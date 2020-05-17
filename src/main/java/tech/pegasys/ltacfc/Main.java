@@ -6,6 +6,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
@@ -18,6 +20,7 @@ import tech.pegasys.ltacfc.soliditywrappers.BlockHeaderStorage;
 import tech.pegasys.ltacfc.utils.KeyPairGen;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 
@@ -63,11 +66,34 @@ public class Main {
 
     deployContracts();
 
-    LOG.info("Initial values");
-    LOG.info(" Val1: {}", this.blockHeaderStorageContract.val1().send());
-    TransactionReceipt receipt1 = this.blockHeaderStorageContract.run().send();
-    LOG.info(" set(5) Receipt: {}", receipt1);
-    LOG.info(" Val1: {}", this.blockHeaderStorageContract.val1().send());
+//    LOG.info("Initial values");
+//    LOG.info(" Val1: {}", this.blockHeaderStorageContract.val1().send());
+//    TransactionReceipt receipt1 = this.blockHeaderStorageContract.run().send();
+//    LOG.info(" set(5) Receipt: {}", receipt1);
+//    LOG.info(" Val1: {}", this.blockHeaderStorageContract.val1().send());
+
+
+    LOG.info("Check Start Event and Create Proof");
+    BigInteger id = BigInteger.TWO;
+    BigInteger timeout = BigInteger.ONE;
+    TransactionReceipt receipt1 = this.crossBlockchainControlContract.start(id, timeout).send();
+    LOG.info(" start Receipt: {}", receipt1);
+    List<Log> logs = receipt1.getLogs();
+    for (Log log: logs) {
+      LOG.info(log);
+    }
+
+
+    List<CrossBlockchainControl.StartEventResponse> startEvent = this.crossBlockchainControlContract.getStartEvents(receipt1);
+    LOG.info("Start Event: Id: {}, Timeout: {}", startEvent.get(0).id, startEvent.get(0).timeout);
+
+
+    EthBlock block = web3j.ethGetBlockByHash(receipt1.getBlockHash(), false).send();
+    EthBlock.Block b1 = block.getBlock();
+    String receiptsRoot = b1.getReceiptsRoot();
+    LOG.info("Receipts Root: {}", receiptsRoot);
+
+
   }
 
 
