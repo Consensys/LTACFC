@@ -4,6 +4,10 @@ package tech.pegasys.ltacfc;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.ethereum.core.Address;
+import org.hyperledger.besu.ethereum.core.Hash;
+import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -15,11 +19,13 @@ import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
+import tech.pegasys.ltacfc.events.ReceiptsProcessing;
 import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
 import tech.pegasys.ltacfc.soliditywrappers.BlockHeaderStorage;
 import tech.pegasys.ltacfc.utils.KeyPairGen;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -91,7 +97,41 @@ public class Main {
     EthBlock block = web3j.ethGetBlockByHash(receipt1.getBlockHash(), false).send();
     EthBlock.Block b1 = block.getBlock();
     String receiptsRoot = b1.getReceiptsRoot();
-    LOG.info("Receipts Root: {}", receiptsRoot);
+    LOG.info("Receipts Root from block: {}", receiptsRoot);
+
+
+    // Convert to Besu objects
+    String stateRootFromReceipt = receipt1.getRoot();
+    Hash root = stateRootFromReceipt == null ? null : Hash.fromHexString(receipt1.getRoot());
+    String statusFromReceipt = receipt1.getStatus();
+    int status = statusFromReceipt == null ? -1 : Integer.parseInt(statusFromReceipt.substring(2), 16);
+    List<org.hyperledger.besu.ethereum.core.Log> logs1 = new ArrayList<>();
+    for (Log log: logs) {
+      org.hyperledger.besu.ethereum.core.Address addr = org.hyperledger.besu.ethereum.core.Address.fromHexString(log.getAddress());
+      Bytes data = Bytes.fromHexString(log.getData());
+      List<String> topics = log.getTopics();
+      List<LogTopic> logTopics = new ArrayList<>();
+      for (String topic: topics) {
+        LogTopic logTopic = LogTopic.create(Bytes.fromHexString(topic));
+        logTopics.add(logTopic);
+      }
+      org.hyperledger.besu.ethereum.core.Log log1 = new org.hyperledger.besu.ethereum.core.Log(addr, data, logTopics);
+      logs1.add(log1);
+    }
+    String revertReasonFromReceipt = receipt1.getRevertReason();
+    Bytes revertReason = revertReasonFromReceipt == null ? null : Bytes.fromHexString(receipt1.getRevertReason());
+    org.hyperledger.besu.ethereum.core.TransactionReceipt txReceipt =
+        root == null ?
+            new org.hyperledger.besu.ethereum.core.TransactionReceipt(status, receipt1.getCumulativeGasUsed().longValue(),
+                logs1, java.util.Optional.ofNullable(revertReason))
+            :
+        new org.hyperledger.besu.ethereum.core.TransactionReceipt(root, receipt1.getCumulativeGasUsed().longValue(),
+        logs1, java.util.Optional.ofNullable(revertReason));
+    List<org.hyperledger.besu.ethereum.core.TransactionReceipt> txReceipts = new ArrayList<>();
+    txReceipts.add(txReceipt);
+    Hash receiptsRoot1 = ReceiptsProcessing.receiptsRoot(txReceipts);
+    LOG.info("Calculated Receipts Root: {}", receiptsRoot1);
+
 
 
   }
