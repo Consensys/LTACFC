@@ -1,2 +1,10 @@
 rootProject.name = 'ltacfc'
+include 'crypto'
+include 'rlp'
+include 'trie'
+include 'receipts'
+include 'registration'
+include 'blockheader'
+include 'crossblockchaincontrol'
+include 'main'
 
