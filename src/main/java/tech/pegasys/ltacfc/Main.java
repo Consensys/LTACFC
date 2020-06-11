@@ -132,7 +132,7 @@ public class Main {
     Hash receiptsRoot1 = ReceiptsProcessing.receiptsRoot(txReceipts);
     LOG.info("Calculated Receipts Root: {}", receiptsRoot1);
 
-
+    ReceiptsProcessing.logTrie(txReceipts);
 
   }
 
