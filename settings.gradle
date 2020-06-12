@@ -7,4 +7,5 @@ include 'registration'
 include 'blockheader'
 include 'crossblockchaincontrol'
 include 'main'
+include 'common'
 

@@ -52,6 +52,11 @@ public class KeyPairGen {
 
   }
 
+
+  public KeyPair generateKeyPair() {
+    return this.keyPairGenerator.generateKeyPair();
+  }
+
   public String generateKeyPairGetPrivateKey() {
     KeyPair rawKeyPair = this.keyPairGenerator.generateKeyPair();
     final ECPrivateKey privateKey =  (ECPrivateKey) rawKeyPair.getPrivate();
