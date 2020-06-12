@@ -47,6 +47,14 @@ public abstract class AbstractWeb3Test {
   }
 
 
+  public Credentials createNewIdentity() {
+    String privateKey = new KeyPairGen().generateKeyPairGetPrivateKey();
+    return Credentials.create(privateKey);
+  }
+
+  public TransactionManager createTransactionManager(Credentials creds) {
+    return new RawTransactionManager(this.web3j, creds, BLOCKCHAIN_ID.longValue(), RETRY, POLLING_INTERVAL);
+  }
 
 
 }

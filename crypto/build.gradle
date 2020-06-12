@@ -9,7 +9,9 @@ repositories {
 }
 
 dependencies {
-    testCompile project (':common')
+    testCompile project (path: ':common', configuration: 'testArtifacts')
+
+
 
     // https://mvnrepository.com/artifact/org.apache.tuweni/tuweni-bytes
     compile group: 'org.apache.tuweni', name: 'tuweni-bytes', version: '1.0.0'

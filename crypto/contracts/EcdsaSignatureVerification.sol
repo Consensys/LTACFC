@@ -24,8 +24,6 @@ contract EcdsaSignatureVerification {
      *
      */
     function verify(address _signer, bytes calldata _message, bytes calldata _signature) internal pure returns (bool) {
-        bytes32 digest = keccak256(_message);
-
         // Check the signature length
         if (_signature.length != 65) {
             return false;
@@ -43,12 +41,29 @@ contract EcdsaSignatureVerification {
             v := byte(0, mload(add(sig, 0x60)))
         }
 
-        if (v != 27 && v != 28) {
+        return verifySigComponents(_signer, _message, r, s, v);
+    }
+
+    /**
+     * Verify a signature.
+     *
+     * @param _signer Address that corresponds to the public key of the signer.
+     * @param _message Message to be verified.
+     * @param _sigR Component of the signature to be verified.
+     * @param _sigS Component of the signature to be verified.
+     * @param _sigV Component of the signature to be verified.
+     *
+     */
+    function verifySigComponents(address _signer, bytes calldata _message, bytes32 _sigR, bytes32 _sigS, uint8 _sigV) internal pure returns (bool) {
+        bytes32 digest = keccak256(_message);
+
+        if (_sigV != 27 && _sigV != 28) {
             return false;
         } else {
             // The signature is verified if the address recovered from the signature matches
             // the signer address (which maps to the public key).
-            return _signer == ecrecover(digest, v, r, s);
+            return _signer == ecrecover(digest, _sigV, _sigR, _sigS);
         }
     }
+
 }
