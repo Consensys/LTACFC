@@ -35,6 +35,8 @@ contract Registrar is RegistrarInterface {
     }
 
     function addAdmin(address _admin) external override(RegistrarInterface) onlyAdmin {
+        // Do not allow an admin to be added twice.
+        require(adminsMap[_admin] == 0, "Existing Admin");
         adminsArray.push(_admin);
         adminsMap[_admin] = adminsArray.length;
     }

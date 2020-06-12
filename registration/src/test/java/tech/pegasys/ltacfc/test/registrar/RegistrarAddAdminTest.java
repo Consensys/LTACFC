@@ -16,24 +16,41 @@ package tech.pegasys.ltacfc.test.registrar;
 
 import org.junit.Test;
 import org.web3j.crypto.Credentials;
-import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Keys;
-import org.web3j.crypto.Sign;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.TransactionManager;
-import org.web3j.utils.Numeric;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
-import tech.pegasys.ltacfc.test.AbstractWeb3Test;
-import tech.pegasys.ltacfc.utils.crypto.EcdsaSignatureConversion;
-import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
-import java.math.BigInteger;
+import static junit.framework.TestCase.assertFalse;
 
 public class RegistrarAddAdminTest extends AbstractRegistrarTest {
-  Registrar contract;
+
+  @Test
+  public void contractDeployerIsAdmin() throws Exception {
+    setupWeb3();
+    deployContract();
+
+    assert(this.contract.isAdmin(this.credentials.getAddress()).send());
+  }
+
 
   @Test
   public void addAdmin() throws Exception {
+    setupWeb3();
+    deployContract();
+
+    Credentials credentials2 = createNewIdentity();
+    String cred2Address = credentials2.getAddress();
+
+    TransactionReceipt receipt = this.contract.addAdmin(cred2Address).send();
+    assert(receipt.isStatusOK());
+
+    assert(this.contract.isAdmin(cred2Address).send());
+  }
+
+  // Do not allow a non-admin to add an admin.
+  @Test
+  public void failAddAdminByNonAdmin() throws Exception {
     setupWeb3();
     deployContract();
 
@@ -43,9 +60,28 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
 
     String cred2Address = credentials2.getAddress();
 
-    TransactionReceipt receipt = regContract2.addAdmin(credentials2.getAddress()).send();
-    assert(receipt.isStatusOK());
+    try {
+      TransactionReceipt receipt = regContract2.addAdmin(credentials2.getAddress()).send();
+      assertFalse(receipt.isStatusOK());
+    } catch (TransactionException ex) {
+      // Do nothing.
+    }
 
-    assert(this.contract.isAdmin(cred2Address).send());
+    assertFalse(this.contract.isAdmin(cred2Address).send());
   }
+
+  // Do not allow an admin to be added twice.
+  @Test
+  public void failAddSameAdminTwice() throws Exception {
+    setupWeb3();
+    deployContract();
+
+    try {
+      TransactionReceipt receipt = this.contract.addAdmin(this.credentials.getAddress()).send();
+      assertFalse(receipt.isStatusOK());
+    } catch (TransactionException ex) {
+      // Do nothing.
+    }
+  }
+
 }
