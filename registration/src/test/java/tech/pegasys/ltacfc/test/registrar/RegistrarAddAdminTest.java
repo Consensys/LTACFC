@@ -19,7 +19,10 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.TransactionManager;
+import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
+
+import java.math.BigInteger;
 
 import static junit.framework.TestCase.assertFalse;
 
@@ -30,7 +33,10 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     setupWeb3();
     deployContract();
 
+    // The address that deployed the contract should be an admin
     assert(this.contract.isAdmin(this.credentials.getAddress()).send());
+    // There should be only one admin.
+    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
 
@@ -41,11 +47,16 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
 
     Credentials credentials2 = createNewIdentity();
     String cred2Address = credentials2.getAddress();
+    BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
 
-    TransactionReceipt receipt = this.contract.addAdmin(cred2Address).send();
+    TransactionReceipt receipt = this.contract.proposeVote(
+        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
+    // The newly added address should be an admin.
     assert(this.contract.isAdmin(cred2Address).send());
+    // There should now be two admins
+    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.TWO) == 0);
   }
 
   // Do not allow a non-admin to add an admin.
@@ -59,15 +70,20 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     Registrar regContract2 = deployContract(tm2);
 
     String cred2Address = credentials2.getAddress();
+    BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
 
     try {
-      TransactionReceipt receipt = regContract2.addAdmin(credentials2.getAddress()).send();
+      TransactionReceipt receipt = regContract2.proposeVote(
+          RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.
     }
 
+    // The add an admin should have failed.
     assertFalse(this.contract.isAdmin(cred2Address).send());
+    // There should be only one admin.
+    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
   // Do not allow an admin to be added twice.
@@ -76,12 +92,19 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     setupWeb3();
     deployContract();
 
+    BigInteger credAddressBig = new BigInteger(this.credentials.getAddress().substring(2), 16);
+
+
     try {
-      TransactionReceipt receipt = this.contract.addAdmin(this.credentials.getAddress()).send();
+      TransactionReceipt receipt = this.contract.proposeVote(
+          RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), credAddressBig, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.
     }
+
+    // There should be only one admin.
+    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
 }
