@@ -102,10 +102,14 @@ interface RegistrarInterface {
 
     function getNumAdmins() external view returns (uint64);
 
+    function getSigAlgorithm(uint256 _blockchainId) external view returns (uint256);
+
+    function getSigningThreshold(uint256 _blockchainId) external view returns (uint64);
+
     /*
      * Return the implementation version.
      */
-    function getVersion() external pure returns (uint16);
+    function getApiVersion() external pure returns (uint16);
 
 
     event Voted(address _participant, uint16 _action, uint256 _voteTarget, bool _votedFor);

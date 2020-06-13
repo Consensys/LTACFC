@@ -32,6 +32,11 @@ contract Registrar is RegistrarInterface {
         VOTE_SET_SIGNING_THRESHOLD            // 5
     }
 
+    // Signature algorithm and curve.
+    enum SigAlgorithm {
+        ALG_NONE,                             // 0: MUST be the first value so it is the zero / deleted value.
+        ALG_ECDSA_KECCAK256_SECP256K1         // 1
+    }
 
     struct Votes {
         // The type of vote being voted on.
@@ -50,6 +55,7 @@ contract Registrar is RegistrarInterface {
     }
 
     struct BlockchainRecord {
+        SigAlgorithm sigAlgorithm;
         uint64 signingThreshold;
     }
 
@@ -119,6 +125,9 @@ contract Registrar is RegistrarInterface {
         else if (action == VoteType.VOTE_ADD_BLOCKCHAIN) {
             // Ensure the blockchain does not yet exist
             require(blockchains[_voteTarget].signingThreshold == 0);
+            // Ensure the signature algorithm is the only one supported.
+            SigAlgorithm sigAlg = SigAlgorithm(_additionalInfo);
+            require(sigAlg == SigAlgorithm.ALG_ECDSA_KECCAK256_SECP256K1);
         }
         else if (action == VoteType.VOTE_SET_SIGNING_THRESHOLD) {
             // Ensure the blockchain exists
@@ -174,10 +183,35 @@ contract Registrar is RegistrarInterface {
     }
 
 
+    function adminArraySize() external view override(RegistrarInterface) returns (uint256) {
+        return adminsArray.length;
+    }
+
+    function getAdmin(uint256 _index) external view override(RegistrarInterface) returns (address)  {
+        return adminsArray[_index];
+    }
+
+    function isAdmin(address _mightBeAdmin) external view override(RegistrarInterface) returns (bool)  {
+        return adminsMap[_mightBeAdmin] != 0;
+    }
+
+    function getNumAdmins() external view override(RegistrarInterface) returns (uint64) {
+        return numAdmins;
+    }
+
+    function getSigAlgorithm(uint256 _blockchainId) external view override(RegistrarInterface) returns (uint256) {
+        return uint256(blockchains[_blockchainId].sigAlgorithm);
+    }
+
+    function getSigningThreshold(uint256 _blockchainId) external view override(RegistrarInterface) returns (uint64) {
+        return blockchains[_blockchainId].signingThreshold;
+    }
+
+
     /*
-     * Return the implementation version.
+     * Return the API version supported by this implementation.
      */
-    function getVersion() external pure override(RegistrarInterface) returns (uint16) {
+    function getApiVersion() external pure override(RegistrarInterface) returns (uint16) {
         return VERSION_ONE;
     }
 
@@ -225,7 +259,8 @@ contract Registrar is RegistrarInterface {
                 votingPeriod = uint64(additionalInfo);
             }
             else if (action == VoteType.VOTE_ADD_BLOCKCHAIN) {
-                blockchains[_voteTarget].signingThreshold = uint64(additionalInfo);
+                blockchains[_voteTarget].sigAlgorithm = SigAlgorithm(additionalInfo);
+                blockchains[_voteTarget].signingThreshold = 1;
             }
             else if (action == VoteType.VOTE_SET_SIGNING_THRESHOLD) {
                 blockchains[_voteTarget].signingThreshold = uint64(additionalInfo);
@@ -271,20 +306,5 @@ contract Registrar is RegistrarInterface {
 
 
 
-    function adminArraySize() external view override(RegistrarInterface) returns (uint256) {
-        return adminsArray.length;
-    }
-
-    function getAdmin(uint256 _index) external view override(RegistrarInterface) returns (address)  {
-        return adminsArray[_index];
-    }
-
-    function isAdmin(address _mightBeAdmin) external view override(RegistrarInterface) returns (bool)  {
-        return adminsMap[_mightBeAdmin] != 0;
-    }
-
-    function getNumAdmins() external view override(RegistrarInterface) returns (uint64) {
-        return numAdmins;
-    }
 
 }
