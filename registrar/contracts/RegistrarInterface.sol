@@ -30,18 +30,20 @@ interface RegistrarInterface {
      *
      * Types of votes:
      *
-     * Value  Action                                  Blockchain              Target                        Additional Information
-     * 1      Add an admin                            Blockchain Id or 0x00   Address of admin to add       ignored
+     * Value  Action                                  Target                        Additional Information
+     * 1      Add an admin                            Address of admin to add       ignored
      *         Revert if the address is already an admin.
-     * 2      Remove an admin                         Blockchain Id or 0x00   Address of admin to remove    ignored
+     * 2      Remove an admin                         Address of admin to remove    ignored
      *         Revert if the address is not an admin.
-     * 3      Change voting algorithm & voting period Blockchain Id or 0x00   Address of voting contract    Voting period
+     * 3      Change voting algorithm & voting period Address of voting contract    Voting period
      *         Proposing a voting algorithm with address(0) removes the voting algorithm.
      *         The voting period must be greater than 1.
-     * 4      Add a blockchain                        0x00                    Blockchain Id                 Signing algorithm used for blockchain.
+     * 4      Add a blockchain                        Blockchain Id                 Signing algorithm used for blockchain.
      *         The blockchain must not exist yet. The signing algorithm must be valid.
-     * 5     Change signing threshold                Blockchain Id            Signing threshold
+     * 5     Change signing threshold                 Blockchain Id                 Signing threshold
      *         The signing threshold must be 1 or more.
+     * 6     Add signer                              Blockchain Id                  Address corresponding to public key of signer.
+     * 7     Remove signer                           Blockchain Id                  Address corresponding to public key of signer.
      *
      * @param _action         The type of vote
      * @param _voteTarget     What is being voted on
@@ -72,26 +74,20 @@ interface RegistrarInterface {
 
 
     /**
-     * Add a signer for the blockchain.
-     */
-    function addSignerPublicKeyAddress(uint256 _blockchainId, address _signerPublicKeyAddress) external;
-
-    /**
-     * Add a signer for the blockchain.
-     */
-    function removeSignerPublicKeyAddress(uint256 _blockchainId, address _signerPublicKeyAddress) external;
-
-
-    /**
      * Verify signatures.
+     *
+     * Revert if:
+     * - The number of signers and signature components does not match
+     * - If any of the signers are not signers for the blockchain
+     * - If any of the signatures do not verify
      */
     function verify(
         uint256 _blockchainId,
-        address[] calldata signers,
-        bytes32[] calldata sigR,
-        bytes32[] calldata sigS,
-        uint8[] calldata sigV,
-        bytes calldata plainText) external;
+        address[] calldata _signers,
+        bytes32[] calldata _sigR,
+        bytes32[] calldata _sigS,
+        uint8[] calldata _sigV,
+        bytes calldata _plainText) external;
 
 
     function adminArraySize() external view returns (uint256);
@@ -106,9 +102,14 @@ interface RegistrarInterface {
 
     function getSigningThreshold(uint256 _blockchainId) external view returns (uint64);
 
-    /*
-     * Return the implementation version.
-     */
+    function numSigners(uint256 _blockchainId) external view returns (uint64);
+
+    function isSigner(uint256 _blockchainId, address _mightBeSigner) external view returns (bool);
+
+
+        /*
+         * Return the implementation version.
+         */
     function getApiVersion() external pure returns (uint16);
 
 

@@ -16,8 +16,9 @@ pragma solidity >=0.4.23;
 
 import "./RegistrarInterface.sol";
 import "./VotingAlgInterface.sol";
+import "../../crypto/contracts/EcdsaSignatureVerification.sol";
 
-contract Registrar is RegistrarInterface {
+contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
     // Implementation version.
     uint16 constant private VERSION_ONE = 1;
 
@@ -29,7 +30,9 @@ contract Registrar is RegistrarInterface {
         VOTE_REMOVE_ADMIN,                    // 2
         VOTE_CHANGE_VOTING,                   // 3
         VOTE_ADD_BLOCKCHAIN,                  // 4
-        VOTE_SET_SIGNING_THRESHOLD            // 5
+        VOTE_SET_SIGNING_THRESHOLD,           // 5
+        VOTE_ADD_SIGNER,                      // 6
+        VOTE_REMOVE_SIGNER                    // 7
     }
 
     // Signature algorithm and curve.
@@ -57,6 +60,12 @@ contract Registrar is RegistrarInterface {
     struct BlockchainRecord {
         SigAlgorithm sigAlgorithm;
         uint64 signingThreshold;
+
+        // Number of active signers
+        uint64 numSigners;
+        // Address of accounts who sign and the offset in the array+1.
+        mapping(address => uint256) signersMap;
+        address[] signersArray;
     }
 
     mapping(uint256=>BlockchainRecord) private blockchains;
@@ -107,6 +116,7 @@ contract Registrar is RegistrarInterface {
         require(votes[_voteTarget].voteType == VoteType.VOTE_NONE);
 
         address targetAddr = address(_voteTarget);
+        address additionalAddress = address(_additionalInfo);
 
         if (action == VoteType.VOTE_ADD_ADMIN) {
             // If the action is to add an admin, then they shouldn't be an admin already.
@@ -132,6 +142,14 @@ contract Registrar is RegistrarInterface {
         else if (action == VoteType.VOTE_SET_SIGNING_THRESHOLD) {
             // Ensure the blockchain exists
             require(blockchains[_voteTarget].signingThreshold != 0);
+        }
+        else if (action == VoteType.VOTE_ADD_SIGNER) {
+            // Can only add a signer if they aren't a signer yet
+            require(blockchains[_voteTarget].signersMap[additionalAddress] == 0);
+        }
+        else if (action == VoteType.VOTE_REMOVE_SIGNER) {
+            // Can only remove a signer if they are a signer
+            require(blockchains[_voteTarget].signersMap[additionalAddress] != 0);
         }
 
         // Set-up the vote.
@@ -183,6 +201,30 @@ contract Registrar is RegistrarInterface {
     }
 
 
+    function verify(
+        uint256 _blockchainId,
+        address[] calldata _signers,
+        bytes32[] calldata _sigR,
+        bytes32[] calldata _sigS,
+        uint8[] calldata _sigV,
+        bytes calldata _plainText) external override(RegistrarInterface) {
+
+        uint256 signersLength = _signers.length;
+        require(signersLength == _sigR.length);
+        require(signersLength == _sigS.length);
+        require(signersLength == _sigV.length);
+
+        require(signersLength >= blockchains[_blockchainId].signingThreshold);
+
+        for (uint256 i=0; i<signersLength; i++) {
+            // Check that signer is a signer for this blockchain
+            require(blockchains[_blockchainId].signersMap[_signers[i]] != 0);
+            // Verify the signature
+            require(verifySigComponents(_signers[i], _plainText, _sigR[i], _sigS[i], _sigV[i]));
+        }
+    }
+
+
     function adminArraySize() external view override(RegistrarInterface) returns (uint256) {
         return adminsArray.length;
     }
@@ -207,6 +249,13 @@ contract Registrar is RegistrarInterface {
         return blockchains[_blockchainId].signingThreshold;
     }
 
+    function numSigners(uint256 _blockchainId) external view override(RegistrarInterface) returns (uint64) {
+        return blockchains[_blockchainId].numSigners;
+    }
+
+    function isSigner(uint256 _blockchainId, address _mightBeSigner) external view override(RegistrarInterface) returns (bool) {
+        return blockchains[_blockchainId].signersMap[_mightBeSigner] != 0;
+    }
 
     /*
      * Return the API version supported by this implementation.
@@ -242,20 +291,21 @@ contract Registrar is RegistrarInterface {
             // The vote has been decided in the affirmative.
             VoteType action = votes[_voteTarget].voteType;
             uint256 additionalInfo = votes[_voteTarget].additionalInfo;
-            address addr = address(_voteTarget);
+            address addr1 = address(_voteTarget);
+            address addr2 = address(additionalInfo);
             if (action == VoteType.VOTE_ADD_ADMIN) {
-                adminsArray.push(addr);
-                adminsMap[addr] = adminsArray.length;
+                adminsArray.push(addr1);
+                adminsMap[addr1] = adminsArray.length;
                 numAdmins++;
             }
             else if (action == VoteType.VOTE_REMOVE_ADMIN) {
-                uint256 arrayOfsPlusOne = adminsMap[addr];
+                uint256 arrayOfsPlusOne = adminsMap[addr1];
                 delete adminsArray[arrayOfsPlusOne-1];
-                delete adminsMap[addr];
+                delete adminsMap[addr1];
                 numAdmins--;
             }
             else if (action == VoteType.VOTE_CHANGE_VOTING) {
-                votingAlgorithmContract = addr;
+                votingAlgorithmContract = addr1;
                 votingPeriod = uint64(additionalInfo);
             }
             else if (action == VoteType.VOTE_ADD_BLOCKCHAIN) {
@@ -264,6 +314,17 @@ contract Registrar is RegistrarInterface {
             }
             else if (action == VoteType.VOTE_SET_SIGNING_THRESHOLD) {
                 blockchains[_voteTarget].signingThreshold = uint64(additionalInfo);
+            }
+            else if (action == VoteType.VOTE_ADD_SIGNER) {
+                blockchains[_voteTarget].signersArray.push(addr2);
+                blockchains[_voteTarget].signersMap[addr2] = blockchains[_voteTarget].signersArray.length;
+                blockchains[_voteTarget].numSigners++;
+            }
+            else if (action == VoteType.VOTE_REMOVE_SIGNER) {
+                uint256 arrayOfsPlusOne = blockchains[_voteTarget].signersMap[addr2];
+                delete blockchains[_voteTarget].signersArray[arrayOfsPlusOne-1];
+                delete blockchains[_voteTarget].signersMap[addr2];
+                blockchains[_voteTarget].numSigners--;
             }
         }
 
@@ -281,30 +342,4 @@ contract Registrar is RegistrarInterface {
         // deleted in the for loop above.
         delete votes[_voteTarget];
     }
-
-
-
-    function addSignerPublicKeyAddress(uint256 _blockchainId, address _signerPublicKeyAddress) external override(RegistrarInterface) {
-
-    }
-
-    function removeSignerPublicKeyAddress(uint256 _blockchainId, address _signerPublicKeyAddress) external override(RegistrarInterface) {
-
-    }
-
-
-
-    function verify(
-        uint256 _blockchainId,
-        address[] calldata signers,
-        bytes32[] calldata sigR,
-        bytes32[] calldata sigS,
-        uint8[] calldata sigV,
-        bytes calldata plainText) external override(RegistrarInterface) {
-
-    }
-
-
-
-
 }

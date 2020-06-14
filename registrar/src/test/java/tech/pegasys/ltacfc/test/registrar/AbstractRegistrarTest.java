@@ -18,8 +18,12 @@ import org.junit.Test;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.TransactionManager;
+import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
+import tech.pegasys.ltacfc.registrar.SigAlgorithmTypes;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 import tech.pegasys.ltacfc.test.AbstractWeb3Test;
+
+import java.math.BigInteger;
 
 public abstract class AbstractRegistrarTest extends AbstractWeb3Test {
   Registrar contract;
@@ -30,6 +34,17 @@ public abstract class AbstractRegistrarTest extends AbstractWeb3Test {
 
   protected Registrar deployContract(TransactionManager tm1) throws Exception {
     return Registrar.deploy(this.web3j, tm1, this.freeGasProvider).send();
+  }
+
+  protected void addBlockchain(BigInteger blockchainId) throws Exception {
+    setupWeb3();
+    deployContract();
+
+    BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
+
+    TransactionReceipt receipt = this.contract.proposeVote(
+        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
+    assert(receipt.isStatusOK());
   }
 
 }

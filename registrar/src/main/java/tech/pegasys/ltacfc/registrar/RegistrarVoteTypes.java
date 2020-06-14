@@ -8,7 +8,9 @@ public enum RegistrarVoteTypes {
   VOTE_REMOVE_ADMIN(2),                    // 2
   VOTE_CHANGE_VOTING(3),                   // 3
   VOTE_ADD_BLOCKCHAIN(4),                  // 4
-  VOTE_SET_SIGNING_THRESHOLD(5);            // 5
+  VOTE_SET_SIGNING_THRESHOLD(5),            // 5
+  VOTE_ADD_SIGNER(6),
+  VOTE_REMOVE_SIGNER(7);
 
   private int val;
 
