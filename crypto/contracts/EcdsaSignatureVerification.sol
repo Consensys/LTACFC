@@ -14,6 +14,9 @@
  */
 pragma solidity >=0.6.9;
 
+/**
+ * Signature verification for ECDSA / KECCAK256 using secp256k1 curve.
+ */
 contract EcdsaSignatureVerification {
     /**
      * Verify a signature.
