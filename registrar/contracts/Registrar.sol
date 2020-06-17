@@ -120,11 +120,11 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
 
         if (action == VoteType.VOTE_ADD_ADMIN) {
             // If the action is to add an admin, then they shouldn't be an admin already.
-            require(adminsMap[targetAddr] == 0);
+            require(!isAdmin(targetAddr));
         }
         else if (action == VoteType.VOTE_REMOVE_ADMIN) {
             // If the action is to remove an admin, then they should be an admin already.
-            require(adminsMap[targetAddr] != 0);
+            require(isAdmin(targetAddr));
             // Don't allow admins to propose removing themselves. This means the case of removing
             // the only admin is avoided.
             require(targetAddr != msg.sender);
@@ -233,7 +233,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
         return adminsArray[_index];
     }
 
-    function isAdmin(address _mightBeAdmin) external view override(RegistrarInterface) returns (bool)  {
+    function isAdmin(address _mightBeAdmin) public view override(RegistrarInterface) returns (bool)  {
         return adminsMap[_mightBeAdmin] != 0;
     }
 

@@ -21,7 +21,7 @@ import "./VotingAlgInterface.sol";
 */
 contract VotingAlgMajority is VotingAlgInterface {
 
-    function assess(uint64 numParticipants, uint64 numVotedFor, uint64 /* numVotedAgainst */) external pure returns (bool) {
+    function assess(uint64 numParticipants, uint64 numVotedFor, uint64 /* numVotedAgainst */) external pure override(VotingAlgInterface) returns (bool) {
         return (numVotedFor * 2 > numParticipants);
     }
 }

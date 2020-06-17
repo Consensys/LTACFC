@@ -9,17 +9,23 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- */
-pragma solidity >=0.4.23;
+ *
+ * SPDX-License-Identifier: Apache-2.0
+*/
+pragma solidity >=0.6.9;
 
-contract BlockHeaderStorage {
-    uint256 public val1 = 3;
-    uint256 public val2 = 5;
+contract Test {
 
-    function run() external {
-      uint256 counter = val1 + val2;
-      for (uint256 i = 0; i < counter; i++) {
-         val1++;
-      }
+    function start(uint256 _crossBlockchainTransactionId) external {
+        emit Event1(_crossBlockchainTransactionId);
+        emit Event2(_crossBlockchainTransactionId + 1);
+        emit Event3(_crossBlockchainTransactionId + 2);
+        emit Event1(_crossBlockchainTransactionId + 3);
     }
+
+
+    event Event1(uint256 id);
+    event Event2(uint256 id);
+    event Event3(uint256 id);
+
 }

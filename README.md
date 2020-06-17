@@ -12,7 +12,7 @@ The directories:
 * gradle: build system related files.
 * main: Runner for overall simulation.
 * receipts: Transaction receipt processing.
-* registrar: Registrar of public keys of transaction receipt root signers.
+* registrar: Registrar of blockchain public keys for transaction receipt root signing.
 * rlp: RLP processing code from Hyperledger Besu.
 * scripts: Scripts to set-up and run Hyperledger Besu.
 * trie: Merkle Patricia Trie code from Hyperledger Besu.

@@ -36,15 +36,15 @@ public abstract class AbstractRegistrarTest extends AbstractWeb3Test {
     return Registrar.deploy(this.web3j, tm1, this.freeGasProvider).send();
   }
 
-  protected void addBlockchain(BigInteger blockchainId) throws Exception {
-    setupWeb3();
-    deployContract();
+  protected Registrar loadContract(TransactionManager tm1) throws Exception {
+    return Registrar.load(this.contract.getContractAddress(), this.web3j, tm1, this.freeGasProvider);
+  }
 
+  protected void addBlockchain(BigInteger blockchainId) throws Exception {
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
 
     TransactionReceipt receipt = this.contract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
     assert(receipt.isStatusOK());
   }
-
 }
