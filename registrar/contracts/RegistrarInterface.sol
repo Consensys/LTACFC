@@ -14,9 +14,32 @@
  */
 pragma solidity >=0.6.9;
 
+
+/**
+ * Registrar contracts hold the public keys used to verify transaction roots from blockchains.
+ *
+ * A set of addresses are administrators for the contract. The administrators vote to add
+ * other administrators, remove administrators, change the voting contract, add blockchains,
+ * and add and remove public keys. The account that deploys the contract is the initial
+ * administrator.
+ *
+ * When the contract is first deployed there is no voting contract. In this mode of operation,
+ * all proposed votes are immediately acted upon. That is, there is no voting. When a voting
+ * algorithm is in place the voting has the following process:
+ *
+ * proposeVote: An administrator proposes a vote. The address is deemed to have voted for the proposal.
+ * vote: During the voting period all administrators can vote for or against the proposal.
+ * actionVote: At any point after the voting period, any administrator can call this function to enact the vote.
+ *
+ * The only signature algorithm supported in this version are ECDSA / KECCAK256 using secp256k1 curve.
+ * Public keys are represented as addresses. Implementer are strongly suggested to use a separate key
+ * pair for each blockchain and in particular not to use a transaction root signing key pair for
+ * Ethereum transaction signing. The reasons for this are: reduce the impact caused by a compromised
+ * private key, different key roll-over schedules, differing security requirements around the storage
+ * and operation of the private keys, given the differing usages.
+ *
+ */
 interface RegistrarInterface {
-
-
     /**
      * Propose that a certain action be voted on.
      *
@@ -66,7 +89,7 @@ interface RegistrarInterface {
     /**
      * Action votes to affect the change.
      *
-     * Only adminss at the contract level or for a blockchain can action votes.
+     * Only admins can action votes.
      *
      * @param _voteTarget What is being voted on.
      */
@@ -107,9 +130,9 @@ interface RegistrarInterface {
     function isSigner(uint256 _blockchainId, address _mightBeSigner) external view returns (bool);
 
 
-        /*
-         * Return the implementation version.
-         */
+    /*
+     * Return the implementation version.
+     */
     function getApiVersion() external pure returns (uint16);
 
 
