@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.registrar.SigAlgorithmTypes;
 import tech.pegasys.ltacfc.test.TestIdentity;
 
 import java.math.BigInteger;
@@ -35,12 +34,12 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
-    assert(this.contract.isSigner(blockchainId, newSigner.getAddress()).send());
-    assert(this.contract.numSigners(blockchainId).send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.isSigner(blockchainId, newSigner.getAddress()).send());
+    assert(this.registrarContract.numSigners(blockchainId).send().compareTo(BigInteger.ONE) == 0);
   }
 
   // Do not allow a signer to be added twice.
@@ -53,12 +52,12 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
     try {
-      receipt = this.contract.proposeVote(
+      receipt = this.registrarContract.proposeVote(
           RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
@@ -66,7 +65,7 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
     }
 
     // There should still be just one signer
-    assert(this.contract.numSigners(blockchainId).send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.numSigners(blockchainId).send().compareTo(BigInteger.ONE) == 0);
   }
 
 }

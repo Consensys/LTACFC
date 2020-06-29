@@ -10,8 +10,10 @@ repositories {
 
 dependencies {
     testCompile project (path: ':common', configuration: 'testArtifacts')
+    testCompile project (path: ':registrar', configuration: 'testArtifacts')
 
     testCompile project (':crypto')
+    testCompile project (':registrar')
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile ('org.web3j:core:4.5.12')

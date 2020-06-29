@@ -15,13 +15,10 @@
 package tech.pegasys.ltacfc.test.registrar;
 
 import org.junit.Test;
-import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
-import org.web3j.tx.TransactionManager;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
 import tech.pegasys.ltacfc.registrar.SigAlgorithmTypes;
-import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 
 import java.math.BigInteger;
 
@@ -37,14 +34,14 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
     BigInteger blockchainId = BigInteger.TEN;
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
     assert(receipt.isStatusOK());
 
     // Check the signature algorithm has been set correctly.
-    assert(this.contract.getSigAlgorithm(blockchainId).send().compareTo(sigAlgorithm) == 0);
+    assert(this.registrarContract.getSigAlgorithm(blockchainId).send().compareTo(sigAlgorithm) == 0);
     // The initial signing threshold is one.
-    assert(this.contract.getSigningThreshold(blockchainId).send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.getSigningThreshold(blockchainId).send().compareTo(BigInteger.ONE) == 0);
   }
 
 
@@ -57,12 +54,12 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
     BigInteger blockchainId = BigInteger.TEN;
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
     assert(receipt.isStatusOK());
 
     try {
-      receipt = this.contract.proposeVote(
+      receipt = this.registrarContract.proposeVote(
           RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
@@ -70,7 +67,7 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
     }
 
     // The initial signing threshold is one.
-    assert(this.contract.getSigningThreshold(blockchainId).send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.getSigningThreshold(blockchainId).send().compareTo(BigInteger.ONE) == 0);
   }
 
 }

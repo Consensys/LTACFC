@@ -43,7 +43,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
 
 
     // Add an admin
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
@@ -53,9 +53,9 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     assert(receipt.isStatusOK());
 
     // Check that the new admin is an admin and that the old admin is no longer an admin
-    assertFalse(this.contract.isAdmin(this.credentials.getAddress()).send());
-    assert(this.contract.isAdmin(cred2Address).send());
-    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
+    assertFalse(this.registrarContract.isAdmin(this.credentials.getAddress()).send());
+    assert(this.registrarContract.isAdmin(cred2Address).send());
+    assert(this.registrarContract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
 
@@ -69,14 +69,14 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     String cred2Address = credentials2.getAddress();
     BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // Remove the original admin using the original admin's credentials.
     try {
       BigInteger cred1AddressBig = new BigInteger(this.credentials.getAddress().substring(2), 16);
-      receipt = this.contract.proposeVote(
+      receipt = this.registrarContract.proposeVote(
           RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred1AddressBig, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
@@ -84,9 +84,9 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     }
 
     // Check that both are still admins
-    assert(this.contract.isAdmin(this.credentials.getAddress()).send());
-    assert(this.contract.isAdmin(cred2Address).send());
-    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.TWO) == 0);
+    assert(this.registrarContract.isAdmin(this.credentials.getAddress()).send());
+    assert(this.registrarContract.isAdmin(cred2Address).send());
+    assert(this.registrarContract.getNumAdmins().send().compareTo(BigInteger.TWO) == 0);
   }
 
 
@@ -104,14 +104,14 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
 
     String cred3Address = credentials3.getAddress();
     BigInteger cred3AddressBig = new BigInteger(cred3Address.substring(2), 16);
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // Check only added admins are admins
-    assert(this.contract.isAdmin(this.credentials.getAddress()).send());
-    assertFalse(this.contract.isAdmin(credentials2.getAddress()).send());
-    assert(this.contract.isAdmin(cred3Address).send());
+    assert(this.registrarContract.isAdmin(this.credentials.getAddress()).send());
+    assertFalse(this.registrarContract.isAdmin(credentials2.getAddress()).send());
+    assert(this.registrarContract.isAdmin(cred3Address).send());
 
     // Remove the original admin using the original admin's credentials.
     try {
@@ -123,9 +123,9 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     }
 
     // Check only added admins are admins
-    assert(this.contract.isAdmin(this.credentials.getAddress()).send());
-    assertFalse(this.contract.isAdmin(credentials2.getAddress()).send());
-    assert(this.contract.isAdmin(cred3Address).send());
+    assert(this.registrarContract.isAdmin(this.credentials.getAddress()).send());
+    assertFalse(this.registrarContract.isAdmin(credentials2.getAddress()).send());
+    assert(this.registrarContract.isAdmin(cred3Address).send());
   }
 
   // Fail if the address to be removed is not an admin
@@ -139,7 +139,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     BigInteger cred3AddressBig = new BigInteger(cred3Address.substring(2), 16);
 
     try {
-      TransactionReceipt receipt = this.contract.proposeVote(
+      TransactionReceipt receipt = this.registrarContract.proposeVote(
           RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {

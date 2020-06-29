@@ -21,6 +21,8 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.0'
 }
 
+
+// Generate Solidity wrapper code before build.
 task generateSources {
     def script = "registrar/gen.sh".execute()
     script.in.eachLine {line -> println line}
@@ -29,7 +31,19 @@ task generateSources {
         throw new GradleException("Solidity compile error")
     }
 }
-
 project.afterEvaluate {
     build.dependsOn generateSources
+}
+
+
+// Generate a test jar so other modules can use the test code, in particular AbstractRegistrarTest.
+configurations {
+    testArtifacts.extendsFrom testRuntime
+}
+task testJar(type: Jar) {
+    classifier "test"
+    from sourceSets.test.output
+}
+artifacts {
+    testArtifacts testJar
 }

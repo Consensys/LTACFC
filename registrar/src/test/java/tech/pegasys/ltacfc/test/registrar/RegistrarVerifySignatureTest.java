@@ -38,7 +38,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -53,7 +53,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData.getV()[0]));
 
     // This will revert if the signature does not verify
-    receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+    receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
     assert(receipt.isStatusOK());
   }
 
@@ -66,10 +66,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     TestIdentity newSigner1 = new TestIdentity();
     TestIdentity newSigner2 = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
-    receipt = this.contract.proposeVote(
+    receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -89,7 +89,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     // This will revert if the signature does not verify
-    receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+    receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
     assert(receipt.isStatusOK());
   }
 
@@ -103,7 +103,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -120,7 +120,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
 
     // This will revert if the signature does not verify
     try {
-      receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // ignore
@@ -137,7 +137,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     TestIdentity newSigner1 = new TestIdentity();
     TestIdentity newSigner2 = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -153,7 +153,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
 
     // This will revert as signer2 is has not been registered for the blockchain
     try {
-      receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // ignore
@@ -169,10 +169,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     TestIdentity newSigner1 = new TestIdentity();
     TestIdentity newSigner2 = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
-    receipt = this.contract.proposeVote(
+    receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -192,7 +192,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // ignore
@@ -208,10 +208,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     TestIdentity newSigner1 = new TestIdentity();
     TestIdentity newSigner2 = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
-    receipt = this.contract.proposeVote(
+    receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -231,7 +231,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // ignore
@@ -247,10 +247,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     TestIdentity newSigner1 = new TestIdentity();
     TestIdentity newSigner2 = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
-    receipt = this.contract.proposeVote(
+    receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -270,7 +270,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // ignore
@@ -286,10 +286,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     TestIdentity newSigner1 = new TestIdentity();
     TestIdentity newSigner2 = new TestIdentity();
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
-    receipt = this.contract.proposeVote(
+    receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
 
@@ -309,7 +309,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     //sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.contract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // ignore

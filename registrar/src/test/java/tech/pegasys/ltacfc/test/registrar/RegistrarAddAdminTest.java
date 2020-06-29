@@ -34,9 +34,9 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     deployContract();
 
     // The address that deployed the contract should be an admin
-    assert(this.contract.isAdmin(this.credentials.getAddress()).send());
+    assert(this.registrarContract.isAdmin(this.credentials.getAddress()).send());
     // There should be only one admin.
-    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
 
@@ -49,14 +49,14 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     String cred2Address = credentials2.getAddress();
     BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
 
-    TransactionReceipt receipt = this.contract.proposeVote(
+    TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // The newly added address should be an admin.
-    assert(this.contract.isAdmin(cred2Address).send());
+    assert(this.registrarContract.isAdmin(cred2Address).send());
     // There should now be two admins
-    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.TWO) == 0);
+    assert(this.registrarContract.getNumAdmins().send().compareTo(BigInteger.TWO) == 0);
   }
 
   // Do not allow a non-admin to add an admin.
@@ -81,9 +81,9 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     }
 
     // The add an admin should have failed.
-    assertFalse(this.contract.isAdmin(cred2Address).send());
+    assertFalse(this.registrarContract.isAdmin(cred2Address).send());
     // There should be only one admin.
-    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
   // Do not allow an admin to be added twice.
@@ -96,7 +96,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
 
 
     try {
-      TransactionReceipt receipt = this.contract.proposeVote(
+      TransactionReceipt receipt = this.registrarContract.proposeVote(
           RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), credAddressBig, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
@@ -104,7 +104,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     }
 
     // There should be only one admin.
-    assert(this.contract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
+    assert(this.registrarContract.getNumAdmins().send().compareTo(BigInteger.ONE) == 0);
   }
 
 }

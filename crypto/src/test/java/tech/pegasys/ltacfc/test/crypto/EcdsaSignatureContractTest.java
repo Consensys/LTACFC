@@ -16,7 +16,7 @@ import static junit.framework.TestCase.assertFalse;
 
 public class EcdsaSignatureContractTest extends AbstractWeb3Test {
 
-  EcdsaSignatureTest contract;
+  EcdsaSignatureTest ecdsaTestContract;
 
   @Test
   public void happyCase() throws Exception {
@@ -33,7 +33,7 @@ public class EcdsaSignatureContractTest extends AbstractWeb3Test {
 
     String address = Keys.getAddress(keyPair.getPublicKey().toString(16));
 
-    Boolean result = this.contract.verify2(address, plainText, signature).send();
+    Boolean result = this.ecdsaTestContract.verify2(address, plainText, signature).send();
     assert(result);
   }
 
@@ -54,7 +54,7 @@ public class EcdsaSignatureContractTest extends AbstractWeb3Test {
     String address = Keys.getAddress(keyPair.getPublicKey().toString(16));
 
 
-    Boolean result = this.contract.verify2(address, fraudPlainText, signature).send();
+    Boolean result = this.ecdsaTestContract.verify2(address, fraudPlainText, signature).send();
     assertFalse(result);
   }
 
@@ -73,7 +73,7 @@ public class EcdsaSignatureContractTest extends AbstractWeb3Test {
 
     String address = Keys.getAddress(keyPair.getPublicKey().toString(16));
 
-    Boolean result = this.contract.verifySigComponents2(address, plainText, signatureData.getR(), signatureData.getS(), BigInteger.valueOf(signatureData.getV()[0])).send();
+    Boolean result = this.ecdsaTestContract.verifySigComponents2(address, plainText, signatureData.getR(), signatureData.getS(), BigInteger.valueOf(signatureData.getV()[0])).send();
     assert(result);
   }
 
@@ -92,7 +92,7 @@ public class EcdsaSignatureContractTest extends AbstractWeb3Test {
 
     String address = Keys.getAddress(keyPair.getPublicKey().toString(16));
 
-    Boolean result = this.contract.verifySigComponents2(address, fraudPlainText, signatureData.getR(), signatureData.getS(), BigInteger.valueOf(signatureData.getV()[0])).send();
+    Boolean result = this.ecdsaTestContract.verifySigComponents2(address, fraudPlainText, signatureData.getR(), signatureData.getS(), BigInteger.valueOf(signatureData.getV()[0])).send();
     assertFalse(result);
   }
 
@@ -100,7 +100,7 @@ public class EcdsaSignatureContractTest extends AbstractWeb3Test {
 
   private void deployContract() throws Exception {
 //    LOG.info("Deploying contracts");
-    this.contract = EcdsaSignatureTest.deploy(this.web3j, this.tm, this.freeGasProvider).send();
+    this.ecdsaTestContract = EcdsaSignatureTest.deploy(this.web3j, this.tm, this.freeGasProvider).send();
   }
 
 }
