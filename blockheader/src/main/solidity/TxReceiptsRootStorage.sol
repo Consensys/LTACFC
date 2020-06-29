@@ -14,7 +14,7 @@
  */
 pragma solidity >=0.6.9;
 
-import "../../registrar/contracts/Registrar.sol";
+import "../../../../registrar/src/main/solidity/Registrar.sol";
 
 contract TxReceiptsRootStorage {
     Registrar registrar;
@@ -24,7 +24,7 @@ contract TxReceiptsRootStorage {
     mapping(uint256=>mapping(bytes32 => bool)) private txReceiptsRoots;
 
 
-    constructor(address _registrar) {
+    constructor(address _registrar) public {
         registrar = Registrar(_registrar);
     }
 
@@ -34,7 +34,8 @@ contract TxReceiptsRootStorage {
         bytes32[] calldata _sigR,
         bytes32[] calldata _sigS,
         uint8[] calldata _sigV,
-        bytes32 _txReceiptsRoot) external override(RegistrarInterface) {
+        bytes32 _txReceiptsRoot) external // override(RegistrarInterface)
+    {
 
         bytes memory txReceiptsRootBytes = abi.encodePacked(_txReceiptsRoot);
         registrar.verify(_blockchainId, _signers, _sigR, _sigS, _sigV, txReceiptsRootBytes);
@@ -44,16 +45,17 @@ contract TxReceiptsRootStorage {
 
 
     function verify(
-        uint256 _blockchainId,
-        bytes32 _txReceiptsRoot
-    ) {
+        uint256 /* _blockchainId */,
+        bytes32 /* _txReceiptsRoot */
+    ) external {
 
     }
 
 
     function containsTxReceiptRoot(
         uint256 _blockchainId,
-        bytes32 _txReceiptsRoot) external override(RegistrarInterface) view returns (bool){
+        bytes32 _txReceiptsRoot) external //override(RegistrarInterface)
+            view returns (bool){
 
         return (txReceiptsRoots[_blockchainId][_txReceiptsRoot]);
     }

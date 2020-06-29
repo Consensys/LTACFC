@@ -2,7 +2,7 @@
 rm -rf build
 
 BUILDDIR=./build
-CONTRACTSDIR=contracts
+CONTRACTSDIR=solidity
 PACKAGE=tech.pegasys.ltacfc.soliditywrappers
 
 

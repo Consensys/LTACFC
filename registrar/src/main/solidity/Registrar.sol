@@ -16,7 +16,7 @@ pragma solidity >=0.4.23;
 
 import "./RegistrarInterface.sol";
 import "./VotingAlgInterface.sol";
-import "../../crypto/contracts/EcdsaSignatureVerification.sol";
+import "../../../../crypto/src/main/solidity/EcdsaSignatureVerification.sol";
 
 contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
     // Implementation version.
