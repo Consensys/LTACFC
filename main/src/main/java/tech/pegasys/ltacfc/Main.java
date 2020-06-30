@@ -10,7 +10,11 @@ import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthGetBlockTransactionCountByHash;
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
+import org.web3j.protocol.core.methods.response.EthTransaction;
 import org.web3j.protocol.core.methods.response.Log;
+import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
@@ -25,6 +29,7 @@ import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -54,12 +59,6 @@ public class Main {
   String testContractAddress;
   Test testContract0;
   Test testContract1;
-//
-//  String blockHeaderStorageContractAddress;
-//  BlockHeaderStorage blockHeaderStorageContract;
-//
-//  String crossBlockchainControlContractAddress;
-//  CrossBlockchainControl crossBlockchainControlContract;
 
   public static void main(String[] args) throws Exception {
     (new Main()).doStuff();
@@ -67,10 +66,10 @@ public class Main {
 
   public void doStuff() throws Exception {
 
-    String privateKey = new KeyPairGen().generateKeyPairGetPrivateKey();
-//    System.out.println("Priv2: " + privateKey);
-    this.credentials0 = Credentials.create(privateKey);
-    this.credentials1 = Credentials.create(privateKey);
+    String privateKey0 = new KeyPairGen().generateKeyPairGetPrivateKey();
+    this.credentials0 = Credentials.create(privateKey0);
+    String privateKey1 = new KeyPairGen().generateKeyPairGetPrivateKey();
+    this.credentials1 = Credentials.create(privateKey1);
 
     this.web3j = Web3j.build(new HttpService(URI), POLLING_INTERVAL, new ScheduledThreadPoolExecutor(5));
     this.tm0 = new RawTransactionManager(this.web3j, this.credentials0, BLOCKCHAIN_ID.longValue(), RETRY, POLLING_INTERVAL);
@@ -78,118 +77,121 @@ public class Main {
 
     deployContracts();
 
-//    LOG.info("Initial values");
-//    LOG.info(" Val1: {}", this.blockHeaderStorageContract.val1().send());
-//    TransactionReceipt receipt1 = this.blockHeaderStorageContract.run().send();
-//    LOG.info(" set(5) Receipt: {}", receipt1);
-//    LOG.info(" Val1: {}", this.blockHeaderStorageContract.val1().send());
-
-
     LOG.info("Check Start Event and Create Proof");
     BigInteger id = BigInteger.TWO;
-//    BigInteger timeout = BigInteger.ONE;
-//    TransactionReceipt receipt1 = this.crossBlockchainControlContract.start(id, timeout).send();
     final TransactionReceipt[] receipts = new TransactionReceipt[2];
 
     CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture1 = this.testContract0.start(BigInteger.TEN).sendAsync();
     CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture2 = this.testContract1.start(BigInteger.valueOf(20)).sendAsync();
-//    CompletableFuture<TransactionReceipt> transactionReceiptCompletableFuture3 = this.testContract.start(BigInteger.valueOf(30)).sendAsync();
     CompletableFuture<Void> combinedFuture
         = CompletableFuture.allOf(transactionReceiptCompletableFuture1, transactionReceiptCompletableFuture2);
-//        = CompletableFuture.allOf(transactionReceiptCompletableFuture2);
-//        = CompletableFuture.allOf(transactionReceiptCompletableFuture1);
     combinedFuture.get();
 
-//    receipts[0] = transactionReceiptCompletableFuture2.get();
     receipts[0] = transactionReceiptCompletableFuture1.get();
     receipts[1] = transactionReceiptCompletableFuture2.get();
-  //  receipts[2] = transactionReceiptCompletableFuture3.get();
+
+    LOG.info(transactionReceiptCompletableFuture1.isDone());
+    LOG.info(transactionReceiptCompletableFuture2.isDone());
 
 
-
-//    receipts[3] = this.testContract.start(id).send();
-
-
+    // Print out the receipts.
     for (int i=0; i<receipts.length; i++) {
       LOG.info(" Tx Receipt ({}): {}", i, receipts[i]);
-      if (receipts[i] != null) {
+      if (receipts[i] == null) {
+        LOG.error("Unexpectedly receipt[{}] is null", i);
+      }
+      else {
         List<Log> logs = receipts[i].getLogs();
         for (Log log: logs) {
-          LOG.info(log);
+          LOG.info("  {}", log);
         }
+
+        List<Test.Event1EventResponse> e1Events = this.testContract0.getEvent1Events(receipts[i]);
+        LOG.info("  Event1(0): Id: {}", e1Events.get(0).id);
+        LOG.info("  Event1(1): Id: {}", e1Events.get(1).id);
+        List<Test.Event2EventResponse> e2Events = this.testContract0.getEvent2Events(receipts[i]);
+        LOG.info("  Event2(0): Id: {}", e2Events.get(0).id);
+        List<Test.Event3EventResponse> e3Events = this.testContract0.getEvent3Events(receipts[i]);
+        LOG.info("  Event3(0): Id: {}", e3Events.get(0).id);
       }
     }
 
-
-
-
-    TransactionReceipt receipt = receipts[0];
-
-    List<Test.Event1EventResponse> e1Events = this.testContract0.getEvent1Events(receipt);
-    LOG.info("Event1(0): Id: {}", e1Events.get(0).id);
-    LOG.info("Event1(1): Id: {}", e1Events.get(1).id);
-    List<Test.Event2EventResponse> e2Events = this.testContract0.getEvent2Events(receipt);
-    LOG.info("Event2(0): Id: {}", e2Events.get(0).id);
-    List<Test.Event3EventResponse> e3Events = this.testContract0.getEvent3Events(receipt);
-    LOG.info("Event3(0): Id: {}", e3Events.get(0).id);
-
-    //    List<CrossBlockchainControl.StartEventResponse> startEvent = this.crossBlockchainControlContract.getStartEvents(receipt1);
-//    LOG.info("Start Event: Id: {}, Timeout: {}", startEvent.get(0).id, startEvent.get(0).timeout);
-
-
-
-    EthBlock block = web3j.ethGetBlockByHash(receipt.getBlockHash(), false).send();
+    // Show the receipts root that has been included in the block.
+    if (receipts[0] == null || receipts[0].getBlockHash() == null) {
+      LOG.error("unexpectedly, receipts == null or block hash in receipt is null");
+      return;
+    }
+    EthBlock block = web3j.ethGetBlockByHash(receipts[0].getBlockHash(), false).send();
     EthBlock.Block b1 = block.getBlock();
     String receiptsRoot = b1.getReceiptsRoot();
     LOG.info("Receipts Root from block: {}", receiptsRoot);
 
 
-    // Convert to Besu objects
-    String stateRootFromReceipt = receipt.getRoot();
-    Hash root = stateRootFromReceipt == null ? null : Hash.fromHexString(receipt.getRoot());
-    String statusFromReceipt = receipt.getStatus();
-    int status = statusFromReceipt == null ? -1 : Integer.parseInt(statusFromReceipt.substring(2), 16);
-    List<org.hyperledger.besu.ethereum.core.Log> logs1 = new ArrayList<>();
-    for (Log log: receipt.getLogs()) {
-      org.hyperledger.besu.ethereum.core.Address addr = org.hyperledger.besu.ethereum.core.Address.fromHexString(log.getAddress());
-      Bytes data = Bytes.fromHexString(log.getData());
-      List<String> topics = log.getTopics();
-      List<LogTopic> logTopics = new ArrayList<>();
-      for (String topic: topics) {
-        LogTopic logTopic = LogTopic.create(Bytes.fromHexString(topic));
-        logTopics.add(logTopic);
+    // Calculate receipt root based on logs for all receipts of all transactions in the block.
+    String txReceiptRootFromReceipt = receipts[0].getRoot();
+    String blockHash = receipts[0].getBlockHash();
+    EthGetBlockTransactionCountByHash transactionCountByHash = web3j.ethGetBlockTransactionCountByHash(blockHash).send();
+    BigInteger txCount = transactionCountByHash.getTransactionCount();
+
+    List<org.hyperledger.besu.ethereum.core.TransactionReceipt> besuReceipts = new ArrayList<>();
+
+    BigInteger transactionIndex = BigInteger.ZERO;
+    do {
+      EthTransaction ethTransaction = this.web3j.ethGetTransactionByBlockHashAndIndex(blockHash, transactionIndex).send();
+      Optional<Transaction> transaction = ethTransaction.getTransaction();
+      if (!transaction.isPresent()) {
+        LOG.error("Transaction at index {} is null!", transactionIndex);
+        return;
       }
-      org.hyperledger.besu.ethereum.core.Log log1 = new org.hyperledger.besu.ethereum.core.Log(addr, data, logTopics);
-      logs1.add(log1);
-    }
-    String revertReasonFromReceipt = receipt.getRevertReason();
-    Bytes revertReason = revertReasonFromReceipt == null ? null : Bytes.fromHexString(receipt.getRevertReason());
-    org.hyperledger.besu.ethereum.core.TransactionReceipt txReceipt =
-        root == null ?
-            new org.hyperledger.besu.ethereum.core.TransactionReceipt(status, receipt.getCumulativeGasUsed().longValue(),
-                logs1, java.util.Optional.ofNullable(revertReason))
-            :
-        new org.hyperledger.besu.ethereum.core.TransactionReceipt(root, receipt.getCumulativeGasUsed().longValue(),
-        logs1, java.util.Optional.ofNullable(revertReason));
-    List<org.hyperledger.besu.ethereum.core.TransactionReceipt> txReceipts = new ArrayList<>();
-    txReceipts.add(txReceipt);
-    Hash receiptsRoot1 = ReceiptsProcessing.receiptsRoot(txReceipts);
+      String txHash = transaction.get().getHash();
+      EthGetTransactionReceipt ethGetTransactionReceipt = this.web3j.ethGetTransactionReceipt(txHash).send();
+      Optional<TransactionReceipt> mayBeReceipt = ethGetTransactionReceipt.getTransactionReceipt();
+      if (!mayBeReceipt.isPresent()) {
+        LOG.error("Transaction receipt at index {} is null!", transactionIndex);
+        return;
+      }
+      TransactionReceipt receipt = mayBeReceipt.get();
+
+      // Convert to Besu objects
+      List<org.hyperledger.besu.ethereum.core.Log> besuLogs = new ArrayList<>();
+
+      String stateRootFromReceipt = receipt.getRoot();
+      Hash root = (stateRootFromReceipt == null) ? null : Hash.fromHexString(receipt.getRoot());
+      String statusFromReceipt = receipt.getStatus();
+      int status = statusFromReceipt == null ? -1 : Integer.parseInt(statusFromReceipt.substring(2), 16);
+      for (Log web3jLog: receipt.getLogs()) {
+        org.hyperledger.besu.ethereum.core.Address addr = org.hyperledger.besu.ethereum.core.Address.fromHexString(web3jLog.getAddress());
+        Bytes data = Bytes.fromHexString(web3jLog.getData());
+        List<String> topics = web3jLog.getTopics();
+        List<LogTopic> logTopics = new ArrayList<>();
+        for (String topic: topics) {
+          LogTopic logTopic = LogTopic.create(Bytes.fromHexString(topic));
+          logTopics.add(logTopic);
+        }
+        besuLogs.add(new org.hyperledger.besu.ethereum.core.Log(addr, data, logTopics));
+      }
+      String revertReasonFromReceipt = receipt.getRevertReason();
+      Bytes revertReason = revertReasonFromReceipt == null ? null : Bytes.fromHexString(receipt.getRevertReason());
+      org.hyperledger.besu.ethereum.core.TransactionReceipt txReceipt =
+          root == null ?
+              new org.hyperledger.besu.ethereum.core.TransactionReceipt(status, receipt.getCumulativeGasUsed().longValue(),
+                  besuLogs, java.util.Optional.ofNullable(revertReason))
+              :
+              new org.hyperledger.besu.ethereum.core.TransactionReceipt(root, receipt.getCumulativeGasUsed().longValue(),
+                  besuLogs, java.util.Optional.ofNullable(revertReason));
+      besuReceipts.add(txReceipt);
+
+      // Increment for the next time through the loop.
+      transactionIndex = transactionIndex.add(BigInteger.ONE);
+    } while (transactionIndex.compareTo(txCount) != 0);
+
+    Hash receiptsRoot1 = ReceiptsProcessing.receiptsRoot(besuReceipts);
     LOG.info("Calculated Receipts Root: {}", receiptsRoot1);
 
-    ReceiptsProcessing.logTrie(txReceipts);
+    ReceiptsProcessing.logTrie(besuReceipts);
 
+    System.exit(0);
   }
-
-
-//  private void loadContracts() {
-//    LOG.info("Loading contracts");
-//    LOG.info(" Block Header Storage contract: {}", this.blockHeaderStorageContract);
-//    this.blockHeaderStorageContract = BlockHeaderStorage.load(
-//        this.blockHeaderStorageContractAddress, this.web3j, this.tm, this.freeGasProvider);
-//    LOG.info(" Cross-Blockchain Control contract: {}", this.crossBlockchainControlContractAddress);
-//    this.crossBlockchainControlContract = CrossBlockchainControl.load(
-//        this.crossBlockchainControlContractAddress, this.web3j, this.tm, this.freeGasProvider);
-//  }
 
 
   public void deployContracts() throws Exception {
@@ -200,18 +202,5 @@ public class Main {
     LOG.info(" Test contract deployed on at address: {}", this.testContractAddress);
 
     this.testContract1 = Test.load(this.testContractAddress, this.web3j, this.tm1, this.freeGasProvider);
-
-
-//    this.blockHeaderStorageContract =
-//        BlockHeaderStorage.deploy(this.web3j, this.tm, this.freeGasProvider).send();
-//    this.blockHeaderStorageContractAddress = this.blockHeaderStorageContract.getContractAddress();
-//    LOG.info(" Block Header Storage contract deployed on at address: {}", this.blockHeaderStorageContractAddress);
-//
-//    this.crossBlockchainControlContract =
-//        CrossBlockchainControl.deploy(this.web3j, this.tm, this.freeGasProvider).send();
-//    this.crossBlockchainControlContractAddress = this.crossBlockchainControlContract.getContractAddress();
-//    LOG.info(" Cross-Blockchain Control contract deployed on at address: {}", this.crossBlockchainControlContractAddress);
-//
-//
   }
 }
