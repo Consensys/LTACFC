@@ -15,8 +15,9 @@
 pragma solidity >=0.6.9;
 
 import "../../../../registrar/src/main/solidity/Registrar.sol";
+import "./TxReceiptsRootStorageInterface.sol";
 
-contract TxReceiptsRootStorage {
+contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface {
     Registrar registrar;
 
     // Mapping (blockchain Id => mapping(transaction receipt root) => bool)
@@ -34,8 +35,7 @@ contract TxReceiptsRootStorage {
         bytes32[] calldata _sigR,
         bytes32[] calldata _sigS,
         uint8[] calldata _sigV,
-        bytes32 _txReceiptsRoot) external // override(RegistrarInterface)
-    {
+        bytes32 _txReceiptsRoot) external override(TxReceiptsRootStorageInterface) {
 
         bytes memory txReceiptsRootBytes = abi.encodePacked(_txReceiptsRoot);
         registrar.verify(_blockchainId, _signers, _sigR, _sigS, _sigV, txReceiptsRootBytes);
@@ -46,19 +46,18 @@ contract TxReceiptsRootStorage {
 
     function verify(
         uint256 /* _blockchainId */,
-        bytes32 /* _txReceiptsRoot */
-    ) external {
+        bytes32 /* _txReceiptsRoot */,
+        bytes calldata /* _txReceipt */,
+        bytes calldata /* _proof */
+    ) external override(TxReceiptsRootStorageInterface) {
 
     }
 
 
     function containsTxReceiptRoot(
         uint256 _blockchainId,
-        bytes32 _txReceiptsRoot) external //override(RegistrarInterface)
-            view returns (bool){
+        bytes32 _txReceiptsRoot) external override(TxReceiptsRootStorageInterface) view returns (bool){
 
         return (txReceiptsRoots[_blockchainId][_txReceiptsRoot]);
     }
-
-
 }
