@@ -25,15 +25,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import tech.pegasys.ltacfc.rlp.RlpDumper;
 
 import static org.hyperledger.besu.crypto.Hash.keccak256;
 
 class BranchNode<V> implements Node<V> {
+  private static final Logger LOG = LogManager.getLogger(BranchNode.class);
+
   public static final byte RADIX = CompactEncoding.LEAF_TERMINATOR;
 
   @SuppressWarnings("rawtypes")
@@ -93,6 +98,7 @@ class BranchNode<V> implements Node<V> {
     if (rlp != null) {
       final Bytes encoded = rlp.get();
       if (encoded != null) {
+        LOG.info("Branch Node1: {}", encoded);
         return encoded;
       }
     }
@@ -109,6 +115,7 @@ class BranchNode<V> implements Node<V> {
     out.endList();
     final Bytes encoded = out.encoded();
     rlp = new WeakReference<>(encoded);
+    LOG.info("Branch Node2: {}", encoded);
     return encoded;
   }
 

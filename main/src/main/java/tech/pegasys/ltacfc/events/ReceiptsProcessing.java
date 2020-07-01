@@ -13,6 +13,7 @@ import org.hyperledger.besu.ethereum.trie.MerklePatriciaTrie;
 import org.hyperledger.besu.ethereum.trie.Proof;
 import org.hyperledger.besu.ethereum.trie.SimpleMerklePatriciaTrie;
 import tech.pegasys.ltacfc.Main;
+import tech.pegasys.ltacfc.rlp.RlpDumper;
 
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,7 @@ public class ReceiptsProcessing {
     LOG.info("Value: {}", value.toString());
 
     Proof<Bytes> proofAndValue = trie.getValueWithProof(key1);
-    LOG.info("Proof: {}", proofAndValue.getValue());
+    LOG.info("Value: {}", proofAndValue.getValue());
     LOG.info("Proof num related nodes: {}", proofAndValue.getProofRelatedNodes().size());
     for (Bytes relatedNode: proofAndValue.getProofRelatedNodes()) {
       LOG.info(" related node: {}", relatedNode);
@@ -64,22 +65,32 @@ public class ReceiptsProcessing {
     }
 
     RLPInput rlpInput = RLP.input(proofAndValue.getValue().get());
-    rlpInput.enterList();
-    LOG.info("Proof bytes: {}", rlpInput.readBytes());
-    LOG.info("Proof bytes: {}", rlpInput.readBytes());
-    LOG.info("Proof bytes: {}", rlpInput.readBytes());
-    LOG.info("Enter list");
-    rlpInput.enterList();
-    LOG.info("Enter list");
-    rlpInput.enterList();
-    LOG.info("Proof bytes (address of contract): {}", rlpInput.readBytes());
-    LOG.info("Enter list");
-    rlpInput.enterList();
-    LOG.info("Proof bytes: (topic) {}", rlpInput.readBytes());
-    LOG.info("End list");
-    rlpInput.leaveList();
-    LOG.info("Proof bytes: (event value) {}", rlpInput.readBytes());
-//    LOG.info("Proof bytes32: {}", rlpInput.readBytes32());
+    RlpDumper.dump(rlpInput);
+
+//    Bytes val = proofAndValue.getValue().get();
+//    for (Bytes relatedNode: proofAndValue.getProofRelatedNodes()) {
+//    }
+
+
+
+//    rlpInput.enterList();
+//    LOG.info("Proof bytes: {}", rlpInput.readBytes());
+//    LOG.info("Proof bytes: {}", rlpInput.readBytes());
+//    LOG.info("Proof bytes: {}", rlpInput.readBytes());
+//    LOG.info("Enter list");
+//    rlpInput.enterList();
+//    LOG.info("Enter list");
+//    rlpInput.enterList();
+//    LOG.info("Proof bytes (address of contract): {}", rlpInput.readBytes());
+//    LOG.info("Enter list");
+//    rlpInput.enterList();
+//    LOG.info("Proof bytes: (topic) {}", rlpInput.readBytes());
+//    LOG.info("End list");
+//    rlpInput.leaveList();
+//    LOG.info("Proof bytes: (event value) {}", rlpInput.readBytes());
+
+
+    //    LOG.info("Proof bytes32: {}", rlpInput.readBytes32());
 
 //    Map<Bytes32, Bytes> entries = trie.entriesFrom(key2, 1000);
 //    for (Bytes32 key: entries.keySet()) {

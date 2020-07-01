@@ -18,10 +18,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 class NullNode<V> implements Node<V> {
+  private static final Logger LOG = LogManager.getLogger(NullNode.class);
+
   @SuppressWarnings("rawtypes")
   private static final NullNode instance = new NullNode();
 
@@ -59,6 +63,7 @@ class NullNode<V> implements Node<V> {
 
   @Override
   public Bytes getRlp() {
+    LOG.info("Null Node: {}", MerklePatriciaTrie.EMPTY_TRIE_NODE);
     return MerklePatriciaTrie.EMPTY_TRIE_NODE;
   }
 

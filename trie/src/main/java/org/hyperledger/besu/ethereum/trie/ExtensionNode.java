@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
@@ -28,6 +30,8 @@ import org.hyperledger.besu.ethereum.rlp.RLP;
 import static org.hyperledger.besu.crypto.Hash.keccak256;
 
 class ExtensionNode<V> implements Node<V> {
+  private static final Logger LOG = LogManager.getLogger(ExtensionNode.class);
+
   private final Bytes path;
   private final Node<V> child;
   private final NodeFactory<V> nodeFactory;
@@ -78,6 +82,7 @@ class ExtensionNode<V> implements Node<V> {
     if (rlp != null) {
       final Bytes encoded = rlp.get();
       if (encoded != null) {
+        LOG.info("Extension Node1: {}", encoded);
         return encoded;
       }
     }
@@ -88,6 +93,7 @@ class ExtensionNode<V> implements Node<V> {
     out.endList();
     final Bytes encoded = out.encoded();
     rlp = new WeakReference<>(encoded);
+    LOG.info("Extension Node2: {}", encoded);
     return encoded;
   }
 

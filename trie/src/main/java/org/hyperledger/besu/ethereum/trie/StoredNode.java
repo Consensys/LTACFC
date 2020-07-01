@@ -14,6 +14,8 @@
  */
 package org.hyperledger.besu.ethereum.trie;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 
 import java.util.List;
@@ -23,6 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 class StoredNode<V> implements Node<V> {
+  private static final Logger LOG = LogManager.getLogger(StoredNode.class);
+
   private final StoredNodeFactory<V> nodeFactory;
   private final Bytes32 hash;
   private Node<V> loaded;
@@ -74,7 +78,9 @@ class StoredNode<V> implements Node<V> {
 
   @Override
   public Bytes getRlp() {
-    return load().getRlp();
+    Bytes encoded = load().getRlp();
+    LOG.info("Stored Node: {}", encoded);
+    return encoded;
   }
 
   @Override
