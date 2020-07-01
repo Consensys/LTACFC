@@ -5,7 +5,7 @@ rm -rf build
 HERE=registrar
 BUILDDIR=$HERE/build
 CONTRACTSDIR=$HERE/src/main/solidity
-OUTPUTDIR=$HERE/src/main/java/tech/pegasys/ltacfc/soliditywrappers
+OUTPUTDIR=$HERE/src/main/java
 PACKAGE=tech.pegasys.ltacfc.soliditywrappers
 WEB3J=web3j
 
@@ -17,10 +17,6 @@ solc $CONTRACTSDIR/VotingAlgMajorityWhoVoted.sol --allow-paths . --bin --abi --o
 
 $WEB3J solidity generate -a=$BUILDDIR/Registrar.abi -b=$BUILDDIR/Registrar.bin -o=$BUILDDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/VotingAlgMajority.abi -b=$BUILDDIR/VotingAlgMajority.bin -o=$BUILDDIR -p=$PACKAGE
-$WEB3J solidity generate -a=$BUILDDIR/VotingAlgMajorityWhoVoted.abi -b=$BUILDDIR/VotingAlgMajorityWhoVoted.bin -o=$BUILDDIR -p=$PACKAGE
-
-mkdir -p $OUTPUTDIR
-cp $BUILDDIR/tech/pegasys/ltacfc/soliditywrappers/* $OUTPUTDIR/.
-# ls -al $OUTPUTDIR
+$WEB3J solidity generate -a=$BUILDDIR/VotingAlgMajorityWhoVoted.abi -b=$BUILDDIR/VotingAlgMajorityWhoVoted.bin -o=$OUTPUTDIR -p=$PACKAGE
 
 
