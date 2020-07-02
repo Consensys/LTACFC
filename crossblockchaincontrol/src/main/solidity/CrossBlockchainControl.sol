@@ -15,31 +15,45 @@
 pragma solidity >=0.6.9;
 
 contract CrossBlockchainControl {
-    // Mapping of cross-blockchain transaction id to time-out block number.
+    // Mapping of cross-blockchain transaction id to time-out block time stamp.
     mapping (uint256=> uint256) public timeout;
+    // Mapping of cross-blockchain transaction id to call graphs.
+    mapping (uint256=> bytes) public callGraphs;
 
 
-    function start(uint256 _crossBlockchainTransactionId, uint256 _timeout) external {
+    function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external {
+        require(crossBlockchainTransactionExists(_crossBlockchainTransactionId) == false);
         timeout[_crossBlockchainTransactionId] = _timeout;
-        emit Start(_crossBlockchainTransactionId, _timeout);
+        callGraphs[_crossBlockchainTransactionId] = _callGraph;
+        emit Start(_crossBlockchainTransactionId, _timeout, _callGraph);
     }
 
-    function segment(uint256 _startEventBlockHash, bytes calldata _startEvent) external {
-
-    }
-
-    function root(uint256 _startEventBlockHash, bytes calldata _startEvent) external {
-
-    }
-
-    function signalling(uint256 _startEventBlockHash, bytes calldata _startEvent) external {
+    function segment(uint256 _startEventBlockHash, bytes calldata _startEvent) external view {
+//        require(crossBlockchainTransactionExists(_crossBlockchainTransactionId));
 
     }
 
-    function close(uint256 _startEventBlockHash, bytes calldata _startEvent) external {
+    function root(uint256 _startEventBlockHash, bytes calldata _startEvent) external view {
 
     }
 
-    event Start(uint256 id, uint256 timeout);
+    function signalling(uint256 _startEventBlockHash, bytes calldata _startEvent) external view {
+
+    }
+
+    function close(uint256 _startEventBlockHash, bytes calldata _startEvent) external view {
+
+    }
+
+    function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) public view returns (bool) {
+        return 0 != timeout[_crossBlockchainTransactionId];
+    }
+
+    function crossBlockchainTransactionTimeout(uint256 _crossBlockchainTransactionId) external view returns (uint256) {
+        return timeout[_crossBlockchainTransactionId];
+    }
+
+
+    event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
 
 }
