@@ -3,20 +3,19 @@ package tech.pegasys.ltacfc.events;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.ethereum.core.Hash;
 import org.hyperledger.besu.ethereum.core.TransactionReceipt;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
-import org.hyperledger.besu.ethereum.trie.MerklePatriciaTrie;
-import org.hyperledger.besu.ethereum.trie.Proof;
-import org.hyperledger.besu.ethereum.trie.SimpleMerklePatriciaTrie;
-import tech.pegasys.ltacfc.Main;
 import tech.pegasys.ltacfc.rlp.RlpDumper;
+import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTrie;
+import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MultiMerkleProof;
+import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
+import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.SimpleMerklePatriciaTrie;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class ReceiptsProcessing {
@@ -50,54 +49,21 @@ public class ReceiptsProcessing {
     }
 
     Bytes key1 = indexKey(0);
-    LOG.info("key1 = {}", key1);
-//    Bytes32 key2 = Bytes32.rightPad(key1);
-//    LOG.info("key2: {}", key2);
-    Optional<Bytes> value = trie.get(key1);
-    LOG.info("Value: {}", value.toString());
-
     Proof<Bytes> proofAndValue = trie.getValueWithProof(key1);
-    LOG.info("Value: {}", proofAndValue.getValue());
-    LOG.info("Proof num related nodes: {}", proofAndValue.getProofRelatedNodes().size());
-    for (Bytes relatedNode: proofAndValue.getProofRelatedNodes()) {
-      LOG.info(" related node: {}", relatedNode);
-      LOG.info("  Hash of related node: {}", Hash.hash(relatedNode));
-    }
-
     RLPInput rlpInput = RLP.input(proofAndValue.getValue().get());
     RlpDumper.dump(rlpInput);
 
-//    Bytes val = proofAndValue.getValue().get();
-//    for (Bytes relatedNode: proofAndValue.getProofRelatedNodes()) {
-//    }
+    // Create a proof
+    List<Bytes> keys = new ArrayList<>();
+    keys.add(key1);
+    MultiMerkleProof<Bytes> proof = trie.getValuesWithMultiMerkleProof(keys);
+    LOG.info("Root hash from multi Merkle Proof: {}", proof.computeRootHash());
+    LOG.info(" Print: {}", proof.toString());
+    proof.printStats();
 
-
-
-//    rlpInput.enterList();
-//    LOG.info("Proof bytes: {}", rlpInput.readBytes());
-//    LOG.info("Proof bytes: {}", rlpInput.readBytes());
-//    LOG.info("Proof bytes: {}", rlpInput.readBytes());
-//    LOG.info("Enter list");
-//    rlpInput.enterList();
-//    LOG.info("Enter list");
-//    rlpInput.enterList();
-//    LOG.info("Proof bytes (address of contract): {}", rlpInput.readBytes());
-//    LOG.info("Enter list");
-//    rlpInput.enterList();
-//    LOG.info("Proof bytes: (topic) {}", rlpInput.readBytes());
-//    LOG.info("End list");
-//    rlpInput.leaveList();
-//    LOG.info("Proof bytes: (event value) {}", rlpInput.readBytes());
-
-
-    //    LOG.info("Proof bytes32: {}", rlpInput.readBytes32());
-
-//    Map<Bytes32, Bytes> entries = trie.entriesFrom(key2, 1000);
-//    for (Bytes32 key: entries.keySet()) {
-//      Bytes value = entries.get(key);
-//      LOG.info(" Tree entry: key: {}, value: {}", key, value);
-//    }
-
+    Bytes multiMerkleRlp = proof.getRlp();
+    LOG.info("Proof RLP: {}", multiMerkleRlp);
+    RlpDumper.dump(RLP.input(multiMerkleRlp));
   }
 
   private static MerklePatriciaTrie<Bytes, Bytes> trie() {

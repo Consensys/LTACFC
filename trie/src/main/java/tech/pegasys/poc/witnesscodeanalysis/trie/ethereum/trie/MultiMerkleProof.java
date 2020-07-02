@@ -48,9 +48,6 @@ public class MultiMerkleProof<V>  {
     return root.accept(getVisitor, bytesToPath(key)).getValue();
   }
 
-  public void print() {
-    root.print();
-  }
 
   public Bytes32 computeRootHash() {
     return root.getHash();
@@ -62,5 +59,15 @@ public class MultiMerkleProof<V>  {
     }
     LOG.info("#Hashes = {}, #Extension nodes = {}, #Branch nodes = {}",
       statsVisitor.getNumHashes(), statsVisitor.getNumExtensions(), statsVisitor.getNumBranches());
+  }
+
+  public Bytes getRlp() {
+    return root.getRlp();
+  }
+
+
+  @Override
+  public String toString() {
+    return root.print();
   }
 }

@@ -17,7 +17,7 @@ public class RlpDumper {
         depth++;
       }
       else if (rlpInput.nextIsNull()) {
-        LOG.info("{}Null", getBlanks(depth));
+        LOG.info("{}Null: {}", getBlanks(depth), rlpInput.readBytes());
       }
       else if (rlpInput.isEndOfCurrentList()) {
         rlpInput.leaveList();
