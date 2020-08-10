@@ -14,7 +14,7 @@ solc $CONTRACTSDIR/BlsSignatureTest.sol --allow-paths . --bin --abi --optimize -
 solc $CONTRACTSDIR/EcdsaSignatureTest.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 # ls -al $BUILDDIR
 
-$WEB3J solidity generate -a=$BUILDDIR/BlsSignatureTest.abi -b=$BUILDDIR/BlsSignatureTest.bin -o=$BUILDDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/BlsSignatureTest.abi -b=$BUILDDIR/BlsSignatureTest.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/EcdsaSignatureTest.abi -b=$BUILDDIR/EcdsaSignatureTest.bin -o=$OUTPUTDIR -p=$PACKAGE
 
 
