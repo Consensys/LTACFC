@@ -48,23 +48,63 @@ public class ReceiptsProcessing {
       trie.put(indexKey(i), rlpEncoding);
     }
 
-    Bytes key1 = indexKey(0);
-    Proof<Bytes> proofAndValue = trie.getValueWithProof(key1);
-    RLPInput rlpInput = RLP.input(proofAndValue.getValue().get());
-    RlpDumper.dump(rlpInput);
 
-    // Create a proof
-    List<Bytes> keys = new ArrayList<>();
-    keys.add(key1);
-    MultiMerkleProof<Bytes> proof = trie.getValuesWithMultiMerkleProof(keys);
-    LOG.info("Root hash from multi Merkle Proof: {}", proof.computeRootHash());
-    LOG.info(" Print: {}", proof.toString());
-    proof.printStats();
+    LOG.info("Simple Proof");
+    for (int i = 0; i < 2; i++) {
+      Bytes aKey = indexKey(i);
+      LOG.info("  key: {}, {}", i, aKey);
 
-    Bytes multiMerkleRlp = proof.getRlp();
-    LOG.info("Proof RLP: {}", multiMerkleRlp);
-    RlpDumper.dump(RLP.input(multiMerkleRlp));
+      Proof<Bytes> simpleProof = trie.getValueWithSimpleProof(aKey);
+      Bytes transactionReceipt = simpleProof.getValue().get();
+      Bytes rlpOfNode = transactionReceipt;
+      LOG.info("  value: {}", transactionReceipt);
+      Bytes nodeRef = transactionReceipt;
+      if (nodeRef.size() >= 32) {
+        nodeRef = RLP.encodeOne(org.hyperledger.besu.crypto.Hash.keccak256(nodeRef));
+        LOG.info("     referencing by hash: {}", nodeRef);
+      }
+
+      LOG.info(" RLP dump of transaction receipt:");
+      RlpDumper.dump(RLP.input(transactionReceipt));
+
+
+      List<Bytes> proofList1 = simpleProof.getProofRelatedNodes();
+      for (int j = proofList1.size()-1; j >=0; j--) {
+        rlpOfNode = proofList1.get(j);
+        LOG.info("   rlpOfNode: {}", rlpOfNode);
+        LOG.info("    found rlpRef at offset: {}", findOffset(rlpOfNode, nodeRef));
+
+        nodeRef = rlpOfNode;
+        if (nodeRef.size() >= 32) {
+          nodeRef = RLP.encodeOne(org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode));
+          LOG.info("     referencing by hash: {}", nodeRef);
+        }
+      }
+      LOG.info(" Root Hash: {}", org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode));
+    }
+
+
+
+
   }
+
+  private static int findOffset(Bytes rlpOfNode, Bytes nodeRef) {
+    int sizeNodeRef = nodeRef.size();
+    for (int i = 0; i < rlpOfNode.size() - sizeNodeRef; i++) {
+      boolean found = true;
+      for (int j = 0; j < sizeNodeRef; j++) {
+        if (rlpOfNode.get(i+j) != nodeRef.get(j)) {
+          found = false;
+          break;
+        }
+      }
+      if (found) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
 
   private static MerklePatriciaTrie<Bytes, Bytes> trie() {
     return new SimpleMerklePatriciaTrie<>(b -> b);

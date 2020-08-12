@@ -77,6 +77,11 @@ class LeafNode<V> implements Node<V> {
   }
 
   @Override
+  public Bytes constructSimpleProof(final Bytes key, final List<Bytes> proof) {
+    return getRlp();
+  }
+
+  @Override
   public void accept(final NodeVisitor<V> visitor) {
     visitor.visit(this);
   }

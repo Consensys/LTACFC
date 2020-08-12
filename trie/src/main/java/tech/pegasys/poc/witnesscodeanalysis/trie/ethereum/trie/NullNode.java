@@ -33,6 +33,11 @@ class NullNode<V> implements Node<V> {
   }
 
   @Override
+  public Bytes constructSimpleProof(final Bytes key, final List<Bytes> proof) {
+    throw new RuntimeException("Shouldn't have gotten here");
+  }
+
+  @Override
   public Node<V> accept(final PathNodeVisitor<V> visitor, final Bytes path) {
     return visitor.visit(this, path);
   }

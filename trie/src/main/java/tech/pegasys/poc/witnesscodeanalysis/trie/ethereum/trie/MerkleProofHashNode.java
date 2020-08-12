@@ -30,6 +30,11 @@ class MerkleProofHashNode<V> implements Node<V> {
     this.hash = hash;
   }
 
+  public Bytes constructSimpleProof(final Bytes key, final List<Bytes> proof) {
+    throw new RuntimeException("Not used");
+  }
+
+
   @Override
   public Node<V> accept(final PathNodeVisitor<V> visitor, final Bytes path) {
     return visitor.visit(this, path);

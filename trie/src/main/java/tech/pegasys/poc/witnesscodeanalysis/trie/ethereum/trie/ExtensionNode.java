@@ -70,6 +70,16 @@ class ExtensionNode<V> implements Node<V> {
   }
 
   @Override
+  public Bytes constructSimpleProof(final Bytes key, final List<Bytes> proof) {
+    proof.add(getRlp());
+    if(!path.slice(0, path.size()-1).equals(key.slice(0, path.size()-1))) {
+      throw new RuntimeException("Key didn't exist in trie");
+    }
+
+    return child.constructSimpleProof(key.slice(path.size()), proof);
+  }
+
+  @Override
   public void accept(final NodeVisitor<V> visitor) {
     visitor.visit(this);
   }

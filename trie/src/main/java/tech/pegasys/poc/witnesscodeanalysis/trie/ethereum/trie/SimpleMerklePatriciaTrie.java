@@ -78,6 +78,15 @@ public class SimpleMerklePatriciaTrie<K extends Bytes, V> implements MerklePatri
   }
 
   @Override
+  public Proof<Bytes> getValueWithSimpleProof(final K key) {
+    checkNotNull(key);
+    final List<Bytes> proof = new ArrayList<>();
+    final Bytes value = this.root.constructSimpleProof(CompactEncoding.bytesToPath(key), proof);
+    return new Proof<>(Optional.of(value), proof);
+  }
+
+
+  @Override
   public void put(final K key, final V value) {
     checkNotNull(key);
     checkNotNull(value);

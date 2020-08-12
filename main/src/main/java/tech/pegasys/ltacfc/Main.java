@@ -25,6 +25,7 @@ import org.web3j.tx.gas.StaticGasProvider;
 import tech.pegasys.ltacfc.events.ReceiptsProcessing;
 import tech.pegasys.ltacfc.soliditywrappers.Test;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
+import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -189,6 +190,7 @@ public class Main {
     LOG.info("Calculated Receipts Root: {}", receiptsRoot1);
 
     ReceiptsProcessing.logTrie(besuReceipts);
+
 
     System.exit(0);
   }

@@ -58,13 +58,18 @@ public interface MerklePatriciaTrie<K, V> {
      return new MultiMerkleProof<>(NullNode.instance());
    }
 
-  /**
-   * Updates the value mapped to the specified key, creating the mapping if one does not already
-   * exist.
-   *
-   * @param key The key that corresponds to the value to be updated.
-   * @param value The value to associate the key with.
-   */
+   default Proof<Bytes> getValueWithSimpleProof(final K key) {
+     throw new RuntimeException("not implemented yet");
+   }
+
+
+    /**
+     * Updates the value mapped to the specified key, creating the mapping if one does not already
+     * exist.
+     *
+     * @param key The key that corresponds to the value to be updated.
+     * @param value The value to associate the key with.
+     */
   void put(K key, V value);
 
   /**

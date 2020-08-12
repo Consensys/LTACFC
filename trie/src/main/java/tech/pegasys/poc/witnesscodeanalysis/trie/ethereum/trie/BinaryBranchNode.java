@@ -96,6 +96,12 @@ class BinaryBranchNode<V> implements Node<V> {
   }
 
   @Override
+  public Bytes constructSimpleProof(final Bytes key, final List<Bytes> proof) {
+    proof.add(getRlp());
+    return children.get(key.get(0)).constructSimpleProof(key.slice(1, key.size()-1), proof);
+  }
+
+  @Override
   public void accept(final NodeVisitor<V> visitor) {
     visitor.visit(this);
   }

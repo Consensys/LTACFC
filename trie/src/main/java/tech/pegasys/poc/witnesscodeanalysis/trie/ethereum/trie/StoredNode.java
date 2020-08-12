@@ -51,6 +51,11 @@ class StoredNode<V> implements Node<V> {
   }
 
   @Override
+  public Bytes constructSimpleProof(final Bytes key, final List<Bytes> proof) {
+    throw new RuntimeException("Shouldn't have gotten here");
+  }
+
+  @Override
   public void accept(final NodeVisitor<V> visitor) {
     final Node<V> node = load();
     node.accept(visitor);
