@@ -13,11 +13,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 pragma solidity >=0.6.9;
+pragma experimental ABIEncoderV2;
+
+import "../../../../common/src/main/solidity/ERC165.sol";
 
 /**
  * Transaction receipt root data store.
  */
-interface TxReceiptsRootStorageInterface {
+interface TxReceiptsRootStorageInterface is ERC165 {
 
     /**
      * Add a transaction receipt root to the transaction receipt root data store.
@@ -45,20 +48,43 @@ interface TxReceiptsRootStorageInterface {
 
     /**
      * Verify that a transaction receipt is part of the Merkle Patricia Trie that hashes to a transaction
-     * receipt root that belongs to a blockchain.
+     * receipt root that belongs to a blockchain. Implementations check that the transaction receipt root
+     * _txReceiptsRoot belongs to the blockchain specified by _blockchainId, and then verify that the
+     * transaction receipt given by _txReceipt is proven to be part of the Merkle Partricia Trie given
+     * _proof, _proofOffsets, and _txReceiptsRoot.
      *
      * Reverts in the following situations:
      * * Transaction receipt has not been added for the blockchain.
      * * The proof does not prove that the transaction receipt is part of the Merkle Patricia Trie.
      *
+     * Ethereum transaction receipts are arranged as a Merkle Patricia Trie, with the leaf nodes of the trie being
+     * the transaction receipts. The message digest of the nodes are included in the nodes next closer to the root
+     * of the trie.
+     *
+     * If there is just one transaction in a block, then there is only one leaf node for the one transaction
+     * receipt. The message digest is the transaction receipt root. In this case _proof and _proofOffsets are
+     * empty arrays.
+     *
+     * If there are between two and sixteen transactions, there will be between two and sixteen leaf nodes to match
+     * the transactions, plus a branch node. The RLP encoded branch node is the only element of _proof. The
+     * message digest of this value must match the transaction receipt root. The message digest of _txReceipt must be
+     * present in the RLP encoded branch node (that is the element of _proof) at the offset specified by _proofOffsets.
+     *
+     * If there are between seventeen and two hundred and fifty-six transactions, then there will be two layers of branch
+     * nodes in the Merkle Patricia Trie, in addition to the leaf nodes. In this case, _proof and _proofOffsets will
+     * have two elements, matching the two layers. The offsets in _proofOffsets allow the message digests to be
+     * found in the next level up proof.
+     *
      * @param _blockchainId Identifier of blockchain that the transaction receipt belongs to
      * @param _txReceiptsRoot The transaction receipt root to reference.
      * @param _txReceipt The value that is being proven to be part of the Merkle Patricia Trie of transaction receipts.
-     * @param _proof The RLP encoded proof information.
+     * @param _proofOffsets The offset of the message digest of the previous level node in the Merkle Patricia Trie
+     *   within the RLP encoded data for the current node.
+     * @param _proof The RLP encoding of branch nodes in the transaction receipt Merkle Patricia Trie.
      *
-     * TODO: Document proof format.
      */
-    function verify(uint256 _blockchainId, bytes32 _txReceiptsRoot, bytes calldata _txReceipt, bytes calldata _proof) external;
+    function verify(uint256 _blockchainId, bytes32 _txReceiptsRoot, bytes calldata _txReceipt,
+        uint256[] calldata _proofOffsets, bytes[] calldata _proof) external;
 
 
     /**

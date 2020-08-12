@@ -14,6 +14,8 @@
  */
 pragma solidity >=0.6.9;
 
+import "../../../../common/src/main/solidity/ERC165.sol";
+
 
 /**
  * Registrar contracts hold the public keys used to verify transaction roots from blockchains.
@@ -39,7 +41,7 @@ pragma solidity >=0.6.9;
  * and operation of the private keys, given the differing usages.
  *
  */
-interface RegistrarInterface {
+interface RegistrarInterface is ERC165 {
     /**
      * Propose that a certain action be voted on.
      *
@@ -128,12 +130,6 @@ interface RegistrarInterface {
     function numSigners(uint256 _blockchainId) external view returns (uint64);
 
     function isSigner(uint256 _blockchainId, address _mightBeSigner) external view returns (bool);
-
-
-    /*
-     * Return the implementation version.
-     */
-    function getApiVersion() external pure returns (uint16);
 
 
     event Voted(address _participant, uint16 _action, uint256 _voteTarget, bool _votedFor);

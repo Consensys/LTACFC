@@ -13,11 +13,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 pragma solidity >=0.6.9;
+pragma experimental ABIEncoderV2;
 
 import "../../../../registrar/src/main/solidity/Registrar.sol";
 import "./TxReceiptsRootStorageInterface.sol";
+import "../../../../common/src/main/solidity/ERC165MappingImplementation.sol";
 
-contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface {
+contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingImplementation {
     Registrar registrar;
 
     // Mapping (blockchain Id => mapping(transaction receipt root) => bool)
@@ -27,6 +29,8 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface {
 
     constructor(address _registrar) public {
         registrar = Registrar(_registrar);
+
+        supportedInterfaces[type(TxReceiptsRootStorageInterface).interfaceId] = true;
     }
 
     function addTxReceiptRoot(
@@ -45,12 +49,22 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface {
 
 
     function verify(
-        uint256 /* _blockchainId */,
-        bytes32 /* _txReceiptsRoot */,
-        bytes calldata /* _txReceipt */,
-        bytes calldata /* _proof */
+        uint256 _blockchainId,
+        bytes32 _txReceiptsRoot,
+        bytes calldata _txReceipt,
+        uint256[] calldata _proofOffsets,
+        bytes[] calldata _proof
     ) external override(TxReceiptsRootStorageInterface) {
+        require(txReceiptsRoots[_blockchainId][_txReceiptsRoot], "Transaction receipt root does not exist for blockchain id");
+        require(_proof.length == _proofOffsets.length, "Length of proofs and proofsOffsets does not match");
 
+        bytes32 hash = keccak256(_txReceipt);
+        for (uint256 i = 0; i < _proof.length; i++) {
+            bytes32 candidateHash = bytesToBytes32(_proof[i], _proofOffsets[i]);
+            require(candidateHash == hash, "Candidate Hash did not match calculated hash");
+            hash = keccak256(_proof[i]);
+        }
+        require(_txReceiptsRoot == hash, "Root Hash did not match calculated hash");
     }
 
 
@@ -60,4 +74,15 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface {
 
         return (txReceiptsRoots[_blockchainId][_txReceiptsRoot]);
     }
+
+    // TODO find something faster than this.
+    function bytesToBytes32(bytes calldata b, uint offset) private pure returns (bytes32) {
+        bytes32 out;
+
+        for (uint i = 0; i < 32; i++) {
+            out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+        }
+        return out;
+    }
+
 }

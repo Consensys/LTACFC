@@ -17,11 +17,9 @@ pragma solidity >=0.4.23;
 import "./RegistrarInterface.sol";
 import "./VotingAlgInterface.sol";
 import "../../../../crypto/src/main/solidity/EcdsaSignatureVerification.sol";
+import "../../../../common/src/main/solidity/ERC165MappingImplementation.sol";
 
-contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
-    // Implementation version.
-    uint16 constant private VERSION_ONE = 1;
-
+contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165MappingImplementation {
     // Indications that a vote is underway.
     // VOTE_NONE indicates no vote is underway. Also matches the deleted value for integers.
     enum VoteType {
@@ -103,6 +101,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
         // The value is the offset into the array + 1.
         adminsMap[msg.sender] = 1;
         numAdmins = 1;
+
+        supportedInterfaces[type(RegistrarInterface).interfaceId] = true;
     }
 
 
@@ -257,12 +257,6 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification {
         return blockchains[_blockchainId].signersMap[_mightBeSigner] != 0;
     }
 
-    /*
-     * Return the API version supported by this implementation.
-     */
-    function getApiVersion() external pure override(RegistrarInterface) returns (uint16) {
-        return VERSION_ONE;
-    }
 
     /************************************* PRIVATE FUNCTIONS BELOW HERE *************************************
     /************************************* PRIVATE FUNCTIONS BELOW HERE *************************************
