@@ -34,15 +34,15 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public abstract class AbstractWeb3Test {
   private static final Logger LOG = LogManager.getLogger(AbstractWeb3Test.class);
 
-  private static final BigInteger BLOCKCHAIN_ID = BigInteger.valueOf(31);
+  protected static final BigInteger BLOCKCHAIN_ID = BigInteger.valueOf(31);
   private static final String IP_PORT = "127.0.0.1:8310";
   private static final String URI = "http://" + IP_PORT + "/";
 
 
   // Have the polling interval equal to the block time.
-  private static final int POLLING_INTERVAL = 2000;
+  protected static final int POLLING_INTERVAL = 2000;
   // Retry requests to Ethereum Clients up to five times.
-  private static final int RETRY = 5;
+  protected static final int RETRY = 5;
 
   protected Web3j web3j;
   protected TransactionManager tm;

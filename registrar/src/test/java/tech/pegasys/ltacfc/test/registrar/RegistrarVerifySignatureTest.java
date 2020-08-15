@@ -33,7 +33,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void verifyOneSignature() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
@@ -60,7 +60,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void verifyTwoSignatures() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner1 = new TestIdentity();
@@ -98,7 +98,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void failInvalidSignature() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
@@ -131,7 +131,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void failUnregisteredSigner() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner1 = new TestIdentity();
@@ -163,7 +163,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void failSignersArrayWrongLength() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner1 = new TestIdentity();
@@ -202,7 +202,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void failSigRArrayWrongLength() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner1 = new TestIdentity();
@@ -241,7 +241,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void failSigSArrayWrongLength() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner1 = new TestIdentity();
@@ -280,7 +280,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
   @Test
   public void failSigVArrayWrongLength() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner1 = new TestIdentity();

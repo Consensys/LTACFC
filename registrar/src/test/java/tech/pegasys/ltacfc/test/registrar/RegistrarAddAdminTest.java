@@ -31,7 +31,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
   @Test
   public void contractDeployerIsAdmin() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     // The address that deployed the contract should be an admin
     assert(this.registrarContract.isAdmin(this.credentials.getAddress()).send());
@@ -43,7 +43,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
   @Test
   public void addAdmin() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     Credentials credentials2 = createNewIdentity();
     String cred2Address = credentials2.getAddress();
@@ -63,11 +63,11 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
   @Test
   public void failAddAdminByNonAdmin() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     Credentials credentials2 = createNewIdentity();
     TransactionManager tm2 = createTransactionManager(credentials2);
-    Registrar regContract2 = deployContract(tm2);
+    Registrar regContract2 = deployRegistrarContract(tm2);
 
     String cred2Address = credentials2.getAddress();
     BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
@@ -90,7 +90,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
   @Test
   public void failAddSameAdminTwice() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     BigInteger credAddressBig = new BigInteger(this.credentials.getAddress().substring(2), 16);
 

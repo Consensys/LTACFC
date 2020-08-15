@@ -29,7 +29,7 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
   @Test
   public void addSigner() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
     TestIdentity newSigner = new TestIdentity();
@@ -46,7 +46,7 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
   @Test
   public void failAddSameBlockchainTwice() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);

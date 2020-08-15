@@ -26,11 +26,11 @@ import java.math.BigInteger;
 public abstract class AbstractRegistrarTest extends AbstractWeb3Test {
   protected Registrar registrarContract;
 
-  protected void deployContract() throws Exception {
+  protected void deployRegistrarContract() throws Exception {
     this.registrarContract = Registrar.deploy(this.web3j, this.tm, this.freeGasProvider).send();
   }
 
-  protected Registrar deployContract(TransactionManager tm1) throws Exception {
+  protected Registrar deployRegistrarContract(TransactionManager tm1) throws Exception {
     return Registrar.deploy(this.web3j, tm1, this.freeGasProvider).send();
   }
 

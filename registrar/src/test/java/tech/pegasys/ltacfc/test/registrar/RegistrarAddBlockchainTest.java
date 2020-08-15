@@ -29,7 +29,7 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
   @Test
   public void addBlockchain() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     BigInteger blockchainId = BigInteger.TEN;
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
@@ -49,7 +49,7 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
   @Test
   public void failAddSameBlockchainTwice() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     BigInteger blockchainId = BigInteger.TEN;
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();

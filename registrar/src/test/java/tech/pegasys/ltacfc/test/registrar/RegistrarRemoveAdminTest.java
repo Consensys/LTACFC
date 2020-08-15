@@ -31,7 +31,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
   @Test
   public void removeAdmin() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     Credentials credentials2 = createNewIdentity();
     TransactionManager tm2 = createTransactionManager(credentials2);
@@ -62,7 +62,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
   @Test
   public void failCantRemoveSelf() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     // Add an admin
     Credentials credentials2 = createNewIdentity();
@@ -94,7 +94,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
   @Test
   public void failRemoveByNonAdmin() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     Credentials credentials2 = createNewIdentity();
     TransactionManager tm2 = createTransactionManager(credentials2);
@@ -132,7 +132,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
   @Test
   public void failRemoveNonAdmin() throws Exception {
     setupWeb3();
-    deployContract();
+    deployRegistrarContract();
 
     Credentials credentials3 = createNewIdentity();
     String cred3Address = credentials3.getAddress();
