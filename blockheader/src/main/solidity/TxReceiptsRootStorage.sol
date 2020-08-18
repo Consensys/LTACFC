@@ -18,8 +18,9 @@ pragma experimental ABIEncoderV2;
 import "../../../../registrar/src/main/solidity/Registrar.sol";
 import "./TxReceiptsRootStorageInterface.sol";
 import "../../../../common/src/main/solidity/ERC165MappingImplementation.sol";
+import "../../../../common/src/main/solidity/BytesUtil.sol";
 
-contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingImplementation {
+contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingImplementation, BytesUtil {
     Registrar registrar;
 
     // Mapping (blockchain Id => mapping(transaction receipt root) => bool)
@@ -60,7 +61,7 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingI
 
         bytes32 hash = keccak256(_txReceipt);
         for (uint256 i = 0; i < _proof.length; i++) {
-            bytes32 candidateHash = bytesToBytes32(_proof[i], _proofOffsets[i]);
+            bytes32 candidateHash = BytesUtil.bytesToBytes32(_proof[i], _proofOffsets[i]);
             require(candidateHash == hash, "Candidate Hash did not match calculated hash");
             hash = keccak256(_proof[i]);
         }
@@ -75,14 +76,5 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingI
         return (txReceiptsRoots[_blockchainId][_txReceiptsRoot]);
     }
 
-    // TODO find something faster than this.
-    function bytesToBytes32(bytes calldata b, uint offset) private pure returns (bytes32) {
-        bytes32 out;
-
-        for (uint i = 0; i < 32; i++) {
-            out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
-        }
-        return out;
-    }
 
 }

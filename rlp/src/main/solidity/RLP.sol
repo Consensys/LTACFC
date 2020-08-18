@@ -1,12 +1,41 @@
-pragma solidity ^0.5.12;
 /**
-* @title RLPReader
+* Copyright (c) 2017 Andreas Olofsson (andreas@ohalo.co / androlo1980@gmail.com))
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
 *
 * RLPReader is used to read and parse RLP encoded data in memory.
 *
-* @author Andreas Olofsson (androlo1980@gmail.com)
+*
+* Copied from:
+*  https://github.com/androlo/standard-contracts/blob/master/contracts/src/codec/RLP.sol
+*
+* Test code is here:
+*  https://github.com/androlo/standard-contracts/blob/master/contracts/test/RLPReaderTest.sol
+* and here:
+*  https://github.com/androlo/standard-contracts/blob/master/integration_tests/rlp_test.js
+*
+* SPDX-License-Identifier: MIT
 */
-library RLP {
+pragma solidity >=0.6.9;
+
+contract RLP {
 
     uint constant DATA_SHORT_START = 0x80;
     uint constant DATA_LONG_START = 0xB8;
@@ -54,9 +83,11 @@ library RLP {
 
     /* RLPItem */
 
-    /// @dev Creates an RLPItem from an array of RLP encoded bytes.
-    /// @param self The RLP encoded bytes.
-    /// @return An RLPItem
+    /**
+     * @dev Creates an RLPItem from an array of RLP encoded bytes.
+     * @param self The RLP encoded bytes.
+     * @return An RLPItem
+     */
     function toRLPItem(bytes memory self) internal pure returns (RLPItem memory) {
         uint len = self.length;
         if (len == 0) {
@@ -69,10 +100,12 @@ library RLP {
         return RLPItem(memPtr, len);
     }
 
-    /// @dev Creates an RLPItem from an array of RLP encoded bytes.
-    /// @param self The RLP encoded bytes.
-    /// @param strict Will revert() if the data is not RLP encoded.
-    /// @return An RLPItem
+    /**
+     * @dev Creates an RLPItem from an array of RLP encoded bytes.
+     * @param self The RLP encoded bytes.
+     * @param strict Will revert() if the data is not RLP encoded.
+     * @return An RLPItem
+     */
     function toRLPItem(bytes memory self, bool strict) internal pure returns (RLPItem memory) {
         RLPItem memory item = toRLPItem(self);
         if(strict) {
@@ -87,16 +120,20 @@ library RLP {
         return item;
     }
 
-    /// @dev Check if the RLP item is null.
-    /// @param self The RLP item.
-    /// @return 'true' if the item is null.
-    function isNull(RLPItem memory self) internal pure returns (bool ret) {
+    /**
+     * @dev Check if the RLP item is null.
+     * @param self The RLP item.
+     * @return true if the item is null.
+     */
+    function isNull(RLPItem memory self) internal pure returns (bool) {
         return self._unsafe_length == 0;
     }
 
-    /// @dev Check if the RLP item is a list.
-    /// @param self The RLP item.
-    /// @return 'true' if the item is a list.
+    /**
+     * @dev Check if the RLP item is a list.
+     * @param self The RLP item.
+     * @return ret 'true' if the item is a list.
+     */
     function isList(RLPItem memory self) internal pure returns (bool ret) {
         if (self._unsafe_length == 0)
             return false;
@@ -106,9 +143,11 @@ library RLP {
         }
     }
 
-    /// @dev Check if the RLP item is data.
-    /// @param self The RLP item.
-    /// @return 'true' if the item is data.
+    /**
+     * @dev Check if the RLP item is data.
+     * @param self The RLP item.
+     * @return ret 'true' if the item is data.
+     */
     function isData(RLPItem memory self) internal pure returns (bool ret) {
         if (self._unsafe_length == 0)
             return false;
@@ -118,10 +157,12 @@ library RLP {
         }
     }
 
-    /// @dev Check if the RLP item is empty (string or list).
-    /// @param self The RLP item.
-    /// @return 'true' if the item is null.
-    function isEmpty(RLPItem memory self) internal pure returns (bool ret) {
+    /**
+     * @dev Check if the RLP item is empty (string or list).
+     * @param self The RLP item.
+     * @return 'true' if the item is null.
+     */
+    function isEmpty(RLPItem memory self) internal pure returns (bool) {
         if(isNull(self))
             return false;
         uint b0;
@@ -132,9 +173,11 @@ library RLP {
         return (b0 == DATA_SHORT_START || b0 == LIST_SHORT_START);
     }
 
-    /// @dev Get the number of items in an RLP encoded list.
-    /// @param self The RLP item.
-    /// @return The number of items.
+    /**
+     * @dev Get the number of items in an RLP encoded list.
+     * @param self The RLP item.
+     * @return The number of items.
+     */
     function items(RLPItem memory self) internal pure returns (uint) {
         if (!isList(self))
             return 0;
@@ -153,9 +196,11 @@ library RLP {
         return itms;
     }
 
-    /// @dev Create an iterator.
-    /// @param self The RLP item.
-    /// @return An 'Iterator' over the item.
+    /**
+     * @dev Create an iterator.
+     * @param self The RLP item.
+     * @return it An 'Iterator' over the item.
+     */
     function iterator(RLPItem memory self) internal pure returns (Iterator memory it) {
         if (!isList(self))
             revert();
@@ -164,9 +209,11 @@ library RLP {
         it._unsafe_nextPtr = ptr;
     }
 
-    /// @dev Return the RLP encoded bytes.
-    /// @param self The RLPItem.
-    /// @return The bytes.
+    /**
+     * @dev Return the RLP encoded bytes.
+     * @param self The RLPItem.
+     * @return bts The bytes.
+     */
     function toBytes(RLPItem memory self) internal pure returns (bytes memory bts) {
         uint len = self._unsafe_length;
         bts = new bytes(len);
@@ -175,10 +222,12 @@ library RLP {
         }
     }
 
-    /// @dev Decode an RLPItem into bytes. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
+    /**
+     * @dev Decode an RLPItem into bytes. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return bts The decoded string.
+     */
     function toData(RLPItem memory self) internal pure returns (bytes memory bts) {
         if(!isData(self))
             revert();
@@ -189,10 +238,13 @@ library RLP {
         _copyToBytes(rStartPos, bts, len);
     }
 
-    /// @dev Get the list of sub-items from an RLP encoded list.
-    /// Warning: This is inefficient, as it requires that the list is read twice.
-    /// @param self The RLP item.
-    /// @return Array of RLPItems.
+    /**
+     * @dev Get the list of sub-items from an RLP encoded list.
+     * Warning: This is inefficient, as it requires that the list is read twice.
+     *
+     * @param self The RLP item.
+     * @return list Array of RLPItems.
+     */
     function toList(RLPItem memory self) internal pure returns (RLPItem[] memory list) {
         if(!isList(self))
             revert();
@@ -206,10 +258,12 @@ library RLP {
         }
     }
 
-    /// @dev Decode an RLPItem into an ascii string. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
+    /**
+     * @dev Decode an RLPItem into an ascii string. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return str The decoded string.
+     */
     function toAscii(RLPItem memory self) internal pure returns (string memory str) {
         if(!isData(self))
             revert();
@@ -221,10 +275,12 @@ library RLP {
         str = string(bts);
     }
 
-    /// @dev Decode an RLPItem into a uint. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
+    /**
+     * @dev Decode an RLPItem into a uint. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return data The decoded uint256.
+     */
     function toUint(RLPItem memory self) internal pure returns (uint data) {
         if(!isData(self))
             revert();
@@ -240,11 +296,13 @@ library RLP {
         }
     }
 
-    /// @dev Decode an RLPItem into a boolean. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
-    function toBool(RLPItem memory self) internal pure returns (bool data) {
+    /**
+     * @dev Decode an RLPItem into a boolean. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return The decoded bool. Is true if the item is 1.
+     */
+    function toBool(RLPItem memory self) internal pure returns (bool) {
         if(!isData(self))
             revert();
         uint rStartPos;
@@ -261,11 +319,14 @@ library RLP {
         return temp == 1 ? true : false;
     }
 
-    /// @dev Decode an RLPItem into a byte. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
-    function toByte(RLPItem memory self) internal pure returns (byte data) {
+    /**
+     * @dev Decode an RLPItem into a byte. This will not work if the RLPItem is a list.
+     * The RLP Item's data must be 1 byte long.
+     *
+     * @param self The RLPItem.
+     * @return The decoded  byte.
+     */
+    function toByte(RLPItem memory self) internal pure returns (byte) {
         if(!isData(self))
             revert();
         uint rStartPos;
@@ -280,27 +341,33 @@ library RLP {
         return temp;
     }
 
-    /// @dev Decode an RLPItem into an int. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
-    function toInt(RLPItem memory self) internal pure returns (int data) {
+    /**
+     * @dev Decode an RLPItem into an int. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return The decoded int.
+     */
+    function toInt(RLPItem memory self) internal pure returns (int) {
         return int(toUint(self));
     }
 
-    /// @dev Decode an RLPItem into a bytes32. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
-    function toBytes32(RLPItem memory self) internal pure returns (bytes32 data) {
+    /**
+     * @dev Decode an RLPItem into a bytes32. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return The decoded bytes32.
+     */
+    function toBytes32(RLPItem memory self) internal pure returns (bytes32) {
         return bytes32(toUint(self));
     }
 
-    /// @dev Decode an RLPItem into an address. This will not work if the
-    /// RLPItem is a list.
-    /// @param self The RLPItem.
-    /// @return The decoded string.
-    function toAddress(RLPItem memory self) internal pure returns (address data) {
+    /**
+     * @dev Decode an RLPItem into an address. This will not work if the RLPItem is a list.
+     *
+     * @param self The RLPItem.
+     * @return addr The decoded address.
+     */
+    function toAddress(RLPItem memory self) internal pure returns (address addr) {
         if(!isData(self))
             revert();
         uint rStartPos;
@@ -309,7 +376,7 @@ library RLP {
         if (len != 20)
             revert();
         assembly {
-            data := div(mload(rStartPos), exp(256, 12))
+            addr := div(mload(rStartPos), exp(256, 12))
         }
     }
 

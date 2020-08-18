@@ -11,6 +11,7 @@ repositories {
 dependencies {
     compile project (':crypto')
     compile project (':trie')
+    testCompile project (path: ':common', configuration: 'testArtifacts')
 
 
     // https://mvnrepository.com/artifact/org.apache.tuweni/tuweni-bytes
@@ -27,4 +28,17 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.12.0'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.0'
 
+}
+
+task generateSources {
+    def script = "receipts/gen.sh".execute()
+    script.in.eachLine {line -> println line}
+    script.err.eachLine {line -> println "ERROR: " + line}
+    if (script.exitValue() != 0) {
+        throw new GradleException("Solidity compile error")
+    }
+}
+
+project.afterEvaluate {
+    build.dependsOn generateSources
 }
