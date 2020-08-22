@@ -37,7 +37,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  * or the org.web3j.codegen.SolidityFunctionWrapperGenerator in the 
  * <a href="https://github.com/web3j/web3j/tree/master/codegen">codegen module</a> to update.
  *
- * <p>Generated with web3j version 4.5.16.
+ * <p>Generated with web3j version 4.7.0-SNAPSHOT.
  */
 @SuppressWarnings("rawtypes")
 public class CrossBlockchainControl extends Contract {
@@ -238,11 +238,36 @@ public class CrossBlockchainControl extends Contract {
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
 
+    public String getRLP_callGraphs(BigInteger param0) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_CALLGRAPHS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public String getRLP_close(BigInteger _startEventBlockHash, byte[] _startEvent) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_CLOSE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_startEventBlockHash), 
+                new org.web3j.abi.datatypes.DynamicBytes(_startEvent)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
     public RemoteFunctionCall<Boolean> crossBlockchainTransactionExists(BigInteger _crossBlockchainTransactionId) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_CROSSBLOCKCHAINTRANSACTIONEXISTS, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_crossBlockchainTransactionId)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
+    }
+
+    public String getRLP_crossBlockchainTransactionExists(BigInteger _crossBlockchainTransactionId) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_CROSSBLOCKCHAINTRANSACTIONEXISTS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_crossBlockchainTransactionId)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
     public RemoteFunctionCall<BigInteger> crossBlockchainTransactionTimeout(BigInteger _crossBlockchainTransactionId) {
@@ -252,12 +277,28 @@ public class CrossBlockchainControl extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
+    public String getRLP_crossBlockchainTransactionTimeout(BigInteger _crossBlockchainTransactionId) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_CROSSBLOCKCHAINTRANSACTIONTIMEOUT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_crossBlockchainTransactionId)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
     public RemoteFunctionCall<TransactionReceipt> lockContract(String _contractToLock) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_LOCKCONTRACT, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _contractToLock)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_lockContract(String _contractToLock) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_LOCKCONTRACT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _contractToLock)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> segment(BigInteger param0, byte[] _startEvent, byte[] param2, List<BigInteger> _callPath) {
@@ -273,6 +314,28 @@ public class CrossBlockchainControl extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    public String getRLP_segment(BigInteger param0, byte[] _startEvent, byte[] param2, List<BigInteger> _callPath) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_SEGMENT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0), 
+                new org.web3j.abi.datatypes.DynamicBytes(_startEvent), 
+                new org.web3j.abi.datatypes.DynamicBytes(param2), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
+                        org.web3j.abi.datatypes.generated.Uint256.class,
+                        org.web3j.abi.Utils.typeMap(_callPath, org.web3j.abi.datatypes.generated.Uint256.class))), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public String getRLP_signalling(BigInteger _startEventBlockHash, byte[] _startEvent) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_SIGNALLING, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_startEventBlockHash), 
+                new org.web3j.abi.datatypes.DynamicBytes(_startEvent)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
     public RemoteFunctionCall<TransactionReceipt> start(BigInteger _crossBlockchainTransactionId, BigInteger _timeout, byte[] _callGraph) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_START, 
@@ -283,11 +346,29 @@ public class CrossBlockchainControl extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    public String getRLP_start(BigInteger _crossBlockchainTransactionId, BigInteger _timeout, byte[] _callGraph) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_START, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_crossBlockchainTransactionId), 
+                new org.web3j.abi.datatypes.generated.Uint256(_timeout), 
+                new org.web3j.abi.datatypes.DynamicBytes(_callGraph)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
     public RemoteFunctionCall<BigInteger> timeout(BigInteger param0) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_TIMEOUT, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public String getRLP_timeout(BigInteger param0) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_TIMEOUT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
     @Deprecated

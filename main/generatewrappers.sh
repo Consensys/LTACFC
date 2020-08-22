@@ -10,7 +10,10 @@ PACKAGE=tech.pegasys.ltacfc.soliditywrappers
 solc $CONTRACTSDIR/Test.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 ls -al $BUILDDIR
 
-WEB3J=web3j
+
+#WEB3J=web3j
+WEB3J=../web3j-rlp/codegen/build/distributions/codegen-4.7.0-SNAPSHOT/bin/codegen
+
 
 $WEB3J solidity generate -a=$BUILDDIR/Test.abi -b=$BUILDDIR/Test.bin -o=$BUILDDIR -p=$PACKAGE
 

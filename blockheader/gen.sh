@@ -10,7 +10,8 @@ OUTPUTDIR=$HERE/src/main/java
 TESTOUTPUTDIR=$HERE/src/test/java
 PACKAGE=tech.pegasys.ltacfc.soliditywrappers
 TESTPACKAGE=tech.pegasys.ltacfc.test.blockheader.soliditywrappers
-WEB3J=web3j
+# WEB3J=web3j
+WEB3J=../web3j-rlp/codegen/build/distributions/codegen-4.7.0-SNAPSHOT/bin/codegen
 
 # compiling one file also compiles its dependendencies. We use overwrite to avoid the related warnings.
 solc $CONTRACTSDIR/TxReceiptsRootStorage.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite

@@ -2,6 +2,7 @@ package tech.pegasys.ltacfc.soliditywrappers;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.Function;
@@ -21,7 +22,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  * or the org.web3j.codegen.SolidityFunctionWrapperGenerator in the 
  * <a href="https://github.com/web3j/web3j/tree/master/codegen">codegen module</a> to update.
  *
- * <p>Generated with web3j version 4.5.16.
+ * <p>Generated with web3j version 4.7.0-SNAPSHOT.
  */
 @SuppressWarnings("rawtypes")
 public class VotingAlgMajorityWhoVoted extends Contract {
@@ -54,6 +55,16 @@ public class VotingAlgMajorityWhoVoted extends Contract {
                 new org.web3j.abi.datatypes.generated.Uint64(numVotedAgainst)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
+    }
+
+    public String getRLP_assess(BigInteger param0, BigInteger numVotedFor, BigInteger numVotedAgainst) {
+        final Function function = new Function(
+                FUNC_ASSESS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint64(param0), 
+                new org.web3j.abi.datatypes.generated.Uint64(numVotedFor), 
+                new org.web3j.abi.datatypes.generated.Uint64(numVotedAgainst)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
     @Deprecated
