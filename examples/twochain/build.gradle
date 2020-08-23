@@ -9,24 +9,16 @@ repositories {
 }
 
 dependencies {
-    testCompile project (path: ':common', configuration: 'testArtifacts')
-    testCompile project (path: ':registrar', configuration: 'testArtifacts')
 
-    testCompile project (':crypto')
-    testCompile project (':registrar')
-    testCompile project (':receipts')
-
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-
+    compile group: 'com.google.guava', name: 'guava', version: '14.0'
     compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.12.0'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.12.0'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.0'
 
-    compile ('org.web3j:core:4.5.12')
 }
 
 task generateSources {
-    def script = "blockheader/gen.sh".execute()
+    def script = "examples/twochain/gen.sh".execute()
     script.in.eachLine {line -> println line}
     script.err.eachLine {line -> println "ERROR: " + line}
     if (script.exitValue() != 0) {
@@ -37,4 +29,3 @@ task generateSources {
 project.afterEvaluate {
     build.dependsOn generateSources
 }
-

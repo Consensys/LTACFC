@@ -67,11 +67,22 @@ contract CrossBlockchainControl {
         execute(targetContract, functionCall);
     }
 
-    function signalling(uint256 _startEventBlockHash, bytes calldata _startEvent) external view {
+    function signalling(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view {
 
     }
 
-    function close(uint256 _startEventBlockHash, bytes calldata _startEvent) external view {
+    function close(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view {
+
+    }
+
+    function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external {
+        // Check that this function call should occur and register if this is an error.
+
+    }
+
+
+    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external view returns (uint256){
+        // Check that this function call should occur and register if this is an error.
 
     }
 
