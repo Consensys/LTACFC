@@ -14,12 +14,24 @@
  */
 pragma solidity >=0.6.9;
 import "./OtherBlockchainContractInterface.sol";
+import "./OtherBlockchainLockableStorage.sol";
 
 contract OtherBlockchainContract is OtherBlockchainContractInterface {
 
+    // TODO add a map to this example.
+    uint256 constant private keyForFlag = 0;
+    uint256 constant private keyForVal = 1;
+    uint256 constant private keyForValsArrayStart = 1000;
+
     uint256 val;
-    bool flag;
     uint256[] vals;
+
+    OtherBlockchainLockableStorage storageContract;
+
+    constructor (address _storageContract) public {
+        storageContract = OtherBlockchainLockableStorage(_storageContract);
+    }
+
 
     function setVal(uint256 _val) external override {
         val = _val;
@@ -33,21 +45,21 @@ contract OtherBlockchainContract is OtherBlockchainContractInterface {
         return val;
     }
 
-    function setFlag(bool _flag) external override {
-        flag = _flag;
+    function setFlag(bool _flag) public override {
+        storageContract.setBool(keyForFlag, _flag);
     }
 
-    function getFlag() external override view returns(bool) {
-        return flag;
+    function getFlag() public override view returns(bool) {
+        return storageContract.getBool(keyForFlag);
     }
 
     function setValAndFlag(bool _flag, uint256 _val) external override {
-        flag = _flag;
+        setFlag(_flag);
         val = _val;
     }
 
     function getValAndFlag() external override view returns(bool, uint256) {
-        return (flag, val);
+        return (getFlag(), val);
     }
 
     function setValues(uint256[] calldata _vals) external override {

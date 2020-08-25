@@ -14,10 +14,6 @@
  */
 pragma solidity >=0.6.9;
 
-enum ReturnType {
-  NONE,
-  BYTES
-}
 
 contract CrossBlockchainControl {
     uint256 myBlockchainId;
@@ -65,6 +61,8 @@ contract CrossBlockchainControl {
         bytes memory functionCall = extractFromStartEventFunctionCall(_startEvent, _callPath);
 
         execute(targetContract, functionCall);
+
+        delete activeCallRootBlockchainId;
     }
 
     function signalling(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view {
@@ -101,6 +99,23 @@ contract CrossBlockchainControl {
     function crossBlockchainTransactionTimeout(uint256 _crossBlockchainTransactionId) external view returns (uint256) {
         return timeout[_crossBlockchainTransactionId];
     }
+
+    /**
+     * @return false if the current transaction execution is part of a cross-blockchain call\.
+     */
+    function isSingleBlockchainCall() public view returns (bool) {
+        return 0 == activeCallRootBlockchainId;
+    }
+
+    function getActiveCallRootBlockchainId() public view returns (uint256) {
+        return activeCallRootBlockchainId;
+    }
+
+    function getActiveCallCrossBlockchainTransactionId() public view returns (uint256) {
+        return activeCallCrossBlockchainTransactionId;
+    }
+
+
 
     function extractFromStartEventRootBlockchainId(bytes calldata /* _startEvent */) private pure returns (uint256) {
         // TODO
