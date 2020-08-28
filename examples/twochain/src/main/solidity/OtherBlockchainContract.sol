@@ -14,60 +14,97 @@
  */
 pragma solidity >=0.6.9;
 import "./OtherBlockchainContractInterface.sol";
-import "./OtherBlockchainLockableStorage.sol";
+import "./LockableStorage.sol";
 
 contract OtherBlockchainContract is OtherBlockchainContractInterface {
 
     // TODO add a map to this example.
     uint256 constant private keyForFlag = 0;
     uint256 constant private keyForVal = 1;
-    uint256 constant private keyForValsArrayStart = 1000;
+    uint256 constant private keyForBytes = 2;
+    uint256 constant private keyForMap = 3;
+    uint256 constant private keyForValsArrayLength = 1000;
+    uint256 constant private keyForValsArrayStart = 1001;
 
-    uint256 val;
-    uint256[] vals;
 
-    OtherBlockchainLockableStorage storageContract;
+    LockableStorage storageContract;
 
     constructor (address _storageContract) public {
-        storageContract = OtherBlockchainLockableStorage(_storageContract);
+        storageContract = LockableStorage(_storageContract);
     }
 
 
-    function setVal(uint256 _val) external override {
-        val = _val;
+    function setVal(uint256 _val) public override {
+        storageContract.setUint256(keyForVal, _val);
     }
 
     function incrementVal() external override {
-        val++;
+        uint256 aVal = storageContract.getUint256(keyForVal);
+        aVal++;
+        storageContract.setUint256(keyForVal, aVal);
     }
 
-    function getVal() external override view returns(uint256) {
-        return val;
-    }
 
     function setFlag(bool _flag) public override {
         storageContract.setBool(keyForFlag, _flag);
+    }
+
+    function setValAndFlag(bool _flag, uint256 _val) external override {
+        setFlag(_flag);
+        setVal(_val);
+    }
+
+    function setBytes(bytes calldata _val) external override {
+        storageContract.setBytes(keyForBytes, _val);
+    }
+
+    // Note that if the array was previously longer than the new length, the
+    // array elements past the length of the new array are not removed.
+    // To do this, call setArrayValue(index, 0).
+    function setArrayValues(uint256[] calldata _vals) external override {
+        storageContract.setUint256(keyForValsArrayLength, _vals.length);
+        for (uint256 i=0; i<_vals.length; i++) {
+            storageContract.setUint256(keyForValsArrayStart + i, _vals[i]);
+        }
+    }
+
+    function setArrayValue(uint256 _index, uint256 _val) external override {
+        storageContract.setUint256(keyForValsArrayStart + _index, _val);
+    }
+
+    function setMapValue(uint256 _key, uint256 _val) external override {
+        bytes32 index = keccak256(abi.encodePacked(keyForMap, _key));
+        storageContract.setUint256(uint256(index), _val);
+    }
+
+
+    function getVal() public override view returns(uint256) {
+        return storageContract.getUint256(keyForVal);
     }
 
     function getFlag() public override view returns(bool) {
         return storageContract.getBool(keyForFlag);
     }
 
-    function setValAndFlag(bool _flag, uint256 _val) external override {
-        setFlag(_flag);
-        val = _val;
-    }
-
     function getValAndFlag() external override view returns(bool, uint256) {
-        return (getFlag(), val);
+        return (getFlag(), getVal());
     }
 
-    function setValues(uint256[] calldata _vals) external override {
-        vals = _vals;
+    function getBytes() external override view returns(bytes memory) {
+        return storageContract.getBytes(keyForBytes);
     }
 
-    function getValue(uint256 _index) external override view returns(uint256) {
-        return vals[_index];
+    function getArrayLength() external override view returns(uint256) {
+        return storageContract.getUint256(keyForValsArrayLength);
+    }
+
+    function getArrayValue(uint256 _index) external override view returns(uint256) {
+        return storageContract.getUint256(keyForValsArrayStart + _index);
+    }
+
+    function getMapValue(uint256 _key) external override view returns(uint256) {
+        bytes32 index = keccak256(abi.encodePacked(keyForMap, _key));
+        return storageContract.getUint256(uint256(index));
     }
 
 }

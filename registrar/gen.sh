@@ -17,8 +17,8 @@ solc $CONTRACTSDIR/VotingAlgMajority.sol --allow-paths . --bin --abi --optimize 
 solc $CONTRACTSDIR/VotingAlgMajorityWhoVoted.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 # ls -al $BUILDDIR
 
-$WEB3J solidity generate -a=$BUILDDIR/Registrar.abi -b=$BUILDDIR/Registrar.bin -o=$BUILDDIR -p=$PACKAGE
-$WEB3J solidity generate -a=$BUILDDIR/VotingAlgMajority.abi -b=$BUILDDIR/VotingAlgMajority.bin -o=$BUILDDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/Registrar.abi -b=$BUILDDIR/Registrar.bin -o=$OUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/VotingAlgMajority.abi -b=$BUILDDIR/VotingAlgMajority.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/VotingAlgMajorityWhoVoted.abi -b=$BUILDDIR/VotingAlgMajorityWhoVoted.bin -o=$OUTPUTDIR -p=$PACKAGE
 
 
