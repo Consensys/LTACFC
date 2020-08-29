@@ -47,6 +47,12 @@ contract OtherBlockchainContract is OtherBlockchainContractInterface {
 
     function setFlag(bool _flag) public override {
         storageContract.setBool(keyForFlag, _flag);
+//        try storageContract.setBool(keyForFlag, _flag) {
+//        } catch Error(string memory reason) {
+//            revert(reason);
+//        } catch (bytes memory) {
+//            revert("Low level fault");
+//        }
     }
 
     function setValAndFlag(bool _flag, uint256 _val) external override {

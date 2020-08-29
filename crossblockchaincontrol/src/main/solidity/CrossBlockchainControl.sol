@@ -14,14 +14,16 @@
  */
 pragma solidity >=0.6.9;
 
+import "./CrossBlockchainControlInterface.sol";
 
-contract CrossBlockchainControl {
-    uint256 myBlockchainId;
+
+contract CrossBlockchainControl is CrossBlockchainControlInterface {
+    uint256 public override myBlockchainId;
 
     // Mapping of cross-blockchain transaction id to time-out block time stamp.
-    mapping (uint256=> uint256) public timeout;
+    mapping (uint256=> uint256) public override  timeout;
     // Mapping of cross-blockchain transaction id to call graphs, for calls instigated from this blockchain.
-    mapping (uint256=> bytes) public callGraphs;
+    mapping (uint256=> bytes) public override  callGraphs;
 
     // Storage variables that are just stored for the life of a transaction. They need to
     // be available in storage as code calls back into this contract.
@@ -38,14 +40,14 @@ contract CrossBlockchainControl {
         myBlockchainId = _myBlockchainId;
     }
 
-    function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external {
+    function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external override {
         require(crossBlockchainTransactionExists(_crossBlockchainTransactionId) == false, "Transaction already registered");
         timeout[_crossBlockchainTransactionId] = _timeout;
         callGraphs[_crossBlockchainTransactionId] = _callGraph;
         emit Start(_crossBlockchainTransactionId, _timeout, _callGraph);
     }
 
-    function segment(uint256 /*_startEventBlockHash*/, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external {
+    function segment(uint256 /*_startEventBlockHash*/, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external override {
 //        require(crossBlockchainTransactionExists(_crossBlockchainTransactionId));
         activeCallRootBlockchainId = extractFromStartEventRootBlockchainId(_startEvent);
         // TODO validate _startEvent using activeCallRootBlockchainId, _proof, _startEvent
@@ -65,53 +67,53 @@ contract CrossBlockchainControl {
         delete activeCallRootBlockchainId;
     }
 
-    function signalling(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view {
+    function signalling(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external override  view {
 
     }
 
-    function close(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view {
+    function close(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external override  view {
 
     }
 
-    function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external {
+    function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override {
         // Check that this function call should occur and register if this is an error.
 
     }
 
 
-    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external view returns (uint256){
+    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override view returns (uint256){
         // Check that this function call should occur and register if this is an error.
 
     }
 
     // Called by a provisional storage contract indicating the contract needs to be locked.
-    function lockContract(address _contractToLock) external {
+    function lockContract(address _contractToLock) external override {
         if (activeCallLockedContractsMap[_contractToLock] == false) {
             activeCallLockedContracts.push(_contractToLock);
         }
     }
 
 
-    function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) public view returns (bool) {
+    function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) public override view returns (bool) {
         return 0 != timeout[_crossBlockchainTransactionId];
     }
 
-    function crossBlockchainTransactionTimeout(uint256 _crossBlockchainTransactionId) external view returns (uint256) {
+    function crossBlockchainTransactionTimeout(uint256 _crossBlockchainTransactionId) external override view returns (uint256) {
         return timeout[_crossBlockchainTransactionId];
     }
 
     /**
      * @return false if the current transaction execution is part of a cross-blockchain call\.
      */
-    function isSingleBlockchainCall() public view returns (bool) {
+    function isSingleBlockchainCall() public override view returns (bool) {
         return 0 == activeCallRootBlockchainId;
     }
 
-    function getActiveCallRootBlockchainId() public view returns (uint256) {
+    function getActiveCallRootBlockchainId() public override view returns (uint256) {
         return activeCallRootBlockchainId;
     }
 
-    function getActiveCallCrossBlockchainTransactionId() public view returns (uint256) {
+    function getActiveCallCrossBlockchainTransactionId() public override view returns (uint256) {
         return activeCallCrossBlockchainTransactionId;
     }
 

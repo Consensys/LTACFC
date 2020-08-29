@@ -5,7 +5,9 @@ rm -rf build
 HERE=examples/twochain
 BUILDDIR=$HERE/build
 CONTRACTSDIR=$HERE/src/main/solidity
+TESTCONTRACTSDIR=$HERE/src/test/solidity
 OUTPUTDIR=$HERE/src/main/java
+TESTOUTPUTDIR=$HERE/src/test/java
 PACKAGE=tech.pegasys.ltacfc.examples.twochain.soliditywrappers
 #WEB3J=web3j
 WEB3J=../web3j-rlp/codegen/build/distributions/codegen-4.7.0-SNAPSHOT/bin/codegen
@@ -15,10 +17,12 @@ WEB3J=../web3j-rlp/codegen/build/distributions/codegen-4.7.0-SNAPSHOT/bin/codege
 solc $CONTRACTSDIR/OtherBlockchainContract.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 solc $CONTRACTSDIR/LockableStorage.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 solc $CONTRACTSDIR/RootBlockchainContract.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
+solc $TESTCONTRACTSDIR/CbcTestLockableStorage.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 # ls -al $BUILDDIR
 
 $WEB3J solidity generate -a=$BUILDDIR/OtherBlockchainContract.abi -b=$BUILDDIR/OtherBlockchainContract.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/LockableStorage.abi -b=$BUILDDIR/LockableStorage.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/RootBlockchainContract.abi -b=$BUILDDIR/RootBlockchainContract.bin -o=$OUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/CbcTestLockableStorage.abi -b=$BUILDDIR/CbcTestLockableStorage.bin -o=$TESTOUTPUTDIR -p=$PACKAGE
 
 

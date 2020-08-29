@@ -14,7 +14,7 @@
  */
 pragma solidity >=0.6.9;
 
-import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControl.sol";
+import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControlInterface.sol";
 
 
 /**
@@ -62,12 +62,13 @@ import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainC
  * Else (not locked) {Read from normal storage}
  */
 contract LockableStorage {
+    address immutable deployer;
 
     // TODO be able to upgrade the business logic contract
     // Address of the contract that this contract is supplying storage for.
-    address private businessLogicContract;
+    address public businessLogicContract;
     // The Cross-Blockchain Control Contract used for cross-blockchain transaction locking.
-    CrossBlockchainControl private crossBlockchainControl;
+    CrossBlockchainControlInterface private crossBlockchainControl;
 
     // True when this contract is locked.
     bool public locked;
@@ -94,8 +95,20 @@ contract LockableStorage {
         _;
     }
 
-    constructor (address _crossBlockchainControl, address _businessLogicContract) public {
-        crossBlockchainControl = CrossBlockchainControl(_crossBlockchainControl);
+    constructor (address _crossBlockchainControl) public {
+        deployer = msg.sender;
+        crossBlockchainControl = CrossBlockchainControlInterface(_crossBlockchainControl);
+    }
+
+    /**
+     * Set the business logic contract that this lockable storage contract relates to.
+     * Can only be called once by the original deployer of this contract.
+     *
+     * @param _businessLogicContract The contract to link this contract to.
+     */
+    function setBusinessLogicContract(address _businessLogicContract) external {
+        require(deployer == msg.sender);
+        require(businessLogicContract == address(0));
         businessLogicContract = _businessLogicContract;
     }
 
@@ -108,6 +121,7 @@ contract LockableStorage {
      * @param _val The boolean value to store.
      */
     function setBool(uint256 _key, bool _val) external onlyBusinessLogicContract {
+//    function setBool(uint256 _key, bool _val) external {
         // Check Cross-Blockchain Control Contract: is there an active cross-blockchain call involving this contract?
         // If not (normal single blockchain call) {
         //   If locked {throw an error}
@@ -222,7 +236,7 @@ contract LockableStorage {
     }
 
 
-    function getBool(uint256 _key) external view onlyBusinessLogicContract returns(bool) {
+    function getBool(uint256 _key) external view returns(bool) {
         // Check Cross-Blockchain Control Contract: is there an active cross-blockchain call involving this contract?
         // If not (normal single blockchain call) {
         //   If locked {throw an error}
@@ -257,7 +271,7 @@ contract LockableStorage {
     }
 
 
-    function getUint256(uint256 _key) external view onlyBusinessLogicContract returns(uint256) {
+    function getUint256(uint256 _key) external view returns(uint256) {
         // Check Cross-Blockchain Control Contract: is there an active cross-blockchain call involving this contract?
         // If not (normal single blockchain call) {
         //   If locked {throw an error}
@@ -292,7 +306,7 @@ contract LockableStorage {
     }
 
 
-    function getBytes(uint256 _key) external view onlyBusinessLogicContract returns(bytes memory) {
+    function getBytes(uint256 _key) external view returns(bytes memory) {
         // Check Cross-Blockchain Control Contract: is there an active cross-blockchain call involving this contract?
         // If not (normal single blockchain call) {
         //   If locked {throw an error}

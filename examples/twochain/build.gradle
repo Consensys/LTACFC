@@ -16,6 +16,9 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.0'
 
     compile ('org.web3j:core:4.5.12')
+
+    testCompile project (path: ':common', configuration: 'testArtifacts')
+
 }
 
 task generateSources {
