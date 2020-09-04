@@ -8,6 +8,7 @@ include 'blockheader'
 include 'crossblockchaincontrol'
 include 'main'
 include 'common'
+include 'lockablestorage'
 include 'examples-twochain'
 
 project(":examples-twochain").projectDir = file("examples/twochain")
