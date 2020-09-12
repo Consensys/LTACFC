@@ -77,7 +77,6 @@ contract LockableStorage {
     uint256 public lockedByTransactionId;
 
     struct AllTypes {
-        bool boolVal;
         uint256 uint256Val;
         bytes bytesVal;
     }
