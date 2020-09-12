@@ -28,37 +28,10 @@ import java.math.BigInteger;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Check operation, assuming the calls are single blockchain (that is not part of a
- * cross-blockchain) call.
+ * Check the ability to store and load all of the types. The tests assume the calls are
+ * single blockchain (that is not part of a cross-blockchain) call.
  */
-public class LockableStorageSingleBlockchainTest extends AbstractWeb3Test {
-  LockableStorageWrapper storageWrapper;
-  LockableStorage lockableStorageContract;
-  MockCbcForLockableStorageTest mockCrossBlockchainControlContract;
-
-
-
-
-  protected void deployContracts() throws Exception {
-    this.mockCrossBlockchainControlContract = MockCbcForLockableStorageTest.deploy(this.web3j, this.tm, this.freeGasProvider).send();
-    this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.freeGasProvider,
-        this.mockCrossBlockchainControlContract.getContractAddress()).send();
-    this.storageWrapper = LockableStorageWrapper.deploy(this.web3j, this.tm, this.freeGasProvider,
-        this.lockableStorageContract.getContractAddress()).send();
-    this.lockableStorageContract.setBusinessLogicContract(this.storageWrapper.getContractAddress()).send();
-  }
-
-
-  @Test
-  public void checkDeployment() throws Exception {
-    setupWeb3();
-    deployContracts();
-
-    assert(!this.lockableStorageContract.locked().send());
-    assertEquals(this.lockableStorageContract.businessLogicContract().send(), this.storageWrapper.getContractAddress());
-  }
-
-
+public class LockableStorageTypesTest extends AbstractLockableStorageTest {
   @Test
   public void bool() throws Exception {
     setupWeb3();

@@ -292,10 +292,12 @@ contract LockableStorage {
      * @param _keyCausingLock The key for the value that is currently being written.
      */
     function lockContract(uint256 _keyCausingLock) private {
-        locked = true;
-        lockedByRootBlockchainId = crossBlockchainControl.getActiveCallRootBlockchainId();
-        lockedByTransactionId = crossBlockchainControl.getActiveCallCrossBlockchainTransactionId();
-        crossBlockchainControl.lockContract(address(this));
+        if (!locked) {
+            locked = true;
+            lockedByRootBlockchainId = crossBlockchainControl.getActiveCallRootBlockchainId();
+            lockedByTransactionId = crossBlockchainControl.getActiveCallCrossBlockchainTransactionId();
+            crossBlockchainControl.lockContract(address(this));
+        }
         provisionalUpdatesList.push(_keyCausingLock);
         provisionalUpdateExists[_keyCausingLock]= true;
     }
