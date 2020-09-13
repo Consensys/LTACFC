@@ -24,7 +24,13 @@ contract LockableStorageWrapper  {
 
 
     function setUint256(uint256 _key, uint256 _val) public {
-        storageContract.setUint256(_key, _val);
+        try storageContract.setUint256(_key, _val) {
+            // No more business logic to do.
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch (bytes memory lowLevelData) {
+            revert(string(lowLevelData));
+        }
     }
 
     function setBool(uint256 _key, bool _flag) public {

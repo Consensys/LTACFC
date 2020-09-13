@@ -18,10 +18,6 @@ import org.junit.Test;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.exceptions.ContractCallException;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorageWrapper;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.MockCbcForLockableStorageTest;
-import tech.pegasys.ltacfc.test.AbstractWeb3Test;
 
 import java.math.BigInteger;
 

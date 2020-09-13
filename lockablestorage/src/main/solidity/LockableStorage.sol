@@ -76,21 +76,27 @@ contract LockableStorage {
     uint256 public lockedByRootBlockchainId;
     uint256 public lockedByTransactionId;
 
-    struct AllTypes {
-        uint256 uint256Val;
-        bytes bytesVal;
-    }
-    mapping(uint256=>AllTypes) private dataStore;
-    mapping(uint256=>AllTypes) private provisionalUpdates;
-    uint256[] private provisionalUpdatesList;
-    mapping(uint256=>bool) private provisionalUpdateExists;
+    mapping(uint256=>uint256) private dataStoreUint256;
+    mapping(uint256=>uint256) private provisionalUpdatesUint256;
+    // List of keys for values that have been updated.
+    uint256[] private provisionalUpdatesListUint256;
+    // Indicates that a value for this key has already been updated.
+    mapping(uint256=>bool) private provisionalUpdateExistsUint256;
 
+    mapping(uint256=>bytes) private dataStoreBytes;
+    mapping(uint256=>bytes) private provisionalUpdatesBytes;
+    // List of keys for values that have been updated.
+    uint256[] private provisionalUpdatesListBytes;
+    // Indicates that a value for this key has already been updated.
+    mapping(uint256=>bool) private provisionalUpdateExistsBytes;
 
     /**
      * Revert if the caller is not Business Logic Contract.
      */
     modifier onlyBusinessLogicContract() {
-        require(msg.sender == businessLogicContract, "Only call from business logic contract");
+        if (msg.sender != businessLogicContract) {
+            revert("Only call from business logic contract");
+        }
         _;
     }
 
@@ -125,8 +131,10 @@ contract LockableStorage {
         //   Else (not locked) {Write to normal storage}
         // }
         if (crossBlockchainControl.isSingleBlockchainCall()) {
-            require(!locked, "Attempted single blockchain call when contract locked");
-            dataStore[_key].uint256Val = _val;
+            if (locked) {
+                revert("Attempted single blockchain call when contract locked");
+            }
+            dataStoreUint256[_key] = _val;
         }
         // Else (this is a cross-blockchain call) {
         else {
@@ -136,8 +144,12 @@ contract LockableStorage {
             //     If no {throw an error}
             //     If yes {Write to provisional storage}
             if (locked) {
-                checkLockingAndWrite(_key);
-                provisionalUpdates[_key].uint256Val = _val;
+                checkLocking();
+                provisionalUpdatesUint256[_key] = _val;
+                if (!provisionalUpdateExistsUint256[_key]) {
+                    provisionalUpdatesListUint256.push(_key);
+                    provisionalUpdateExistsUint256[_key] = true;
+                }
             }
             //   Else (not locked) {
             //     Lock the contract.
@@ -145,8 +157,10 @@ contract LockableStorage {
             //      Lockable Storage contract
             //     Write to provisional storage
             else {
-                lockContract(_key);
-                provisionalUpdates[_key].uint256Val = _val;
+                lockContract();
+                provisionalUpdatesUint256[_key] = _val;
+                provisionalUpdatesListUint256.push(_key);
+                provisionalUpdateExistsUint256[_key] = true;
             }
         }
     }
@@ -166,8 +180,10 @@ contract LockableStorage {
         //   Else (not locked) {Write to normal storage}
         // }
         if (crossBlockchainControl.isSingleBlockchainCall()) {
-            require(!locked, "Attempted single blockchain call when contract locked");
-            dataStore[_key].bytesVal = _val;
+            if (locked) {
+                revert("Attempted single blockchain call when contract locked");
+            }
+            dataStoreBytes[_key] = _val;
         }
         // Else (this is a cross-blockchain call) {
         else {
@@ -177,8 +193,12 @@ contract LockableStorage {
             //     If no {throw an error}
             //     If yes {Write to provisional storage}
             if (locked) {
-                checkLockingAndWrite(_key);
-                provisionalUpdates[_key].bytesVal = _val;
+                checkLocking();
+                provisionalUpdatesBytes[_key] = _val;
+                if (!provisionalUpdateExistsBytes[_key]) {
+                    provisionalUpdatesListBytes.push(_key);
+                    provisionalUpdateExistsBytes[_key] = true;
+                }
             }
             //   Else (not locked) {
             //     Lock the contract.
@@ -186,12 +206,54 @@ contract LockableStorage {
             //      Lockable Storage contract
             //     Write to provisional storage
             else {
-                lockContract(_key);
-                provisionalUpdates[_key].bytesVal = _val;
+                lockContract();
+                provisionalUpdatesBytes[_key] = _val;
+                provisionalUpdatesListBytes.push(_key);
+                provisionalUpdateExistsBytes[_key] = true;
             }
         }
     }
 
+
+    /**
+     * Called by the cross-blockchain control contract when the call has been completed.
+     *
+     * @param _commit True if the provisional updates should be committed. False indicates the
+     *         provisional updates should be discarded.
+     */
+    function finalise(bool _commit) external {
+        if (!locked) {
+            revert("Nothing to finalise");
+        }
+
+        if (_commit) {
+            // Copy all provisional updates to data stores.
+            for (uint256 i = 0; i < provisionalUpdatesListUint256.length; i++) {
+                uint256 key = provisionalUpdatesListUint256[i];
+                dataStoreUint256[key] = provisionalUpdatesUint256[key];
+            }
+            for (uint256 i = 0; i < provisionalUpdatesListBytes.length; i++) {
+                uint256 key = provisionalUpdatesListBytes[i];
+                dataStoreBytes[key] = provisionalUpdatesBytes[key];
+            }
+        }
+
+        // Delete all provisional updates.
+        for (uint256 i = 0; i < provisionalUpdatesListUint256.length; i++) {
+            uint256 key = provisionalUpdatesListUint256[i];
+            delete provisionalUpdatesUint256[key];
+            delete provisionalUpdateExistsUint256[key];
+        }
+        for (uint256 i = 0; i < provisionalUpdatesListBytes.length; i++) {
+            uint256 key = provisionalUpdatesListBytes[i];
+            delete provisionalUpdatesBytes[key];
+            delete provisionalUpdateExistsBytes[key];
+        }
+        delete provisionalUpdatesListUint256;
+        delete provisionalUpdatesListBytes;
+
+        locked = false;
+    }
 
     function getUint256(uint256 _key) external view returns(uint256) {
         // Check Cross-Blockchain Control Contract: is there an active cross-blockchain call involving this contract?
@@ -200,8 +262,10 @@ contract LockableStorage {
         //   Else (not locked) {Read from to normal storage}
         // }
         if (crossBlockchainControl.isSingleBlockchainCall()) {
-            require(!locked, "Attempted single blockchain call when contract locked");
-            return dataStore[_key].uint256Val;
+            if (locked) {
+                revert("Attempted single blockchain call when contract locked");
+            }
+            return dataStoreUint256[_key];
         }
         // Else (this is a cross-blockchain call) {
         else {
@@ -212,17 +276,17 @@ contract LockableStorage {
             //     If yes {Allow the read. If the value isn’t available in provisional storage, return
             //       the value in normal storage.} }
             if (locked) {
-                checkPreviousCrossCall();
-                if (provisionalUpdateExists[_key]) {
-                    return provisionalUpdates[_key].uint256Val;
+                checkLocking();
+                if (provisionalUpdateExistsUint256[_key]) {
+                    return provisionalUpdatesUint256[_key];
                 }
                 else {
-                    return dataStore[_key].uint256Val;
+                    return dataStoreUint256[_key];
                 }
             }
             // Else (not locked) {Read from normal storage}
             else {
-                return dataStore[_key].uint256Val;
+                return dataStoreUint256[_key];
             }
         }
     }
@@ -235,8 +299,10 @@ contract LockableStorage {
         //   Else (not locked) {Read from to normal storage}
         // }
         if (crossBlockchainControl.isSingleBlockchainCall()) {
-            require(!locked, "Attempted single blockchain call when contract locked");
-            return dataStore[_key].bytesVal;
+            if (locked) {
+                revert("Attempted single blockchain call when contract locked");
+            }
+            return dataStoreBytes[_key];
         }
         // Else (this is a cross-blockchain call) {
         else {
@@ -247,63 +313,50 @@ contract LockableStorage {
             //     If yes {Allow the read. If the value isn’t available in provisional storage, return
             //       the value in normal storage.} }
             if (locked) {
-                checkPreviousCrossCall();
-                if (provisionalUpdateExists[_key]) {
-                    return provisionalUpdates[_key].bytesVal;
+                checkLocking();
+                if (provisionalUpdateExistsBytes[_key]) {
+                    return provisionalUpdatesBytes[_key];
                 }
                 else {
-                    return dataStore[_key].bytesVal;
+                    return dataStoreBytes[_key];
                 }
             }
             // Else (not locked) {Read from normal storage}
             else {
-                return dataStore[_key].bytesVal;
+                return dataStoreBytes[_key];
             }
         }
     }
 
-
     /**
-     * Do the type-independant things that need to be done to check that a locked contract
-     * is being written to by the same cross-blockchain call, and then do the write.
-     *
-     * Check Cross-Blockchain Control Contract: has this cross-blockchain call previously
-     *   locked the contract?
-     * If no {throw an error}
-     * If yes {Write to provisional storage}
-     *
-     * @param _key The key for the value that is currently being written.
-     */
-    function checkLockingAndWrite(uint256 _key) private {
-        require(lockedByRootBlockchainId == crossBlockchainControl.getActiveCallRootBlockchainId(), "Contract locked by other root blockchain");
-        require(lockedByTransactionId == crossBlockchainControl.getActiveCallCrossBlockchainTransactionId(), "Contract locked by other cross-blockchain transaction");
-        provisionalUpdatesList.push(_key);
-        provisionalUpdateExists[_key]= true;
-    }
-
-    /**
-     * Do the type-independant things that need to be done to lock a contract.
+     * Do the type-independent things that need to be done to lock a contract.
      *
      * Lock the contract.
      * Indicate in the Cross-Blockchain Control Contract that this call is locking the
      *   Lockable Storage contract
-     *  Generic parts of "write to provisional storage"
-     *
-     * @param _keyCausingLock The key for the value that is currently being written.
      */
-    function lockContract(uint256 _keyCausingLock) private {
-        if (!locked) {
-            locked = true;
-            lockedByRootBlockchainId = crossBlockchainControl.getActiveCallRootBlockchainId();
-            lockedByTransactionId = crossBlockchainControl.getActiveCallCrossBlockchainTransactionId();
-            crossBlockchainControl.lockContract(address(this));
-        }
-        provisionalUpdatesList.push(_keyCausingLock);
-        provisionalUpdateExists[_keyCausingLock]= true;
+    function lockContract() private {
+        locked = true;
+        lockedByRootBlockchainId = crossBlockchainControl.getActiveCallRootBlockchainId();
+        lockedByTransactionId = crossBlockchainControl.getActiveCallCrossBlockchainTransactionId();
+        crossBlockchainControl.lockContract(address(this));
     }
 
-    function checkPreviousCrossCall() private view {
-        require(lockedByRootBlockchainId == crossBlockchainControl.getActiveCallRootBlockchainId(), "Contract locked by other root blockchain");
-        require(lockedByTransactionId == crossBlockchainControl.getActiveCallCrossBlockchainTransactionId(), "Contract locked by other cross-blockchain transaction");
+    /**
+     * Check whether a locked contract is being written to by the same cross-blockchain call.
+     *
+     * Check Cross-Blockchain Control Contract: has this cross-blockchain call previously
+     *   locked the contract?
+     * If no {throw an error}
+     *
+     */
+    function checkLocking() private view {
+        if (lockedByRootBlockchainId != crossBlockchainControl.getActiveCallRootBlockchainId()) {
+            revert("Contract locked by other root blockchain");
+        }
+        if (lockedByTransactionId != crossBlockchainControl.getActiveCallCrossBlockchainTransactionId()) {
+            revert("Contract locked by other cross-blockchain transaction");
+        }
     }
+
 }

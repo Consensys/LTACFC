@@ -1,17 +1,12 @@
 package tech.pegasys.ltacfc.lockablestorage.test;
 
 import org.junit.Test;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.exceptions.ContractCallException;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorageWrapper;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.MockCbcForLockableStorageTest;
-import tech.pegasys.ltacfc.test.AbstractWeb3Test;
 
 import java.math.BigInteger;
 
-public class LockableStorageLockingTest extends AbstractLockableStorageTest {
+public class LockableStorageLockingUint256Test extends AbstractLockableStorageTest {
 
 
   // By default, locking is off. As such, setting a uint256 will not encounter any locks.
@@ -135,5 +130,63 @@ public class LockableStorageLockingTest extends AbstractLockableStorageTest {
     assert(this.storageWrapper.getUint256(theUint).send().compareTo(BigInteger.TWO) == 0);
   }
 
+  // Check that finalising with a commit = true works.
+  @Test
+  public void commit() throws Exception {
+    setupWeb3();
+    deployContracts();
+
+    BigInteger theUint = BigInteger.ZERO;
+    BigInteger theMap = BigInteger.ONE;
+    BigInteger theMapKey = BigInteger.TWO;
+
+    BigInteger val1 = BigInteger.TEN;
+    BigInteger val2 = BigInteger.valueOf(13);
+
+    // Any non-zero Root Blockchain Id is deemed to indicate an active Cross-Blockchain call.
+    this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ONE).send();
+
+    // Set some values.
+    this.storageWrapper.setUint256(theUint, val1).send();
+    this.storageWrapper.setMapValue(theMap, theMapKey, val2).send();
+
+    // Commit changes.
+    this.lockableStorageContract.finalise(true).send();
+
+    assert(!this.lockableStorageContract.locked().send());
+
+    assert(this.storageWrapper.getUint256(theUint).send().compareTo(val1) == 0);
+    assert(this.storageWrapper.getMapValue(theMap, theMapKey).send().compareTo(val2) == 0);
+  }
+
+
+  // Check that finalising with a commit = false works.
+  @Test
+  public void ignore() throws Exception {
+    setupWeb3();
+    deployContracts();
+
+    BigInteger theUint = BigInteger.ZERO;
+    BigInteger theMap = BigInteger.ONE;
+    BigInteger theMapKey = BigInteger.TWO;
+
+    BigInteger val1 = BigInteger.TEN;
+    BigInteger val2 = BigInteger.valueOf(13);
+
+    // Any non-zero Root Blockchain Id is deemed to indicate an active Cross-Blockchain call.
+    this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ONE).send();
+
+    // Set some values.
+    this.storageWrapper.setUint256(theUint, val1).send();
+    this.storageWrapper.setMapValue(theMap, theMapKey, val2).send();
+
+    // Commit changes.
+    this.lockableStorageContract.finalise(false).send();
+
+    assert(!this.lockableStorageContract.locked().send());
+
+    assert(this.storageWrapper.getUint256(theUint).send().compareTo(BigInteger.ZERO) == 0);
+    assert(this.storageWrapper.getMapValue(theMap, theMapKey).send().compareTo(BigInteger.ZERO) == 0);
+  }
 
 }
