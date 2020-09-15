@@ -16,44 +16,43 @@ pragma solidity >=0.6.9;
 
 import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControl.sol";
 import "./OtherBlockchainContractInterface.sol";
+import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
 
-contract RootBlockchainContract {
+contract RootBlockchainContract is LockableStorageWrapper {
     CrossBlockchainControl private crossBlockchainControlContract;
     uint256 private otherBlockchainId;
     OtherBlockchainContractInterface private otherContract;
-    uint256 public localValue;
 
-    constructor (address _crossBlockchainControl, uint256 _otherBlockchainId, address _otherContract) public {
+    uint256 private KEY_LOCAL_UINT;
+
+    constructor (address _crossBlockchainControl, uint256 _otherBlockchainId, address _otherContract, address _storageContract)
+        LockableStorageWrapper(_storageContract) public {
         crossBlockchainControlContract = CrossBlockchainControl(_crossBlockchainControl);
         otherBlockchainId = _otherBlockchainId;
         otherContract = OtherBlockchainContractInterface(_otherContract);
     }
 
-    function setVal(uint256 _val) external {
+    function setValRemote(uint256 _val) external {
         crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
             abi.encodeWithSelector(otherContract.setVal.selector, _val));
     }
 
-    function incrementVal() external {
+    function incrementRemoteVal() external {
         crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
             abi.encodeWithSelector(otherContract.incrementVal.selector));
     }
 
-    function getVal() external view returns(uint256) {
-        return crossBlockchainControlContract.crossBlockchainCallReturnsUint256(otherBlockchainId, address(otherContract),
+    function getRemoteVal() external {
+        uint256 val = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(otherBlockchainId, address(otherContract),
             abi.encodeWithSelector(otherContract.getVal.selector));
+        setUint256(KEY_LOCAL_UINT, val);
     }
 
-//
-//    function setFlag(bool _flag) external;
-//    function getFlag() external view returns(bool);
-//
-//    function setValAndFlag(bool _flag, uint256 _val) external;
-//    function getValAndFlag() external view returns(bool, uint256);
-//
-//    function setValues(uint256[] calldata _vals) external;
-//    function getValue(uint256 _index) external view returns(uint256);
+    function setLocalVal(uint256 _val) external {
+        setUint256(KEY_LOCAL_UINT, _val);
+    }
 
-
-
+    function getLocalVal() external view returns (uint256) {
+        return getUint256(KEY_LOCAL_UINT);
+    }
 }

@@ -14,103 +14,26 @@
  */
 pragma solidity >=0.6.9;
 import "./OtherBlockchainContractInterface.sol";
-import "./LockableStorage.sol";
+import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
 
-contract OtherBlockchainContract is OtherBlockchainContractInterface {
+contract OtherBlockchainContract is OtherBlockchainContractInterface, LockableStorageWrapper {
+    uint256 constant private KEY_FOR_VAL = 1;
 
-    // TODO add a map to this example.
-    uint256 constant private keyForFlag = 0;
-    uint256 constant private keyForVal = 1;
-    uint256 constant private keyForBytes = 2;
-    uint256 constant private keyForMap = 3;
-    uint256 constant private keyForValsArrayLength = 1000;
-    uint256 constant private keyForValsArrayStart = 1001;
-
-
-    LockableStorage storageContract;
-
-    constructor (address _storageContract) public {
-        storageContract = LockableStorage(_storageContract);
+    constructor (address _storageContract) LockableStorageWrapper(_storageContract) public {
     }
 
 
-    function setVal(uint256 _val) public override {
-        storageContract.setUint256(keyForVal, _val);
+    function setVal(uint256 _val) external override {
+        setUint256(KEY_FOR_VAL, _val);
     }
 
     function incrementVal() external override {
-        uint256 aVal = storageContract.getUint256(keyForVal);
+        uint256 aVal = getUint256(KEY_FOR_VAL);
         aVal++;
-        storageContract.setUint256(keyForVal, aVal);
+        setUint256(KEY_FOR_VAL, aVal);
     }
-
-
-    function setFlag(bool _flag) public override {
-        storageContract.setBool(keyForFlag, _flag);
-//        try storageContract.setBool(keyForFlag, _flag) {
-//        } catch Error(string memory reason) {
-//            revert(reason);
-//        } catch (bytes memory) {
-//            revert("Low level fault");
-//        }
-    }
-
-    function setValAndFlag(bool _flag, uint256 _val) external override {
-        setFlag(_flag);
-        setVal(_val);
-    }
-
-    function setBytes(bytes calldata _val) external override {
-        storageContract.setBytes(keyForBytes, _val);
-    }
-
-    // Note that if the array was previously longer than the new length, the
-    // array elements past the length of the new array are not removed.
-    // To do this, call setArrayValue(index, 0).
-    function setArrayValues(uint256[] calldata _vals) external override {
-        storageContract.setUint256(keyForValsArrayLength, _vals.length);
-        for (uint256 i=0; i<_vals.length; i++) {
-            storageContract.setUint256(keyForValsArrayStart + i, _vals[i]);
-        }
-    }
-
-    function setArrayValue(uint256 _index, uint256 _val) external override {
-        storageContract.setUint256(keyForValsArrayStart + _index, _val);
-    }
-
-    function setMapValue(uint256 _key, uint256 _val) external override {
-        bytes32 index = keccak256(abi.encodePacked(keyForMap, _key));
-        storageContract.setUint256(uint256(index), _val);
-    }
-
 
     function getVal() public override view returns(uint256) {
-        return storageContract.getUint256(keyForVal);
+        return getUint256(KEY_FOR_VAL);
     }
-
-    function getFlag() public override view returns(bool) {
-        return storageContract.getBool(keyForFlag);
-    }
-
-    function getValAndFlag() external override view returns(bool, uint256) {
-        return (getFlag(), getVal());
-    }
-
-    function getBytes() external override view returns(bytes memory) {
-        return storageContract.getBytes(keyForBytes);
-    }
-
-    function getArrayLength() external override view returns(uint256) {
-        return storageContract.getUint256(keyForValsArrayLength);
-    }
-
-    function getArrayValue(uint256 _index) external override view returns(uint256) {
-        return storageContract.getUint256(keyForValsArrayStart + _index);
-    }
-
-    function getMapValue(uint256 _key) external override view returns(uint256) {
-        bytes32 index = keccak256(abi.encodePacked(keyForMap, _key));
-        return storageContract.getUint256(uint256(index));
-    }
-
 }

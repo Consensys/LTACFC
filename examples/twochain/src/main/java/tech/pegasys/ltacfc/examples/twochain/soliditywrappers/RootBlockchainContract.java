@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Bool;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
@@ -28,15 +31,49 @@ import org.web3j.tx.gas.ContractGasProvider;
  */
 @SuppressWarnings("rawtypes")
 public class RootBlockchainContract extends Contract {
-    public static final String BINARY = "608060405234801561001057600080fd5b506040516104943803806104948339818101604052606081101561003357600080fd5b5080516020820151604090920151600080546001600160a01b039384166001600160a01b031991821617909155600193909355600280549290911691909216179055610410806100846000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80630d7f9bde146100515780633d4197f01461005b578063a35f68bc14610078578063e1cb0e5214610092575b600080fd5b61005961009a565b005b6100596004803603602081101561007157600080fd5b50356101a2565b6100806102b8565b60408051918252519081900360200190f35b6100806102be565b60008054600154600254604080516004808252602480830184526020830180516001600160e01b03166306bfcdef60e11b17815293516392b2c33560e01b81529182018681526001600160a01b0395861691830182905260606044840190815284516064850152845196909816986392b2c33598929694959194929360840192908190849084905b8381101561013a578181015183820152602001610122565b50505050905090810190601f1680156101675780820380516001836020036101000a031916815260200191505b50945050505050600060405180830381600087803b15801561018857600080fd5b505af115801561019c573d6000803e3d6000fd5b50505050565b60008054600154600254604080516024808201889052825180830382018152604492830184526020810180516001600160e01b03166303d4197f60e41b17815293516392b2c33560e01b8152600481018781526001600160a01b03968716938201849052606094820194855282516064830152825196909816986392b2c3359893969295939493608490920192908190849084905b8381101561024f578181015183820152602001610237565b50505050905090810190601f16801561027c5780820380516001836020036101000a031916815260200191505b50945050505050600060405180830381600087803b15801561029d57600080fd5b505af11580156102b1573d6000803e3d6000fd5b5050505050565b60035481565b60008054600154600254604080516004808252602480830184526020830180516001600160e01b03166370e5872960e11b1781529351632388b54d60e21b81529182018681526001600160a01b039586169183018290526060604484019081528451606485015284519690981697638e22d5349796929591939092608490910191908083838d5b8381101561035d578181015183820152602001610345565b50505050905090810190601f16801561038a5780820380516001836020036101000a031916815260200191505b5094505050505060206040518083038186803b1580156103a957600080fd5b505afa1580156103bd573d6000803e3d6000fd5b505050506040513d60208110156103d357600080fd5b505190509056fea2646970667358221220d63a865e941f6125775e5f173fbdac99a82bf19b1934d84b6988990c370a6ec664736f6c634300060b0033";
+    public static final String BINARY = "608060405234801561001057600080fd5b5060405161159e38038061159e8339818101604052608081101561003357600080fd5b50805160208201516040830151606090930151600080546001600160a01b039283166001600160a01b031991821617909155600180549483169482169490941790935560029190915560038054919093169116179055611506806100986000396000f3fe608060405234801561001057600080fd5b50600436106101375760003560e01c806361d0f54f116100b8578063891276e11161007c578063891276e1146103af57806397cedc76146103cc5780639cc51b23146103f1578063ac4ce2c614610414578063b93f9b0a14610440578063e2b6f3f31461045657610137565b806361d0f54f14610328578063634354661461034b5780636716b0ec1461037c5780637921381a1461039f57806382bc854b146103a757610137565b80633e06e621116100ff5780633e06e62114610227578063441abbac1461022757806347c9c2d51461025657806357bc2ef3146102735780635bf9755e1461030557610137565b8063011827fd1461013c57806311ce0267146101b55780632f8d2984146101d95780633507eaa71461020257806339fc06e01461021f575b600080fd5b6101b36004803603604081101561015257600080fd5b8135919081019060408101602082013564010000000081111561017457600080fd5b82018360208201111561018657600080fd5b803590602001918460018302840111640100000000831117156101a857600080fd5b50909250905061047f565b005b6101bd61051c565b604080516001600160a01b039092168252519081900360200190f35b6101b3600480360360608110156101ef57600080fd5b508035906020810135906040013561052b565b6101b36004803603602081101561021857600080fd5b5035610682565b6101b3610798565b6102446004803603602081101561023d57600080fd5b503561089f565b60408051918252519081900360200190f35b6101b36004803603602081101561026c57600080fd5b503561091e565b6102906004803603602081101561028957600080fd5b503561092d565b6040805160208082528351818301528351919283929083019185019080838360005b838110156102ca5781810151838201526020016102b2565b50505050905090810190601f1680156102f75780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6101b36004803603604081101561031b57600080fd5b5080359060200135610a6c565b6102446004803603604081101561033e57600080fd5b5080359060200135610be3565b6103686004803603602081101561036157600080fd5b5035610c89565b604080519115158252519081900360200190f35b6101b36004803603604081101561039257600080fd5b5080359060200135610d19565b610244610e8f565b6101b3610ea2565b6101b3600480360360208110156103c557600080fd5b5035610fcb565b6101b3600480360360408110156103e257600080fd5b50803590602001351515611177565b6102446004803603604081101561040757600080fd5b50803590602001356111f4565b6101b36004803603604081101561042a57600080fd5b50803590602001356001600160a01b0316611357565b6101bd6004803603602081101561023d57600080fd5b6101b36004803603606081101561046c57600080fd5b50803590602081013590604001356113a9565b6000546040805163011827fd60e01b81526004810186815260248201928352604482018590526001600160a01b039093169263011827fd928792879287929091606401848480828437600081840152601f19601f820116905080830192505050945050505050600060405180830381600087803b1580156104ff57600080fd5b505af1158015610513573d6000803e3d6000fd5b50505050505050565b6000546001600160a01b031681565b6000805460408051631106aeeb60e21b81526004810187905290516001600160a01b039092169163441abbac91602480820192602092909190829003018186803b15801561057857600080fd5b505afa15801561058c573d6000803e3d6000fd5b505050506040513d60208110156105a257600080fd5b505190508083106105f0576040805162461bcd60e51b8152602060048201526013602482015272496e646578206f7574206f6620626f756e647360681b604482015290519081900360640190fd5b6040805160208082018790528251808303820181528284018085528151919092012060008054632dfcbaaf60e11b909352878201604485015260648401879052935190936001600160a01b0390921692635bf9755e92608480830193919282900301818387803b15801561066357600080fd5b505af1158015610677573d6000803e3d6000fd5b505050505050505050565b600154600254600354604080516024808201879052825180830382018152604492830184526020810180516001600160e01b03166303d4197f60e41b17815293516392b2c33560e01b8152600481018781526001600160a01b03968716938201849052606094820194855282516064830152825196909816976392b2c335979693959294909390926084909201919080838360005b8381101561072f578181015183820152602001610717565b50505050905090810190601f16801561075c5780820380516001836020036101000a031916815260200191505b50945050505050600060405180830381600087803b15801561077d57600080fd5b505af1158015610791573d6000803e3d6000fd5b5050505050565b600154600254600354604080516004808252602480830184526020830180516001600160e01b03166306bfcdef60e11b17815293516392b2c33560e01b81529182018681526001600160a01b0395861691830182905260606044840190815284516064850152845196909816976392b2c33597969295919390926084909101919080838360005b8381101561083757818101518382015260200161081f565b50505050905090810190601f1680156108645780820380516001836020036101000a031916815260200191505b50945050505050600060405180830381600087803b15801561088557600080fd5b505af1158015610899573d6000803e3d6000fd5b50505050565b6000805460408051631106aeeb60e21b81526004810185905290516001600160a01b039092169163441abbac91602480820192602092909190829003018186803b1580156108ec57600080fd5b505afa158015610900573d6000803e3d6000fd5b505050506040513d602081101561091657600080fd5b505192915050565b61092a60045482610a6c565b50565b60008054604080516357bc2ef360e01b81526004810185905290516060936001600160a01b03909316926357bc2ef39260248082019391829003018186803b15801561097857600080fd5b505afa15801561098c573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f1916820160405260208110156109b557600080fd5b81019080805160405193929190846401000000008211156109d557600080fd5b9083019060208201858111156109ea57600080fd5b8251640100000000811182820188101715610a0457600080fd5b82525081516020918201929091019080838360005b83811015610a31578181015183820152602001610a19565b50505050905090810190601f168015610a5e5780820380516001836020036101000a031916815260200191505b506040525050509050919050565b6000805460408051632dfcbaaf60e11b8152600481018690526024810185905290516001600160a01b0390921692635bf9755e9260448084019382900301818387803b158015610abb57600080fd5b505af1925050508015610acc575060015b610bdf57610ad8611428565b80610ae35750610b68565b8060405162461bcd60e51b81526004018080602001828103825283818151815260200191508051906020019080838360005b83811015610b2d578181015183820152602001610b15565b50505050905090810190601f168015610b5a5780820380516001836020036101000a031916815260200191505b509250505060405180910390fd5b3d808015610b92576040519150601f19603f3d011682016040523d82523d6000602084013e610b97565b606091505b5060405162461bcd60e51b8152602060048201818152835160248401528351849391928392604401919085019080838360008315610b2d578181015183820152602001610b15565b5050565b6040805160208082018590528183018490528251808303840181526060830180855281519183019190912060008054631106aeeb60e21b90935260648501829052945190936001600160a01b039092169263441abbac9260848082019391829003018186803b158015610c5557600080fd5b505afa158015610c69573d6000803e3d6000fd5b505050506040513d6020811015610c7f57600080fd5b5051949350505050565b6000805460408051631106aeeb60e21b81526004810185905290516001600160a01b039092169163441abbac91602480820192602092909190829003018186803b158015610cd657600080fd5b505afa158015610cea573d6000803e3d6000fd5b505050506040513d6020811015610d0057600080fd5b5051600114610d10576000610d13565b60015b92915050565b6000805460408051631106aeeb60e21b81526004810186905290516001600160a01b039092169163441abbac91602480820192602092909190829003018186803b158015610d6657600080fd5b505afa158015610d7a573d6000803e3d6000fd5b505050506040513d6020811015610d9057600080fd5b50516040805160208181018790528251808303820181528284018085528151919092012060008054632dfcbaaf60e11b9093528186016044850152606484018890529351949550936001600160a01b0390911692635bf9755e926084808201939182900301818387803b158015610e0657600080fd5b505af1158015610e1a573d6000803e3d6000fd5b50506000805460408051632dfcbaaf60e11b8152600481018a905260018801602482015290516001600160a01b039092169450635bf9755e9350604480820193929182900301818387803b158015610e7157600080fd5b505af1158015610e85573d6000803e3d6000fd5b5050505050505050565b6000610e9c60045461089f565b90505b90565b600154600254600354604080516004808252602480830184526020830180516001600160e01b03166370e5872960e11b1781529351632388b54d60e21b81529182018681526001600160a01b039586169183018290526060604484019081528451606485015284516000999790971697638e22d5349790969395949293919260840191908083838d5b83811015610f43578181015183820152602001610f2b565b50505050905090810190601f168015610f705780820380516001836020036101000a031916815260200191505b5094505050505060206040518083038186803b158015610f8f57600080fd5b505afa158015610fa3573d6000803e3d6000fd5b505050506040513d6020811015610fb957600080fd5b505160045490915061092a9082610a6c565b6000805460408051631106aeeb60e21b81526004810185905290516001600160a01b039092169163441abbac91602480820192602092909190829003018186803b15801561101857600080fd5b505afa15801561102c573d6000803e3d6000fd5b505050506040513d602081101561104257600080fd5b5051905080611098576040805162461bcd60e51b815260206004820152601e60248201527f506f702063616c6c6564206f6e7a65726f206c656e6774682061727261790000604482015290519081900360640190fd5b6040805160208082018590528251808303820181528284018085528151919092012060008054632dfcbaaf60e11b909352858201604485015260648401819052935190936001600160a01b0390921692635bf9755e92608480830193919282900301818387803b15801561110b57600080fd5b505af115801561111f573d6000803e3d6000fd5b50506000805460408051632dfcbaaf60e11b8152600481018990526000198801602482015290516001600160a01b039092169450635bf9755e9350604480820193929182900301818387803b1580156104ff57600080fd5b6000546001600160a01b0316635bf9755e8383611195576000611198565b60015b6040518363ffffffff1660e01b8152600401808381526020018260ff16815260200192505050600060405180830381600087803b1580156111d857600080fd5b505af11580156111ec573d6000803e3d6000fd5b505050505050565b6000805460408051631106aeeb60e21b815260048101869052905183926001600160a01b03169163441abbac916024808301926020929190829003018186803b15801561124057600080fd5b505afa158015611254573d6000803e3d6000fd5b505050506040513d602081101561126a57600080fd5b505190508281116112b8576040805162461bcd60e51b8152602060048201526013602482015272496e646578206f7574206f6620626f756e647360681b604482015290519081900360640190fd5b604080516020808201879052825180830382018152828401808552815191830191909120600054631106aeeb60e21b909252878101604485015293516001600160a01b039091169263441abbac926064808301939192829003018186803b15801561132257600080fd5b505afa158015611336573d6000803e3d6000fd5b505050506040513d602081101561134c57600080fd5b505195945050505050565b6000805460408051632dfcbaaf60e11b8152600481018690526001600160a01b03858116602483015291519190921692635bf9755e926044808201939182900301818387803b1580156111d857600080fd5b604080516020808201869052818301859052825180830384018152606083018085528151919092012060008054632dfcbaaf60e11b9093526064840182905260848401869052935190936001600160a01b0390921692635bf9755e9260a480830193919282900301818387803b158015610e7157600080fd5b60e01c90565b600060443d101561143857610e9f565b600481823e6308c379a061144c8251611422565b1461145657610e9f565b6040513d600319016004823e80513d67ffffffffffffffff81602484011181841117156114865750505050610e9f565b828401915081519250808311156114a05750505050610e9f565b503d830160208383010111156114b857505050610e9f565b601f91909101601f191681016020016040529150509056fea2646970667358221220905036a7edfaf853417f72a9deb072eccd94df20bdb7bf02420134fc0e7552a564736f6c634300060b0033";
 
-    public static final String FUNC_GETVAL = "getVal";
+    public static final String FUNC_GETADDRESS = "getAddress";
 
-    public static final String FUNC_INCREMENTVAL = "incrementVal";
+    public static final String FUNC_GETARRAYLENGTH = "getArrayLength";
 
-    public static final String FUNC_LOCALVALUE = "localValue";
+    public static final String FUNC_GETARRAYVALUE = "getArrayValue";
 
-    public static final String FUNC_SETVAL = "setVal";
+    public static final String FUNC_GETBOOL = "getBool";
+
+    public static final String FUNC_GETBYTES = "getBytes";
+
+    public static final String FUNC_GETLOCALVAL = "getLocalVal";
+
+    public static final String FUNC_GETMAPVALUE = "getMapValue";
+
+    public static final String FUNC_GETREMOTEVAL = "getRemoteVal";
+
+    public static final String FUNC_GETUINT256 = "getUint256";
+
+    public static final String FUNC_INCREMENTREMOTEVAL = "incrementRemoteVal";
+
+    public static final String FUNC_POPARRAYVALUE = "popArrayValue";
+
+    public static final String FUNC_PUSHARRAYVALUE = "pushArrayValue";
+
+    public static final String FUNC_SETADDRESS = "setAddress";
+
+    public static final String FUNC_SETARRAYVALUE = "setArrayValue";
+
+    public static final String FUNC_SETBOOL = "setBool";
+
+    public static final String FUNC_SETBYTES = "setBytes";
+
+    public static final String FUNC_SETLOCALVAL = "setLocalVal";
+
+    public static final String FUNC_SETMAPVALUE = "setMapValue";
+
+    public static final String FUNC_SETUINT256 = "setUint256";
+
+    public static final String FUNC_SETVALREMOTE = "setValRemote";
+
+    public static final String FUNC_STORAGECONTRACT = "storageContract";
 
     @Deprecated
     protected RootBlockchainContract(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
@@ -56,64 +93,351 @@ public class RootBlockchainContract extends Contract {
         super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
-    public RemoteFunctionCall<BigInteger> getVal() {
-        final Function function = new Function(FUNC_GETVAL, 
+    public RemoteFunctionCall<String> getAddress(BigInteger _key) {
+        final Function function = new Function(FUNC_GETADDRESS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
+    }
+
+    public String getRLP_getAddress(BigInteger _key) {
+        final Function function = new Function(
+                FUNC_GETADDRESS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<BigInteger> getArrayLength(BigInteger _key) {
+        final Function function = new Function(FUNC_GETARRAYLENGTH, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public String getRLP_getArrayLength(BigInteger _key) {
+        final Function function = new Function(
+                FUNC_GETARRAYLENGTH, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<BigInteger> getArrayValue(BigInteger _key, BigInteger _index) {
+        final Function function = new Function(FUNC_GETARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_index)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public String getRLP_getArrayValue(BigInteger _key, BigInteger _index) {
+        final Function function = new Function(
+                FUNC_GETARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_index)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<Boolean> getBool(BigInteger _key) {
+        final Function function = new Function(FUNC_GETBOOL, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
+        return executeRemoteCallSingleValueReturn(function, Boolean.class);
+    }
+
+    public String getRLP_getBool(BigInteger _key) {
+        final Function function = new Function(
+                FUNC_GETBOOL, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<byte[]> getBytes(BigInteger _key) {
+        final Function function = new Function(FUNC_GETBYTES, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<DynamicBytes>() {}));
+        return executeRemoteCallSingleValueReturn(function, byte[].class);
+    }
+
+    public String getRLP_getBytes(BigInteger _key) {
+        final Function function = new Function(
+                FUNC_GETBYTES, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<BigInteger> getLocalVal() {
+        final Function function = new Function(FUNC_GETLOCALVAL, 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public String getRLP_getVal() {
+    public String getRLP_getLocalVal() {
         final Function function = new Function(
-                FUNC_GETVAL, 
+                FUNC_GETLOCALVAL, 
                 Arrays.<Type>asList(), 
                 Collections.<TypeReference<?>>emptyList());
         return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> incrementVal() {
-        final Function function = new Function(
-                FUNC_INCREMENTVAL, 
-                Arrays.<Type>asList(), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
-    public String getRLP_incrementVal() {
-        final Function function = new Function(
-                FUNC_INCREMENTVAL, 
-                Arrays.<Type>asList(), 
-                Collections.<TypeReference<?>>emptyList());
-        return org.web3j.abi.FunctionEncoder.encode(function);
-    }
-
-    public RemoteFunctionCall<BigInteger> localValue() {
-        final Function function = new Function(FUNC_LOCALVALUE, 
-                Arrays.<Type>asList(), 
+    public RemoteFunctionCall<BigInteger> getMapValue(BigInteger _key, BigInteger _mapKey) {
+        final Function function = new Function(FUNC_GETMAPVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_mapKey)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public String getRLP_localValue() {
+    public String getRLP_getMapValue(BigInteger _key, BigInteger _mapKey) {
         final Function function = new Function(
-                FUNC_LOCALVALUE, 
+                FUNC_GETMAPVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_mapKey)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> getRemoteVal() {
+        final Function function = new Function(
+                FUNC_GETREMOTEVAL, 
+                Arrays.<Type>asList(), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_getRemoteVal() {
+        final Function function = new Function(
+                FUNC_GETREMOTEVAL, 
                 Arrays.<Type>asList(), 
                 Collections.<TypeReference<?>>emptyList());
         return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> setVal(BigInteger _val) {
+    public RemoteFunctionCall<BigInteger> getUint256(BigInteger _key) {
+        final Function function = new Function(FUNC_GETUINT256, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public String getRLP_getUint256(BigInteger _key) {
         final Function function = new Function(
-                FUNC_SETVAL, 
+                FUNC_GETUINT256, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> incrementRemoteVal() {
+        final Function function = new Function(
+                FUNC_INCREMENTREMOTEVAL, 
+                Arrays.<Type>asList(), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_incrementRemoteVal() {
+        final Function function = new Function(
+                FUNC_INCREMENTREMOTEVAL, 
+                Arrays.<Type>asList(), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> popArrayValue(BigInteger _key) {
+        final Function function = new Function(
+                FUNC_POPARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_popArrayValue(BigInteger _key) {
+        final Function function = new Function(
+                FUNC_POPARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> pushArrayValue(BigInteger _key, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_PUSHARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_pushArrayValue(BigInteger _key, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_PUSHARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setAddress(BigInteger _key, String _address) {
+        final Function function = new Function(
+                FUNC_SETADDRESS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.Address(160, _address)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setAddress(BigInteger _key, String _address) {
+        final Function function = new Function(
+                FUNC_SETADDRESS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.Address(160, _address)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setArrayValue(BigInteger _key, BigInteger _index, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_index), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setArrayValue(BigInteger _key, BigInteger _index, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETARRAYVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_index), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setBool(BigInteger _key, Boolean _flag) {
+        final Function function = new Function(
+                FUNC_SETBOOL, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.Bool(_flag)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setBool(BigInteger _key, Boolean _flag) {
+        final Function function = new Function(
+                FUNC_SETBOOL, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.Bool(_flag)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setBytes(BigInteger _key, byte[] _val) {
+        final Function function = new Function(
+                FUNC_SETBYTES, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.DynamicBytes(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setBytes(BigInteger _key, byte[] _val) {
+        final Function function = new Function(
+                FUNC_SETBYTES, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.DynamicBytes(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setLocalVal(BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETLOCALVAL, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_val)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public String getRLP_setVal(BigInteger _val) {
+    public String getRLP_setLocalVal(BigInteger _val) {
         final Function function = new Function(
-                FUNC_SETVAL, 
+                FUNC_SETLOCALVAL, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setMapValue(BigInteger _key, BigInteger _mapKey, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETMAPVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_mapKey), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setMapValue(BigInteger _key, BigInteger _mapKey, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETMAPVALUE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_mapKey), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setUint256(BigInteger _key, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETUINT256, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setUint256(BigInteger _key, BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETUINT256, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_key), 
+                new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> setValRemote(BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETVALREMOTE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_setValRemote(BigInteger _val) {
+        final Function function = new Function(
+                FUNC_SETVALREMOTE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_val)), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<String> storageContract() {
+        final Function function = new Function(FUNC_STORAGECONTRACT, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
+    }
+
+    public String getRLP_storageContract() {
+        final Function function = new Function(
+                FUNC_STORAGECONTRACT, 
+                Arrays.<Type>asList(), 
                 Collections.<TypeReference<?>>emptyList());
         return org.web3j.abi.FunctionEncoder.encode(function);
     }
@@ -136,33 +460,37 @@ public class RootBlockchainContract extends Contract {
         return new RootBlockchainContract(contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
-    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract) {
+    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract, String _storageContract) {
         String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _crossBlockchainControl), 
                 new org.web3j.abi.datatypes.generated.Uint256(_otherBlockchainId), 
-                new org.web3j.abi.datatypes.Address(160, _otherContract)));
+                new org.web3j.abi.datatypes.Address(160, _otherContract), 
+                new org.web3j.abi.datatypes.Address(160, _storageContract)));
         return deployRemoteCall(RootBlockchainContract.class, web3j, credentials, contractGasProvider, BINARY, encodedConstructor);
     }
 
-    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract) {
+    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract, String _storageContract) {
         String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _crossBlockchainControl), 
                 new org.web3j.abi.datatypes.generated.Uint256(_otherBlockchainId), 
-                new org.web3j.abi.datatypes.Address(160, _otherContract)));
+                new org.web3j.abi.datatypes.Address(160, _otherContract), 
+                new org.web3j.abi.datatypes.Address(160, _storageContract)));
         return deployRemoteCall(RootBlockchainContract.class, web3j, transactionManager, contractGasProvider, BINARY, encodedConstructor);
     }
 
     @Deprecated
-    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract) {
+    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract, String _storageContract) {
         String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _crossBlockchainControl), 
                 new org.web3j.abi.datatypes.generated.Uint256(_otherBlockchainId), 
-                new org.web3j.abi.datatypes.Address(160, _otherContract)));
+                new org.web3j.abi.datatypes.Address(160, _otherContract), 
+                new org.web3j.abi.datatypes.Address(160, _storageContract)));
         return deployRemoteCall(RootBlockchainContract.class, web3j, credentials, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 
     @Deprecated
-    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract) {
+    public static RemoteCall<RootBlockchainContract> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, String _crossBlockchainControl, BigInteger _otherBlockchainId, String _otherContract, String _storageContract) {
         String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _crossBlockchainControl), 
                 new org.web3j.abi.datatypes.generated.Uint256(_otherBlockchainId), 
-                new org.web3j.abi.datatypes.Address(160, _otherContract)));
+                new org.web3j.abi.datatypes.Address(160, _otherContract), 
+                new org.web3j.abi.datatypes.Address(160, _storageContract)));
         return deployRemoteCall(RootBlockchainContract.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 }
