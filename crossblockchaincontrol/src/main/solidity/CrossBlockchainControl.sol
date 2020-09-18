@@ -19,6 +19,7 @@ import "./CrossBlockchainControlInterface.sol";
 
 contract CrossBlockchainControl is CrossBlockchainControlInterface {
     uint256 public override myBlockchainId;
+    address public txReceiptRootStorage;
 
     // Mapping of cross-blockchain transaction id to time-out block time stamp.
     mapping (uint256=> uint256) public override  timeout;
@@ -36,8 +37,9 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
     address[] private activeCallLockedContracts;
 
 
-    constructor(uint256 _myBlockchainId) public {
+    constructor(uint256 _myBlockchainId, address _txReceiptRootStorage) public {
         myBlockchainId = _myBlockchainId;
+        txReceiptRootStorage = _txReceiptRootStorage;
     }
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external override {

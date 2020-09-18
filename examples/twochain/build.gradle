@@ -9,7 +9,11 @@ repositories {
 }
 
 dependencies {
+    compile project (':crypto')
+    compile project (':blockheader')
     compile project (':lockablestorage')
+    compile project (':crossblockchaincontrol')
+    compile project (':registrar')
 
     compile group: 'com.google.guava', name: 'guava', version: '14.0'
     compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.12.0'
