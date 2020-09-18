@@ -32,14 +32,25 @@ contract RootBlockchainContract is LockableStorageWrapper {
         otherContract = OtherBlockchainContractInterface(_otherContract);
     }
 
-    function setValRemote(uint256 _val) external {
-        crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
-            abi.encodeWithSelector(otherContract.setVal.selector, _val));
+    function someComplexBusinessLogic(uint256 _val) external {
+        // Use the value on the other blockchain as a threshold
+        uint256 currentThreshold = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(
+            otherBlockchainId, address(otherContract), abi.encodeWithSelector(otherContract.getVal.selector));
+
+        if (_val > currentThreshold) {
+            crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
+                abi.encodeWithSelector(otherContract.setValues.selector, _val, currentThreshold));
+            setLocalVal(currentThreshold);
+        }
+        else {
+            setValRemote(1);
+            setLocalVal(_val);
+        }
     }
 
-    function incrementRemoteVal() external {
+    function setValRemote(uint256 _val) public {
         crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
-            abi.encodeWithSelector(otherContract.incrementVal.selector));
+            abi.encodeWithSelector(otherContract.setVal.selector, _val));
     }
 
     function getRemoteVal() external {
@@ -48,7 +59,7 @@ contract RootBlockchainContract is LockableStorageWrapper {
         setUint256(KEY_LOCAL_UINT, val);
     }
 
-    function setLocalVal(uint256 _val) external {
+    function setLocalVal(uint256 _val) public {
         setUint256(KEY_LOCAL_UINT, _val);
     }
 

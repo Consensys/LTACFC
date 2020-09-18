@@ -10,6 +10,7 @@ repositories {
 
 dependencies {
     compile project (':crypto')
+    compile project (':rlp')
     compile project (':blockheader')
     compile project (':lockablestorage')
     compile project (':crossblockchaincontrol')

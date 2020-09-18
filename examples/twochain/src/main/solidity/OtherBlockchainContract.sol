@@ -23,7 +23,7 @@ contract OtherBlockchainContract is OtherBlockchainContractInterface, LockableSt
     }
 
 
-    function setVal(uint256 _val) external override {
+    function setVal(uint256 _val) public override {
         setUint256(KEY_FOR_VAL, _val);
     }
 
@@ -32,6 +32,11 @@ contract OtherBlockchainContract is OtherBlockchainContractInterface, LockableSt
         aVal++;
         setUint256(KEY_FOR_VAL, aVal);
     }
+
+    function setValues(uint256 _val1, uint256 _val2) external override {
+        setVal(_val1 + _val2);
+    }
+
 
     function getVal() external override view returns(uint256) {
         return getUint256(KEY_FOR_VAL);

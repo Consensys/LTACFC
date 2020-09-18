@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.TransactionManager;
@@ -35,7 +36,7 @@ public class RootBc extends AbstractBlockchain {
   }
 
 
-  protected void deployContracts(BigInteger otherBlockchainId, String otherContractAddress) throws Exception {
+  public void deployContracts(BigInteger otherBlockchainId, String otherContractAddress) throws Exception {
     LOG.info("Deploy Root Blockchain Contracts");
     deployContracts();
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.freeGasProvider,
@@ -47,5 +48,16 @@ public class RootBc extends AbstractBlockchain {
             otherContractAddress,
             this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.rootBlockchainContract.getContractAddress()).send();
+  }
+
+  public String getRlpFunctionSignature_SomeComplexBusinessLogic(BigInteger val) {
+    return this.rootBlockchainContract.getRLP_someComplexBusinessLogic(val);
+  }
+
+  public TransactionReceipt start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
+    LOG.info("TxId: {}", transactionId.toString(16));
+    LOG.info("Timeout: {}", timeout);
+    LOG.info("Call Graph: {}", callGraph);
+    return this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
   }
 }

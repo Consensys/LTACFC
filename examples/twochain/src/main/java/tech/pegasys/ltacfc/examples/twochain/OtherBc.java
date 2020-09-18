@@ -19,6 +19,7 @@ import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class OtherBc extends AbstractBlockchain {
@@ -46,4 +47,22 @@ public class OtherBc extends AbstractBlockchain {
           this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.otherBlockchainContract.getContractAddress()).send();
   }
+
+  public void setVal(BigInteger val) throws Exception {
+    this.otherBlockchainContract.setVal(val).send();
+  }
+
+  public String getRlpFunctionSignature_GetVal() {
+    return this.otherBlockchainContract.getRLP_getVal();
+  }
+
+  public String getRlpFunctionSignature_SetVal(BigInteger val) {
+    return this.otherBlockchainContract.getRLP_setVal(val);
+  }
+
+  public String getRlpFunctionSignature_SetValues(BigInteger val1, BigInteger val2) {
+    return this.otherBlockchainContract.getRLP_setValues(val1, val2);
+  }
+
+
 }
