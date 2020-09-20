@@ -2,19 +2,27 @@ package tech.pegasys.ltacfc.examples.twochain;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.Sign;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
+import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
+import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
 import java.security.DrbgParameters;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.security.DrbgParameters.Capability.RESEED_ONLY;
 
@@ -35,6 +43,11 @@ public class Main {
     RootBc rootBlockchain = new RootBc();
     rootBlockchain.setupWeb3(creds);
     rootBlockchain.deployContracts(otherBcId, otherContractAddress);
+
+    AnIdentity signer = new AnIdentity();
+    otherBlockchain.registerSigner(signer);
+    rootBlockchain.registerSigner(signer);
+
 
     // Create simulators
     SimOtherContract simOtherContract = new SimOtherContract();
@@ -89,7 +102,17 @@ public class Main {
     BigInteger crossBlockchainTransactionId1 = new BigInteger(255, rand);
     BigInteger timeout = BigInteger.valueOf(100);
 
+    LOG.info("start");
     TransactionReceipt startTxReceipt = rootBlockchain.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
+    byte[] transactionReceiptRoot = rootBlockchain.getTransactionReceiptRoot(startTxReceipt);
+    Log startEventLog = startTxReceipt.getLogs().get(0);
+    String eventData = startEventLog.getData();
+    LOG.info("Event Data: {}", eventData);
+
+    otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, transactionReceiptRoot);
+    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, transactionReceiptRoot);
+
+//    otherBlockchain.segment(transactionReceiptRoot, );
 
     //TODO
 

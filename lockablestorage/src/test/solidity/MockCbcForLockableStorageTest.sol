@@ -55,15 +55,15 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
 
     }
 
-    function segment(uint256, bytes calldata, bytes calldata, uint256[] calldata) external override {
+    function segment(bytes32, bytes calldata, bytes calldata, uint256[] calldata) external override {
 
     }
 
-    function signalling(uint256, bytes calldata) external override view {
+    function signalling(bytes32, bytes calldata) external override view {
 
     }
 
-    function close(uint256, bytes calldata) external override view {
+    function close(bytes32, bytes calldata) external override view {
 
     }
 

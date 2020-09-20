@@ -19,7 +19,7 @@ import org.web3j.crypto.Sign;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.test.TestIdentity;
+import tech.pegasys.ltacfc.common.AnIdentity;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner = new TestIdentity();
+    AnIdentity newSigner = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
@@ -63,8 +63,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner1 = new TestIdentity();
-    TestIdentity newSigner2 = new TestIdentity();
+    AnIdentity newSigner1 = new AnIdentity();
+    AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
@@ -101,7 +101,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner = new TestIdentity();
+    AnIdentity newSigner = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
@@ -134,8 +134,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner1 = new TestIdentity();
-    TestIdentity newSigner2 = new TestIdentity();
+    AnIdentity newSigner1 = new AnIdentity();
+    AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
@@ -166,8 +166,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner1 = new TestIdentity();
-    TestIdentity newSigner2 = new TestIdentity();
+    AnIdentity newSigner1 = new AnIdentity();
+    AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
@@ -205,8 +205,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner1 = new TestIdentity();
-    TestIdentity newSigner2 = new TestIdentity();
+    AnIdentity newSigner1 = new AnIdentity();
+    AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
@@ -244,8 +244,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner1 = new TestIdentity();
-    TestIdentity newSigner2 = new TestIdentity();
+    AnIdentity newSigner1 = new AnIdentity();
+    AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
@@ -283,8 +283,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     deployRegistrarContract();
     BigInteger blockchainId = BigInteger.TEN;
     addBlockchain(blockchainId);
-    TestIdentity newSigner1 = new TestIdentity();
-    TestIdentity newSigner2 = new TestIdentity();
+    AnIdentity newSigner1 = new AnIdentity();
+    AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();

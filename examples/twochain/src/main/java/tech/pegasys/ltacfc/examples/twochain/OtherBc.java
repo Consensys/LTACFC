@@ -1,5 +1,6 @@
 package tech.pegasys.ltacfc.examples.twochain;
 
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
@@ -20,6 +21,7 @@ import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
 import java.util.BitSet;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class OtherBc extends AbstractBlockchain {
@@ -64,5 +66,13 @@ public class OtherBc extends AbstractBlockchain {
     return this.otherBlockchainContract.getRLP_setValues(val1, val2);
   }
 
+  public void segment(byte[] startEventReceiptRoot, byte[] startEvent, List<BigInteger> callPath) throws Exception {
+
+
+    byte[] proof = null;
+
+    this.crossBlockchainControlContract.segment(startEventReceiptRoot, startEvent, proof, callPath).send();
+
+  }
 
 }

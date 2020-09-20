@@ -40,6 +40,7 @@ public class KeyPairGen {
   private final KeyPairGenerator keyPairGenerator;
 
   public KeyPairGen() {
+    // TODO don't create a PRNG each call
     try {
       final SecureRandom rand = SecureRandom.getInstance("DRBG",
           DrbgParameters.instantiation(256, RESEED_ONLY, getPersonalizationString()));

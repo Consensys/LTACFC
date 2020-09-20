@@ -49,7 +49,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
         emit Start(_crossBlockchainTransactionId, _timeout, _callGraph);
     }
 
-    function segment(uint256 /*_startEventBlockHash*/, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external override {
+    function segment(bytes32 /* _startEventTxReceiptRoot */, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external override {
 //        require(crossBlockchainTransactionExists(_crossBlockchainTransactionId));
         activeCallRootBlockchainId = extractFromStartEventRootBlockchainId(_startEvent);
         // TODO validate _startEvent using activeCallRootBlockchainId, _proof, _startEvent
@@ -69,11 +69,11 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
         delete activeCallRootBlockchainId;
     }
 
-    function signalling(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external override  view {
+    function signalling(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
 
     }
 
-    function close(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external override  view {
+    function close(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
 
     }
 

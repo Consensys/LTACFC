@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.test;
+package tech.pegasys.ltacfc.common;
 
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Keys;
@@ -22,11 +22,11 @@ import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
 
-public class TestIdentity {
+public class AnIdentity {
   private ECKeyPair keyPair;
   private String address;
 
-  public TestIdentity() {
+  public AnIdentity() {
     KeyPairGen keyGen = new KeyPairGen();
     String privateKey = keyGen.generateKeyPairGetPrivateKey();
     this.keyPair = ECKeyPair.create(Numeric.toBigInt(privateKey));

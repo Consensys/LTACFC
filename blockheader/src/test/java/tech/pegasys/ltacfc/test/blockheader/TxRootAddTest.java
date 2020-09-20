@@ -33,9 +33,8 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.RawTransactionManager;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.rlp.RlpDumper;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
-import tech.pegasys.ltacfc.test.TestIdentity;
+import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.test.blockheader.soliditywrappers.TestEvents;
 import tech.pegasys.ltacfc.test.registrar.AbstractRegistrarTest;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
@@ -43,7 +42,6 @@ import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTri
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.SimpleMerklePatriciaTrie;
 
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +70,7 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     addBlockchain(blockchainId);
 
     // Set-up one signer for the blockchain
-    TestIdentity newSigner = new TestIdentity();
+    AnIdentity newSigner = new AnIdentity();
     TransactionReceipt receipt = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
     assert(receipt.isStatusOK());
@@ -132,7 +130,7 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     addBlockchain(sourceBlockchainId);
 
     // Set-up one signer for the blockchain
-    TestIdentity newSigner = new TestIdentity();
+    AnIdentity newSigner = new AnIdentity();
     TransactionReceipt receipt1 = this.registrarContract.proposeVote(
         RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), sourceBlockchainId, newSigner.getAddressAsBigInt()).send();
     assert(receipt1.isStatusOK());

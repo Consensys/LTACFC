@@ -19,11 +19,11 @@ interface CrossBlockchainControlInterface {
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external;
 
-    function segment(uint256 /*_startEventBlockHash*/, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external;
+    function segment(bytes32 _startEventTxReceiptRoot, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external;
 
-    function signalling(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view;
+    function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 
-    function close(uint256 /* _startEventBlockHash */, bytes calldata /* _startEvent */) external view;
+    function close(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 
     function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external;
 
