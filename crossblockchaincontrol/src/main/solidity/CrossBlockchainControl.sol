@@ -13,13 +13,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 pragma solidity >=0.6.9;
+pragma experimental ABIEncoderV2;
 
 import "./CrossBlockchainControlInterface.sol";
+import "../../../../blockheader/src/main/solidity/TxReceiptsRootStorageInterface.sol";
+import "../../../../receipts/src/main/solidity/Receipts.sol";
 
 
-contract CrossBlockchainControl is CrossBlockchainControlInterface {
+contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
+    bytes32 constant private START_EVENT_SIGNATURE = keccak256("Start(uint256,uint256,bytes)");
+
+
+    event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
+    event Segment(uint256 _rootBlockchain, uint256 _crossBlockchainTransactionId, uint256[] _callPath,
+        address[] _lockedContracts, bytes _returnValue);
+    event Signalling(uint256 _crossBlockchainTransactionId);
+    event Close(uint256 _crossBlockchainTransactionId);
+
+
     uint256 public override myBlockchainId;
-    address public txReceiptRootStorage;
+    TxReceiptsRootStorageInterface public txReceiptRootStorage;
 
     // Mapping of cross-blockchain transaction id to time-out block time stamp.
     mapping (uint256=> uint256) public override  timeout;
@@ -29,8 +42,10 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
     // Storage variables that are just stored for the life of a transaction. They need to
     // be available in storage as code calls back into this contract.
     // TODO some of these will be able to be stored in memory
-    uint256 private activeCallRootBlockchainId;
-    uint256 private activeCallCrossBlockchainTransactionId;
+    uint256 public activeCallRootBlockchainId;
+    uint256 public activeCallCrossBlockchainTransactionId;
+    bytes public activeCall;
+//    uint256 public tempActiveTimeout;
     uint256[] private activeCallsCallPath;
     mapping(address => bool) private activeCallLockedContractsMap;
 
@@ -39,7 +54,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
 
     constructor(uint256 _myBlockchainId, address _txReceiptRootStorage) public {
         myBlockchainId = _myBlockchainId;
-        txReceiptRootStorage = _txReceiptRootStorage;
+        txReceiptRootStorage = TxReceiptsRootStorageInterface(_txReceiptRootStorage);
     }
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external override {
@@ -49,24 +64,42 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
         emit Start(_crossBlockchainTransactionId, _timeout, _callGraph);
     }
 
-    function segment(bytes32 /* _startEventTxReceiptRoot */, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external override {
-//        require(crossBlockchainTransactionExists(_crossBlockchainTransactionId));
-        activeCallRootBlockchainId = extractFromStartEventRootBlockchainId(_startEvent);
-        // TODO validate _startEvent using activeCallRootBlockchainId, _proof, _startEvent
 
-        uint256 targetBlockchainId = extractFromStartEventTargetBlockchainId(_startEvent, _callPath);
-        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
+    function segment(
+        uint256 _rootBlockchainId, address _rootCBCContract,
+        bytes32 _startEventTxReceiptRoot, bytes calldata _encodedStartTxReceipt,
+        uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external override {
 
-        activeCallCrossBlockchainTransactionId = extractFromStartEventTransactionId(_startEvent);
-        // TODO use transaction id in conjunction with callPath to prevent replay attacks
+        txReceiptRootStorage.verify(_rootBlockchainId, _startEventTxReceiptRoot, _encodedStartTxReceipt,
+            _proofOffsets, _proof);
+
+        bytes memory _encodedStartTxReceiptLocal = _encodedStartTxReceipt;
+        RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedStartTxReceiptLocal));
+        bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
+        (RLP.RLPItem[] memory startEventTopics, bytes memory startEventData) =
+            extractEvent(_rootCBCContract, START_EVENT_SIGNATURE, receiptBytes);
+
+        activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
+        //tempActiveTimeout = BytesUtil.bytesToUint256(startEventData, 0x20);
+        activeCall = startEventData;
+
+//
+//        activeCallRootBlockchainId = extractFromStartEventRootBlockchainId(startEvent);
+//        require(activeCallRootBlockchainId == _rootBlockchainId);
+//
+//        uint256 targetBlockchainId = extractFromStartEventTargetBlockchainId(startEvent, _callPath);
+//        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
+//
+//        activeCallCrossBlockchainTransactionId = extractFromStartEventTransactionId(_startEvent);
+//        // TODO use transaction id in conjunction with callPath to prevent replay attacks
         activeCallsCallPath = _callPath;
-
-        address targetContract = extractFromStartEventTargetContract(_startEvent, _callPath);
-        bytes memory functionCall = extractFromStartEventFunctionCall(_startEvent, _callPath);
-
-        execute(targetContract, functionCall);
-
-        delete activeCallRootBlockchainId;
+//
+//        address targetContract = extractFromStartEventTargetContract(_startEvent, _callPath);
+//        bytes memory functionCall = extractFromStartEventFunctionCall(_startEvent, _callPath);
+//
+//        execute(targetContract, functionCall);
+//
+//        delete activeCallRootBlockchainId;
     }
 
     function signalling(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
@@ -120,7 +153,6 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
     }
 
 
-
     function extractFromStartEventRootBlockchainId(bytes calldata /* _startEvent */) private pure returns (uint256) {
         // TODO
         return 0;
@@ -166,10 +198,5 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface {
             activeCallLockedContracts, returnValueEncoded);
     }
 
-    event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
-    event Segment(uint256 _rootBlockchain, uint256 _crossBlockchainTransactionId, uint256[] _callPath,
-        address[] _lockedContracts, bytes _returnValue);
-    event Signalling(uint256 _crossBlockchainTransactionId);
-    event Close(uint256 _crossBlockchainTransactionId);
 
 }

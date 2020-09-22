@@ -34,4 +34,24 @@ abstract contract BytesUtil {
         return out;
     }
 
+    // Starting point was this, but with some modifications.
+    // https://ethereum.stackexchange.com/questions/49185/solidity-conversion-bytes-memory-to-uint
+    function bytesToUint256(bytes memory _b, uint256 _startOffset) internal pure returns (uint256) {
+        require(_b.length >= _startOffset + 32, "slicing out of range");
+        uint256 x;
+        assembly {
+            x := mload(add(_b, add(32, _startOffset)))
+        }
+        return x;
+    }
+
+    function bytesToUint64(bytes memory _b, uint256 _startOffset) internal pure returns (uint64) {
+        require(_b.length >= _startOffset + 8, "slicing out of range");
+        uint256 x;
+        assembly {
+            x := mload(add(_b, add(8, _startOffset)))
+        }
+        return uint64(x);
+    }
+
 }

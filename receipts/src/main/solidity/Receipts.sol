@@ -30,7 +30,7 @@ contract Receipts is RLP, BytesUtil {
      * @return topics The topics associated with the event.
      * @return data The RLP encoded data associated with the event.
      */
-    function retrieveLog(address _contractAddress, bytes32 _eventFunctionSignature, bytes memory _receiptRlp)
+    function extractEvent(address _contractAddress, bytes32 _eventFunctionSignature, bytes memory _receiptRlp)
        internal pure returns (RLP.RLPItem[] memory topics, bytes memory data) {
         // Decode the receipt into an array of RLP items.
         //  receipt[0]: state root or status

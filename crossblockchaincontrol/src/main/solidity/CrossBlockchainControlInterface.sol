@@ -13,13 +13,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 pragma solidity >=0.6.9;
-
+pragma experimental ABIEncoderV2;
 
 interface CrossBlockchainControlInterface {
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external;
 
-    function segment(bytes32 _startEventTxReceiptRoot, bytes calldata _startEvent, bytes calldata /*_proof*/, uint256[] calldata _callPath) external;
+    function segment(
+        uint256 _rootBlockchainId, address _rootCBCContract,
+        bytes32 _startEventTxReceiptRoot, bytes calldata _startTxReceipt,
+        uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external;
 
     function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 

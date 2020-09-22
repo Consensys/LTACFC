@@ -26,14 +26,14 @@ contract TestReceipts is Receipts {
 
     function retrieveStartLog(address _contractAddress, bytes memory _receiptRlp)
       external pure returns (bytes memory){
-        (, bytes memory data) = retrieveLog(_contractAddress, startEventFunctionSignature, _receiptRlp);
+        (, bytes memory data) = extractEvent(_contractAddress, startEventFunctionSignature, _receiptRlp);
         return data;
     }
 
 
     function retrieveALog(address _contractAddress, bytes32 _eventFunctionSignature, bytes memory _receiptRlp)
        external pure returns (bytes memory){
-        (, bytes memory data) = retrieveLog(_contractAddress, _eventFunctionSignature, _receiptRlp);
+        (, bytes memory data) = extractEvent(_contractAddress, _eventFunctionSignature, _receiptRlp);
         return data;
     }
 

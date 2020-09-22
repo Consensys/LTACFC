@@ -12,6 +12,7 @@ dependencies {
     compile project (':common')
     compile project (':crypto')
     compile project (':rlp')
+    compile project (':receipts')
     compile project (':blockheader')
     compile project (':lockablestorage')
     compile project (':crossblockchaincontrol')

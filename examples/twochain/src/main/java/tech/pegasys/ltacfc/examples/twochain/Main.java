@@ -2,8 +2,14 @@ package tech.pegasys.ltacfc.examples.twochain;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
+import org.hyperledger.besu.ethereum.core.Hash;
+import org.hyperledger.besu.ethereum.core.LogTopic;
+import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
+import org.web3j.abi.EventEncoder;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -13,9 +19,12 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import tech.pegasys.ltacfc.common.AnIdentity;
+import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
+import tech.pegasys.ltacfc.rlp.RlpDumper;
+import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
@@ -107,13 +116,48 @@ public class Main {
     byte[] transactionReceiptRoot = rootBlockchain.getTransactionReceiptRoot(startTxReceipt);
     Log startEventLog = startTxReceipt.getLogs().get(0);
     String eventData = startEventLog.getData();
+    LOG.info("Event Address: {}", startEventLog.getAddress());
+    LOG.info("Event Topics length: {}", startEventLog.getTopics().size());
+    LOG.info("Event Topics(0): {}", startEventLog.getTopics().get(0));
     LOG.info("Event Data: {}", eventData);
+
+    List<CrossBlockchainControl.StartEventResponse> startEventResponses = rootBlockchain.crossBlockchainControlContract.getStartEvents(startTxReceipt);
+    for (CrossBlockchainControl.StartEventResponse startEventResponse: startEventResponses) {
+      LOG.info("TxId: {}", startEventResponse._crossBlockchainTransactionId.toString(16));
+      LOG.info("Timeout: {}", startEventResponse._timeout.toString(16));
+      LOG.info("Call Graph: {}", new BigInteger(1, startEventResponse._callGraph).toString(16));
+    }
+
 
     otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, transactionReceiptRoot);
     rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, transactionReceiptRoot);
 
-//    otherBlockchain.segment(transactionReceiptRoot, );
+    LOG.info("Start Event encoded: {}", EventEncoder.encode(CrossBlockchainControl.START_EVENT));
+    LOG.info("Root BC CBS Address: {}", rootBlockchain.crossBlockchainControlContract.getContractAddress());
 
+    Tuple<List<byte[]>, List<BigInteger>, byte[]> retVal = rootBlockchain.getProofForTxReceipt(startTxReceipt);
+    List<byte[]> proof = retVal.getFirst();
+    List<BigInteger> proofOffsets = retVal.getSecond();
+    byte[] encodedStartTxReceiptBytes = retVal.getThird();
+
+    RLPInput rlpIn = RLP.input(Bytes.wrap(encodedStartTxReceiptBytes));
+    rlpIn.enterList();
+    rlpIn.readBytes();
+    Bytes rec = rlpIn.readBytes();
+    LOG.info("outer");
+    RlpDumper.dump(RLP.input(Bytes.wrap(encodedStartTxReceiptBytes)));
+    LOG.info("inner");
+    RlpDumper.dump(RLP.input(rec));
+
+
+
+    List<BigInteger> callPath = new ArrayList<>();
+    callPath.add(BigInteger.ONE);
+
+
+    otherBlockchain.segment(
+        rootBlockchain.blockchainId, rootBlockchain.crossBlockchainControlContract.getContractAddress(),
+        transactionReceiptRoot, encodedStartTxReceiptBytes, proofOffsets, proof, callPath);
     //TODO
 
 
@@ -160,8 +204,4 @@ public class Main {
 //    System.out.println("Priv2: " + privateKey);
     return Credentials.create(privateKey);
   }
-
-
-
-
 }

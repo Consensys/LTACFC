@@ -13,6 +13,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 pragma solidity >=0.6.9;
+pragma experimental ABIEncoderV2;
 
 import "../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControlInterface.sol";
 
@@ -55,7 +56,9 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
 
     }
 
-    function segment(bytes32, bytes calldata, bytes calldata, uint256[] calldata) external override {
+    function segment(
+        uint256, address, bytes32, bytes calldata ,
+        uint256[] calldata, bytes[] calldata, uint256[] calldata) external override {
 
     }
 
