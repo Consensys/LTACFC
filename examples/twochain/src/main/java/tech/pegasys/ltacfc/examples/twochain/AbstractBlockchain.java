@@ -91,6 +91,9 @@ public abstract class AbstractBlockchain {
     this.crossBlockchainControlContract =
         CrossBlockchainControl.deploy(this.web3j, this.tm, this.freeGasProvider,
             this.blockchainId, this.txReceiptsRootStorageContract.getContractAddress()).send();
+    LOG.info(" Registrar Contract: {}", this.registrarContract.getContractAddress());
+    LOG.info(" TxReceiptRoot Contract: {}", this.txReceiptsRootStorageContract.getContractAddress());
+    LOG.info(" Cross Blockchain Contract Contract: {}", this.crossBlockchainControlContract.getContractAddress());
   }
 
   public void registerSigner(AnIdentity signer) throws Exception {

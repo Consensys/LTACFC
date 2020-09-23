@@ -23,11 +23,11 @@ interface VotingAlgInterface {
      * Assess a vote.
      *
      * @param numParticipants Total number of participants.
-     * @param numVotedFor     Number of participants who voted for the proposal.
-     * @param numVotedAgainst Number of participants who voted against the proposal.
+     * @param votedFor     Array of participants who voted for the proposal.
+     * @param votedAgainst Array of participants who voted against the proposal.
      * @return true if the result of the vote was true. That is, given the voting algorithm
      *              the result of the vote is for what was being voted on.
      *         false if the result of the vote was against the proposal
      */
-    function assess(uint64 numParticipants, uint64 numVotedFor, uint64 numVotedAgainst) external pure returns (bool);
+    function assess(uint64 numParticipants, address[] memory votedFor, address[] memory votedAgainst) external pure returns (bool);
 }

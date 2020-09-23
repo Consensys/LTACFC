@@ -67,6 +67,8 @@ public class RootBc extends AbstractBlockchain {
             otherContractAddress,
             this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.rootBlockchainContract.getContractAddress()).send();
+    LOG.info(" Other Blockchain Contract: {}", this.rootBlockchainContract.getContractAddress());
+    LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
   }
 
   public String getRlpFunctionSignature_SomeComplexBusinessLogic(BigInteger val) {

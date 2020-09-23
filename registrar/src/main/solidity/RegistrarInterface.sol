@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2020 ConsenSys
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -69,7 +69,8 @@ interface RegistrarInterface is ERC165 {
      *         The signing threshold must be 1 or more.
      * 6     Add signer                              Blockchain Id                  Address corresponding to public key of signer.
      * 7     Remove signer                           Blockchain Id                  Address corresponding to public key of signer.
-     *
+     * 8     Set finality for a blockchain           Ignored                        Number of confirmation blocks  
+     * 
      * @param _action         The type of vote
      * @param _voteTarget     What is being voted on
      * @param _additionalInfo Additional information as per the table above.
@@ -130,6 +131,8 @@ interface RegistrarInterface is ERC165 {
     function numSigners(uint256 _blockchainId) external view returns (uint64);
 
     function isSigner(uint256 _blockchainId, address _mightBeSigner) external view returns (bool);
+    
+    function getChainFinality(uint256 _blockchainId) external view returns (uint64);
 
 
     event Voted(address _participant, uint16 _action, uint256 _voteTarget, bool _votedFor);

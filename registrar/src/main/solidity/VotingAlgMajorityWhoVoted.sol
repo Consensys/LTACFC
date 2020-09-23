@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import "./VotingAlgInterface.sol";
 */
 contract VotingAlgMajorityWhoVoted is VotingAlgInterface {
 
-    function assess(uint64 /* numParticipants */, uint64 numVotedFor, uint64 numVotedAgainst) external pure override(VotingAlgInterface) returns (bool) {
-        return (numVotedFor > numVotedAgainst);
+    function assess(uint64 /* numParticipants */, address[] memory votedFor, address[] memory votedAgainst) external pure override(VotingAlgInterface) returns (bool) {
+        return (votedFor.length > votedAgainst.length);
     }
 }

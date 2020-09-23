@@ -44,8 +44,8 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     // TODO some of these will be able to be stored in memory
     uint256 public activeCallRootBlockchainId;
     uint256 public activeCallCrossBlockchainTransactionId;
-    bytes public activeCall;
-//    uint256 public tempActiveTimeout;
+    bytes public activeCallGraph;
+    uint256 public tempActiveTimeout;
     uint256[] private activeCallsCallPath;
     mapping(address => bool) private activeCallLockedContractsMap;
 
@@ -73,29 +73,29 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         txReceiptRootStorage.verify(_rootBlockchainId, _startEventTxReceiptRoot, _encodedStartTxReceipt,
             _proofOffsets, _proof);
 
-        bytes memory _encodedStartTxReceiptLocal = _encodedStartTxReceipt;
-        RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedStartTxReceiptLocal));
-        bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
-        (RLP.RLPItem[] memory startEventTopics, bytes memory startEventData) =
-            extractEvent(_rootCBCContract, START_EVENT_SIGNATURE, receiptBytes);
+        bytes memory startEventData;
+        {
+            bytes memory _encodedStartTxReceiptLocal = _encodedStartTxReceipt;
+            RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedStartTxReceiptLocal));
+            bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
+    //        (RLP.RLPItem[] memory startEventTopics, bytes memory startEventData) =
+            (, startEventData) =
+                extractEvent(_rootCBCContract, START_EVENT_SIGNATURE, receiptBytes);
+        }
 
+        // TODO use transaction id in conjunction with call path to prevent replay attacks.
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
-        //tempActiveTimeout = BytesUtil.bytesToUint256(startEventData, 0x20);
-        activeCall = startEventData;
+        tempActiveTimeout = BytesUtil.bytesToUint256(startEventData, 0x20);
+        // Skip the type field at 0x40.
+        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x60);
+        bytes memory callGraph = BytesUtil.slice(startEventData, 0x80, lenOfActiveCallGraph);
+        activeCallGraph = callGraph;
 
-//
-//        activeCallRootBlockchainId = extractFromStartEventRootBlockchainId(startEvent);
-//        require(activeCallRootBlockchainId == _rootBlockchainId);
-//
-//        uint256 targetBlockchainId = extractFromStartEventTargetBlockchainId(startEvent, _callPath);
-//        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
-//
-//        activeCallCrossBlockchainTransactionId = extractFromStartEventTransactionId(_startEvent);
-//        // TODO use transaction id in conjunction with callPath to prevent replay attacks
+        activeCallRootBlockchainId = _rootBlockchainId;
         activeCallsCallPath = _callPath;
-//
-//        address targetContract = extractFromStartEventTargetContract(_startEvent, _callPath);
-//        bytes memory functionCall = extractFromStartEventFunctionCall(_startEvent, _callPath);
+
+        (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, _callPath);
+//        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
 //
 //        execute(targetContract, functionCall);
 //
@@ -153,40 +153,12 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     }
 
 
-    function extractFromStartEventRootBlockchainId(bytes calldata /* _startEvent */) private pure returns (uint256) {
-        // TODO
-        return 0;
-    }
 
-    function extractFromStartEventRootTransactionId(bytes calldata /* _startEvent */) private pure returns (uint256) {
-        // TODO
-        return 0;
-    }
-
-    function extractFromStartEventTargetBlockchainId(bytes calldata /* _startEvent */, uint256[] calldata /* _callPath */) private pure returns (uint256) {
-        // TODO
-        return 0;
-    }
-
-    function extractFromStartEventTargetAddress(bytes calldata /* _startEvent */, uint256[] calldata /* _callPath */) private pure returns (address) {
-        // TODO
-        return address(0);
-    }
-
-    function extractFromStartEventFunctionCall(bytes calldata /* _startEvent */, uint256[] calldata /* _callPath */) private pure returns (bytes memory) {
-       // TODO
-       return new bytes(0);
-    }
-
-    function extractFromStartEventTransactionId(bytes calldata /* _startEvent */ ) private pure returns (uint256) {
-       // TODO
-       return uint256(0);
-    }
+    function extractTargetFromCallGraph(bytes memory _callGraph, uint256[] calldata _callPath) private pure
+        returns (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) {
 
 
-    function extractFromStartEventTargetContract(bytes calldata /* _startEvent */, uint256[] calldata /* _callPath */) private pure returns (address) {
-        // TODO
-        return address(0);
+        return (0, address(0), new bytes(0));
     }
 
     function execute(address targetContract, bytes memory functionCall) private {

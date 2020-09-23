@@ -30,7 +30,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         VOTE_ADD_BLOCKCHAIN,                  // 4
         VOTE_SET_SIGNING_THRESHOLD,           // 5
         VOTE_ADD_SIGNER,                      // 6
-        VOTE_REMOVE_SIGNER                    // 7
+        VOTE_REMOVE_SIGNER,                   // 7
+        VOTE_SET_FINALITY                     // 8
     }
 
     // Signature algorithm and curve.
@@ -49,15 +50,19 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
 
         // Map of who has voted on the proposal.
         mapping(address=>bool) hasVoted;
-        // The number of participants who voted for the proposal.
-        uint64 numVotedFor;
-        // The number of participants who voted against the proposal.
-        uint64 numVotedAgainst;
+        // The participants who voted for the proposal.
+        address[] votedFor;
+        // The participants who voted against the proposal.
+        address[] votedAgainst;
     }
 
     struct BlockchainRecord {
         SigAlgorithm sigAlgorithm;
         uint64 signingThreshold;
+        // An indication of the finality of the blockchain, in blocks.
+        // Conforming relayers should not add transaction receipt roots to blocks that
+        // are not final.
+        uint64 finality;
 
         // Number of active signers
         uint64 numSigners;
@@ -151,6 +156,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
             // Can only remove a signer if they are a signer
             require(blockchains[_voteTarget].signersMap[additionalAddress] != 0);
         }
+        // Nothing to do for set finality
 
         // Set-up the vote.
         votes[_voteTarget].voteType = action;
@@ -193,8 +199,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         VotingAlgInterface voteAlg = VotingAlgInterface(votingAlgorithmContract);
         bool result = voteAlg.assess(
             numAdmins,
-            votes[_voteTarget].numVotedFor,
-            votes[_voteTarget].numVotedAgainst);
+            votes[_voteTarget].votedFor,
+            votes[_voteTarget].votedAgainst);
         emit VoteResult(uint16(action), _voteTarget, result);
 
         actionVotesNoChecks(_voteTarget, result);
@@ -257,6 +263,10 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         return blockchains[_blockchainId].signersMap[_mightBeSigner] != 0;
     }
 
+    function getChainFinality(uint256 _blockchainId) external view override(RegistrarInterface) returns (uint64) {
+        return blockchains[_blockchainId].finality;
+    }
+
 
     /************************************* PRIVATE FUNCTIONS BELOW HERE *************************************
     /************************************* PRIVATE FUNCTIONS BELOW HERE *************************************
@@ -273,9 +283,9 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         votes[_voteTarget].hasVoted[msg.sender] = true;
 
         if (_voteFor) {
-            votes[_voteTarget].numVotedFor++;
+            votes[_voteTarget].votedFor.push(msg.sender);
         } else {
-            votes[_voteTarget].numVotedAgainst++;
+            votes[_voteTarget].votedAgainst.push(msg.sender);
         }
     }
 
@@ -320,6 +330,9 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
                 delete blockchains[_voteTarget].signersMap[addr2];
                 blockchains[_voteTarget].numSigners--;
             }
+            else if (action == VoteType.VOTE_SET_FINALITY) {
+                blockchains[_voteTarget].finality = uint64(additionalInfo);
+            }
         }
 
 
@@ -330,6 +343,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         for (uint i = 0; i < adminsArray.length; i++) {
             if (adminsArray[i] != address(0)) {
                 delete votes[_voteTarget].hasVoted[adminsArray[i]];
+                delete votes[_voteTarget].votedFor;
+                delete votes[_voteTarget].votedAgainst;
             }
         }
         // This will recursively delete everything in the structure, except for the map, which was
