@@ -80,7 +80,7 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
     }
 
     // Called by a provisional storage contract indicating the contract needs to be locked.
-    function lockContract(address /* _contractToLock */ ) external override {
+    function addToListOfLockedContracts(address /* _contractToLock */ ) external override {
 
     }
 

@@ -58,7 +58,6 @@ public class Main {
     otherBlockchain.registerSigner(signer);
     rootBlockchain.registerSigner(signer);
 
-
     // Create simulators
     SimOtherContract simOtherContract = new SimOtherContract();
     SimRootContract simRootContract = new SimRootContract(simOtherContract);
@@ -72,17 +71,20 @@ public class Main {
     simRootContract.someComplexBusinessLogic(param);
 
     String rlpFunctionCall_SomeComplexBusinessLogic = rootBlockchain.getRlpFunctionSignature_SomeComplexBusinessLogic(param);
-    System.out.println("rlpFunctionCall_SomeComplexBusinessLogic: " + rlpFunctionCall_SomeComplexBusinessLogic);
+    LOG.info("rlpFunctionCall_SomeComplexBusinessLogic: {}", rlpFunctionCall_SomeComplexBusinessLogic);
     String rlpFunctionCall_GetVal = otherBlockchain.getRlpFunctionSignature_GetVal();
+    LOG.info("rlpFunctionCall_GetVal: {}", rlpFunctionCall_GetVal);
     String rlpFunctionCall_SetValues = null;
     String rlpFunctionCall_SetVal = null;
     if (simRootContract.someComplexBusinessLogicIfTrue) {
       rlpFunctionCall_SetValues = otherBlockchain.getRlpFunctionSignature_SetValues(
           simRootContract.someComplexBusinessLogicSetValuesParameter1,
           simRootContract.someComplexBusinessLogicSetValuesParameter2);
+      LOG.info("rlpFunctionCall_SetValues: {}", rlpFunctionCall_SetValues);
     }
     else {
       rlpFunctionCall_SetVal = otherBlockchain.getRlpFunctionSignature_SetVal(simRootContract.someComplexBusinessLogicSetValParameter);
+      LOG.info("rlpFunctionCall_SetVal: {}", rlpFunctionCall_SetVal);
     }
 
     RlpList callGraph;
@@ -139,7 +141,7 @@ public class Main {
     byte[] encodedStartTxReceiptBytes = retVal.getThird();
 
     List<BigInteger> callPath = new ArrayList<>();
-    callPath.add(BigInteger.ONE);
+    callPath.add(BigInteger.TWO);
 
     otherBlockchain.segment(
         rootBlockchain.blockchainId, rootBlockchain.crossBlockchainControlContract.getContractAddress(),
@@ -147,7 +149,7 @@ public class Main {
     //TODO
 
 
-
+    LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
 
 
 

@@ -26,7 +26,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
     event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
     event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
-        address[] _lockedContracts, bytes _returnValue);
+        address[] _lockedContracts, bool _success, bytes _returnValue);
     event Signalling(uint256 _crossBlockchainTransactionId);
     event Close(uint256 _crossBlockchainTransactionId);
 
@@ -38,6 +38,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     // Mapping of cross-blockchain transaction id to time-out block time stamp.
     mapping (uint256=> uint256) public override  timeout;
     // Mapping of cross-blockchain transaction id to call graphs, for calls instigated from this blockchain.
+    // TODO why is this needed?
     mapping (uint256=> bytes) public override  callGraphs;
 
     // Storage variables that are just stored for the life of a transaction. They need to
@@ -46,10 +47,8 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     uint256 public activeCallRootBlockchainId;
     uint256 public activeCallCrossBlockchainTransactionId;
     bytes public activeCallGraph;
-    uint256 public tempActiveTimeout;
     uint256[] private activeCallsCallPath;
     mapping(address => bool) private activeCallLockedContractsMap;
-
     address[] private activeCallLockedContracts;
 
 
@@ -88,7 +87,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
         // TODO use transaction id in conjunction with call path to prevent replay attacks.
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
-        tempActiveTimeout = BytesUtil.bytesToUint256(startEventData, 0x20);
+        //tempActiveTimeout = BytesUtil.bytesToUint256(startEventData, 0x20);
         // Skip the type field at 0x40.
         uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x60);
         bytes memory callGraph = BytesUtil.slice(startEventData, 0x80, lenOfActiveCallGraph);
@@ -100,12 +99,25 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, _callPath);
         emit Dump(targetBlockchainId, targetContract, functionCall);
 
+        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
+        execute(targetContract, functionCall);
 
-//        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
-//
-//        execute(targetContract, functionCall);
-//
-//        delete activeCallRootBlockchainId;
+        bool isSuccess;
+        bytes memory returnValueEncoded;
+        (isSuccess, returnValueEncoded) = targetContract.call(functionCall);
+
+        bytes32 hashOfCallGraph = keccak256(callGraph);
+        emit Segment(activeCallCrossBlockchainTransactionId, hashOfCallGraph, _callPath, activeCallLockedContracts, isSuccess, returnValueEncoded);
+
+        // Clean-up active call temporary storage.
+        delete activeCallCrossBlockchainTransactionId;
+        delete activeCallRootBlockchainId;
+        delete activeCallGraph;
+        delete activeCallsCallPath;
+        for (uint i = 0; i < activeCallLockedContracts.length; i++) {
+            delete activeCallLockedContractsMap[activeCallLockedContracts[i]];
+        }
+        delete activeCallLockedContracts;
     }
 
     function signalling(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
@@ -128,9 +140,10 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     }
 
     // Called by a provisional storage contract indicating the contract needs to be locked.
-    function lockContract(address _contractToLock) external override {
+    function addToListOfLockedContracts(address _contractToLock) external override {
         if (activeCallLockedContractsMap[_contractToLock] == false) {
             activeCallLockedContracts.push(_contractToLock);
+            activeCallLockedContractsMap[_contractToLock] = true;
         }
     }
 

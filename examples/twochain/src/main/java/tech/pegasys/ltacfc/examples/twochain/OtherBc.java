@@ -57,6 +57,11 @@ public class OtherBc extends AbstractBlockchain {
     return this.otherBlockchainContract.getRLP_setValues(val1, val2);
   }
 
+  public boolean storageIsLocked() throws Exception {
+    Boolean isLocked = this.lockableStorageContract.locked().send();
+    return  isLocked;
+  }
+
   public void segment(
       BigInteger rootBlockchainId, String rootBlockchainCBC, byte[] startTxReceiptRoot, byte[] startTxReceipt, List<BigInteger> proofOffsets, List<byte[]> proof,
       List<BigInteger> callPath) throws Exception {
@@ -71,7 +76,6 @@ public class OtherBc extends AbstractBlockchain {
 
     LOG.info("Cross Bc Id: {}", this.crossBlockchainControlContract.activeCallCrossBlockchainTransactionId().send().toString(16));
     LOG.info("CallGraph: {}", new BigInteger(1, this.crossBlockchainControlContract.activeCallGraph().send()).toString(16));
-    LOG.info("Timeout: {}", this.crossBlockchainControlContract.tempActiveTimeout().send().toString(16));
 
     List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
     CrossBlockchainControl.DumpEventResponse event = dumpEventResponses.get(0);
@@ -79,8 +83,17 @@ public class OtherBc extends AbstractBlockchain {
     LOG.info("Addr: {}", event._addr);
     LOG.info("Function Call: {}", (new BigInteger(1, event._functionCall)).toString(16));
 
-
-
+    List<CrossBlockchainControl.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
+    CrossBlockchainControl.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
+    LOG.info("Segment Event:");
+    LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
+    LOG.info(" _callPath len: {}", segmentEventResponse._callPath.size());
+    LOG.info(" _success: {}", segmentEventResponse._success);
+    LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
+    LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());
+//    for (String lockedContractAddress: segmentEventResponse._lockedContracts) {
+//      LOG.info(" locked contracts: {}", lockedContractAddress);
+//    }
   }
 
   private void check(byte[] txReceipt) {

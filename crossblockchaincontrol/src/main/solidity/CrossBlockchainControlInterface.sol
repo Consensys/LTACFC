@@ -34,7 +34,7 @@ interface CrossBlockchainControlInterface {
     function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external view returns (uint256);
 
     // Called by a provisional storage contract indicating the contract needs to be locked.
-    function lockContract(address _contractToLock) external;
+    function addToListOfLockedContracts(address _contractToLock) external;
 
     function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) external view returns (bool);
 

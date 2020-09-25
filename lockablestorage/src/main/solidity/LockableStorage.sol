@@ -339,7 +339,7 @@ contract LockableStorage {
         locked = true;
         lockedByRootBlockchainId = crossBlockchainControl.getActiveCallRootBlockchainId();
         lockedByTransactionId = crossBlockchainControl.getActiveCallCrossBlockchainTransactionId();
-        crossBlockchainControl.lockContract(address(this));
+        crossBlockchainControl.addToListOfLockedContracts(address(this));
     }
 
     /**
