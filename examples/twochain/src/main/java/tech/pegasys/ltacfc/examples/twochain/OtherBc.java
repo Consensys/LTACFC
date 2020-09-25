@@ -8,6 +8,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import tech.pegasys.ltacfc.rlp.RlpDumper;
+import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -71,6 +72,14 @@ public class OtherBc extends AbstractBlockchain {
     LOG.info("Cross Bc Id: {}", this.crossBlockchainControlContract.activeCallCrossBlockchainTransactionId().send().toString(16));
     LOG.info("CallGraph: {}", new BigInteger(1, this.crossBlockchainControlContract.activeCallGraph().send()).toString(16));
     LOG.info("Timeout: {}", this.crossBlockchainControlContract.tempActiveTimeout().send().toString(16));
+
+    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
+    CrossBlockchainControl.DumpEventResponse event = dumpEventResponses.get(0);
+    LOG.info("Bc Id: {}", event._bcId.toString(16));
+    LOG.info("Addr: {}", event._addr);
+    LOG.info("Function Call: {}", (new BigInteger(1, event._functionCall)).toString(16));
+
+
 
   }
 

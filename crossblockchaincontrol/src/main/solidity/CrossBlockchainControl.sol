@@ -25,11 +25,12 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
 
     event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
-    event Segment(uint256 _rootBlockchain, uint256 _crossBlockchainTransactionId, uint256[] _callPath,
+    event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
         address[] _lockedContracts, bytes _returnValue);
     event Signalling(uint256 _crossBlockchainTransactionId);
     event Close(uint256 _crossBlockchainTransactionId);
 
+    event Dump(uint256 _bcId, address _addr, bytes _functionCall);
 
     uint256 public override myBlockchainId;
     TxReceiptsRootStorageInterface public txReceiptRootStorage;
@@ -70,6 +71,8 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         bytes32 _startEventTxReceiptRoot, bytes calldata _encodedStartTxReceipt,
         uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external override {
 
+        // TODO require call path length >= 1
+
         txReceiptRootStorage.verify(_rootBlockchainId, _startEventTxReceiptRoot, _encodedStartTxReceipt,
             _proofOffsets, _proof);
 
@@ -95,6 +98,9 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         activeCallsCallPath = _callPath;
 
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, _callPath);
+        emit Dump(targetBlockchainId, targetContract, functionCall);
+
+
 //        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
 //
 //        execute(targetContract, functionCall);
@@ -157,17 +163,24 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     function extractTargetFromCallGraph(bytes memory _callGraph, uint256[] calldata _callPath) private pure
         returns (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) {
 
+        RLP.RLPItem[] memory functions = RLP.toList(RLP.toRLPItem(_callGraph));
 
-        return (0, address(0), new bytes(0));
+        for (uint i=0; i < _callPath.length - 1; i++) {
+            functions = RLP.toList(functions[_callPath[i]]);
+        }
+        RLP.RLPItem[] memory func = RLP.toList(functions[_callPath[_callPath.length - 1]]);
+        targetBlockchainId = RLP.toUint(func[0]);
+        targetContract = RLP.toAddress(func[1]);
+        functionCall = RLP.toData(func[2]);
     }
 
-    function execute(address targetContract, bytes memory functionCall) private {
+    function execute(address _targetContract, bytes memory _functionCall) private {
         bool isSuccess;
         bytes memory returnValueEncoded;
-        (isSuccess, returnValueEncoded) = targetContract.call(functionCall);
+        (isSuccess, returnValueEncoded) = _targetContract.call(_functionCall);
         // TODO unlock contracts if failed and revert state, and indicate an error in the event below.
-        emit Segment(activeCallRootBlockchainId, activeCallCrossBlockchainTransactionId, activeCallsCallPath,
-            activeCallLockedContracts, returnValueEncoded);
+//        emit Segment(activeCallRootBlockchainId, activeCallCrossBlockchainTransactionId, activeCallsCallPath,
+//            activeCallLockedContracts, returnValueEncoded);
     }
 
 

@@ -18,6 +18,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
+import org.web3j.rlp.RlpType;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
@@ -88,20 +89,20 @@ public class Main {
     if (simRootContract.someComplexBusinessLogicIfTrue) {
       RlpList getVal = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_GetVal);
       RlpList setValues = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_SetValues);
-      callGraph = createRootFunctionCall(rootBlockchain.blockchainId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic,
-        new RlpList(
-            getVal,
-            setValues
-        ));
+      List<RlpType> calls = new ArrayList<>();
+      calls.add(getVal);
+      calls.add(setValues);
+      callGraph = createRootFunctionCall(
+          rootBlockchain.blockchainId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic, calls);
     }
     else {
       RlpList getVal = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_GetVal);
       RlpList setVal = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_SetVal);
-      callGraph = createRootFunctionCall(rootBlockchain.blockchainId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic,
-          new RlpList(
-              getVal,
-              setVal
-          ));
+      List<RlpType> calls = new ArrayList<>();
+      calls.add(getVal);
+      calls.add(setVal);
+      callGraph = createRootFunctionCall(
+          rootBlockchain.blockchainId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic, calls);
     }
 
 
@@ -153,18 +154,14 @@ public class Main {
   }
 
 
-  public static RlpList createRootFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString, RlpList calledFunctions) {
-    return new RlpList(
-        createFunctionCall(blockchainId, contractAddress, rlpBytesAsString),
-        calledFunctions
-    );
+  public static RlpList createRootFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString, List<RlpType>  calledFunctions) {
+    return createIntermediateFunctionCall(blockchainId, contractAddress, rlpBytesAsString, calledFunctions);
   }
 
-  public static RlpList createIntermediateFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString, RlpList calledFunctions) {
-    return new RlpList(
-        createFunctionCall(blockchainId, contractAddress, rlpBytesAsString),
-        calledFunctions
-    );
+  public static RlpList createIntermediateFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString, List<RlpType> calledFunctions) {
+    RlpList func = createFunctionCall(blockchainId, contractAddress, rlpBytesAsString);
+    calledFunctions.add(0, (RlpType) func);
+    return new RlpList(calledFunctions);
   }
 
   public static RlpList createLeafFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString) {
@@ -174,7 +171,7 @@ public class Main {
   public static RlpList createFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString) {
     return new RlpList(
         RlpString.create(blockchainId),
-        RlpString.create(contractAddress),
+        toRlpString(contractAddress),
         toRlpString(rlpBytesAsString)
     );
   }
