@@ -24,7 +24,15 @@ interface CrossBlockchainControlInterface {
         bytes32 _startEventTxReceiptRoot, bytes calldata _startTxReceipt,
         uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external;
 
-    function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
+    function root(
+        uint256[] calldata _rootAndSegmentBlockchainIds,
+        address[] calldata _rootAndSegmentCBCContracts,
+        bytes32[] calldata _startAndSegmentTxReceiptRoots,
+        bytes[] calldata _startAndSegmentTxReceipts,
+        uint256[][] calldata _startAndSegmentProofOffsets,
+        bytes[][] calldata _startAndSegmentProofs) external;
+
+function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 
     function close(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 

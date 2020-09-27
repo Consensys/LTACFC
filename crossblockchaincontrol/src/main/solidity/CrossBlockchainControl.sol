@@ -27,6 +27,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
     event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
         address[] _lockedContracts, bool _success, bytes _returnValue);
+    event Root(uint256 _crossBlockchainTransactionId, bool _success);
     event Signalling(uint256 _crossBlockchainTransactionId);
     event Close(uint256 _crossBlockchainTransactionId);
 
@@ -118,6 +119,18 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
             delete activeCallLockedContractsMap[activeCallLockedContracts[i]];
         }
         delete activeCallLockedContracts;
+    }
+
+    function root(
+        uint256[] calldata _rootAndSegmentBlockchainIds,
+        address[] calldata _rootAndSegmentCBCContracts,
+        bytes32[] calldata _startAndSegmentTxReceiptRoots,
+        bytes[] calldata _startAndSegmentTxReceipts,
+        uint256[][] calldata _startAndSegmentProofOffsets,
+        bytes[][] calldata _startAndSegmentProofs) external override {
+
+        emit Root(7, true);
+
     }
 
     function signalling(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {

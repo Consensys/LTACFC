@@ -116,40 +116,136 @@ public class Main {
 
     LOG.info("start");
     TransactionReceipt startTxReceipt = rootBlockchain.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
-    byte[] transactionReceiptRoot = rootBlockchain.getTransactionReceiptRoot(startTxReceipt);
-    Log startEventLog = startTxReceipt.getLogs().get(0);
-    String eventData = startEventLog.getData();
-    LOG.info("Event Address: {}", startEventLog.getAddress());
-    LOG.info("Event Topics length: {}", startEventLog.getTopics().size());
-    LOG.info("Event Topics(0): {}", startEventLog.getTopics().get(0));
-    LOG.info("Event Data: {}", eventData);
+    byte[] startTxReceiptRoot = rootBlockchain.getTransactionReceiptRoot(startTxReceipt);
+    // Add tx receipt root so event will be trusted.
+    otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, startTxReceiptRoot);
+    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, startTxReceiptRoot);
+    // Work out the proof.
+    Tuple<List<byte[]>, List<BigInteger>, byte[]> startRetVal = rootBlockchain.getProofForTxReceipt(startTxReceipt);
+    List<byte[]> startProof = startRetVal.getFirst();
+    List<BigInteger> startProofOffsets = startRetVal.getSecond();
+    byte[] startEncodedTxReceiptBytes = startRetVal.getThird();
 
-    List<CrossBlockchainControl.StartEventResponse> startEventResponses = rootBlockchain.crossBlockchainControlContract.getStartEvents(startTxReceipt);
-    for (CrossBlockchainControl.StartEventResponse startEventResponse: startEventResponses) {
-      LOG.info("TxId: {}", startEventResponse._crossBlockchainTransactionId.toString(16));
-      LOG.info("Timeout: {}", startEventResponse._timeout.toString(16));
-      LOG.info("Call Graph: {}", new BigInteger(1, startEventResponse._callGraph).toString(16));
+    //    Log startEventLog = startTxReceipt.getLogs().get(0);
+//    String eventData = startEventLog.getData();
+//    LOG.info("Event Address: {}", startEventLog.getAddress());
+//    LOG.info("Event Topics length: {}", startEventLog.getTopics().size());
+//    LOG.info("Event Topics(0): {}", startEventLog.getTopics().get(0));
+//    LOG.info("Event Data: {}", eventData);
+
+//    List<CrossBlockchainControl.StartEventResponse> startEventResponses = rootBlockchain.crossBlockchainControlContract.getStartEvents(startTxReceipt);
+//    for (CrossBlockchainControl.StartEventResponse startEventResponse: startEventResponses) {
+//      LOG.info("TxId: {}", startEventResponse._crossBlockchainTransactionId.toString(16));
+//      LOG.info("Timeout: {}", startEventResponse._timeout.toString(16));
+//      LOG.info("Call Graph: {}", new BigInteger(1, startEventResponse._callGraph).toString(16));
+//    }
+
+
+
+
+    // Prepare for root transaction
+    List<BigInteger> segmentBlockchainIds = new ArrayList<>();
+    List<String> segmentBlockchainCBCs = new ArrayList<>();
+    List<byte[]> segmentTxReceiptRoots = new ArrayList<>();
+    List<byte[]> segmentTxReceipts = new ArrayList<>();
+    List<List<BigInteger>> segmentProofOffsets = new ArrayList<>();
+    List<List<byte[]>> segmentProofs = new ArrayList<>();
+
+    LOG.info("segment: getVal");
+    List<BigInteger> getValCallPath = new ArrayList<>();
+    getValCallPath.add(BigInteger.ONE);
+    TransactionReceipt segGetValTxReceipt = otherBlockchain.segment(
+        rootBlockchain.blockchainId, rootBlockchain.crossBlockchainControlContract.getContractAddress(),
+        startTxReceiptRoot, startEncodedTxReceiptBytes, startProofOffsets, startProof, getValCallPath);
+    byte[] segGetValTxReceiptRoot = otherBlockchain.getTransactionReceiptRoot(segGetValTxReceipt);
+    // Add tx receipt root so event will be trusted.
+    otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBlockchain.blockchainId, segGetValTxReceiptRoot);
+    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBlockchain.blockchainId, segGetValTxReceiptRoot);
+
+    BigInteger segGetValBlockchainId = otherBlockchain.blockchainId;
+    String segGetValBlockchainCBC = otherBlockchain.crossBlockchainControlContract.getContractAddress();
+
+    // Work out the proof.
+    Tuple<List<byte[]>, List<BigInteger>, byte[]> segGetValRetVal = otherBlockchain.getProofForTxReceipt(segGetValTxReceipt);
+    List<byte[]> segGetValProof = segGetValRetVal.getFirst();
+    List<BigInteger> segGetValProofOffsets = segGetValRetVal.getSecond();
+    byte[] segGetValEncodedTxReceiptBytes = segGetValRetVal.getThird();
+
+    segmentBlockchainIds.add(segGetValBlockchainId);
+    segmentBlockchainCBCs.add(segGetValBlockchainCBC);
+    segmentTxReceiptRoots.add(segGetValTxReceiptRoot);
+    segmentTxReceipts.add(segGetValEncodedTxReceiptBytes);
+    segmentProofOffsets.add(segGetValProofOffsets);
+    segmentProofs.add(segGetValProof);
+
+
+
+    if (simRootContract.someComplexBusinessLogicIfTrue) {
+      LOG.info("segment: setValues");
+      List<BigInteger> setValuesCallPath = new ArrayList<>();
+      setValuesCallPath.add(BigInteger.TWO);
+      TransactionReceipt segSetValuesTxReceipt = otherBlockchain.segment(
+          rootBlockchain.blockchainId, rootBlockchain.crossBlockchainControlContract.getContractAddress(),
+          startTxReceiptRoot, startEncodedTxReceiptBytes, startProofOffsets, startProof, setValuesCallPath);
+      byte[] segSetValuesTxReceiptRoot = otherBlockchain.getTransactionReceiptRoot(segSetValuesTxReceipt);
+      // Add tx receipt root so event will be trusted.
+      otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBlockchain.blockchainId, segSetValuesTxReceiptRoot);
+      rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBlockchain.blockchainId, segSetValuesTxReceiptRoot);
+
+      BigInteger segSetValuesBlockchainId = otherBlockchain.blockchainId;
+      String segSetValuesBlockchainCBC = otherBlockchain.crossBlockchainControlContract.getContractAddress();
+
+      // Work out the proof.
+      Tuple<List<byte[]>, List<BigInteger>, byte[]> segSetValuesRetVal = otherBlockchain.getProofForTxReceipt(segSetValuesTxReceipt);
+      List<byte[]> segSetValuesProof = segSetValuesRetVal.getFirst();
+      List<BigInteger> segSetValuesProofOffsets = segSetValuesRetVal.getSecond();
+      byte[] segSetValuesEncodedTxReceiptBytes = segSetValuesRetVal.getThird();
+
+      segmentBlockchainIds.add(segSetValuesBlockchainId);
+      segmentBlockchainCBCs.add(segSetValuesBlockchainCBC);
+      segmentTxReceiptRoots.add(segSetValuesTxReceiptRoot);
+      segmentTxReceipts.add(segSetValuesEncodedTxReceiptBytes);
+      segmentProofOffsets.add(segSetValuesProofOffsets);
+      segmentProofs.add(segSetValuesProof);
+    } else {
+
+      LOG.info("segment: setVal");
+      List<BigInteger> setValCallPath = new ArrayList<>();
+      setValCallPath.add(BigInteger.TWO);
+      TransactionReceipt segSetValTxReceipt = otherBlockchain.segment(
+          rootBlockchain.blockchainId, rootBlockchain.crossBlockchainControlContract.getContractAddress(),
+          startTxReceiptRoot, startEncodedTxReceiptBytes, startProofOffsets, startProof, setValCallPath);
+      byte[] segSetValTxReceiptRoot = otherBlockchain.getTransactionReceiptRoot(segSetValTxReceipt);
+      // Add tx receipt root so event will be trusted.
+      otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBlockchain.blockchainId, segSetValTxReceiptRoot);
+      rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBlockchain.blockchainId, segSetValTxReceiptRoot);
+
+      BigInteger segSetValBlockchainId = otherBlockchain.blockchainId;
+      String segSetValBlockchainCBC = otherBlockchain.crossBlockchainControlContract.getContractAddress();
+
+      // Work out the proof.
+      Tuple<List<byte[]>, List<BigInteger>, byte[]> segSetValRetVal = otherBlockchain.getProofForTxReceipt(segSetValTxReceipt);
+      List<byte[]> segSetValProof = segSetValRetVal.getFirst();
+      List<BigInteger> segSetValProofOffsets = segSetValRetVal.getSecond();
+      byte[] segSetValEncodedTxReceiptBytes = segSetValRetVal.getThird();
+
+      segmentBlockchainIds.add(segSetValBlockchainId);
+      segmentBlockchainCBCs.add(segSetValBlockchainCBC);
+      segmentTxReceiptRoots.add(segSetValTxReceiptRoot);
+      segmentTxReceipts.add(segSetValEncodedTxReceiptBytes);
+      segmentProofOffsets.add(segSetValProofOffsets);
+      segmentProofs.add(segSetValProof);
+
     }
 
-
-    otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, transactionReceiptRoot);
-    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBlockchain.blockchainId, transactionReceiptRoot);
-
-    Tuple<List<byte[]>, List<BigInteger>, byte[]> retVal = rootBlockchain.getProofForTxReceipt(startTxReceipt);
-    List<byte[]> proof = retVal.getFirst();
-    List<BigInteger> proofOffsets = retVal.getSecond();
-    byte[] encodedStartTxReceiptBytes = retVal.getThird();
-
-    List<BigInteger> callPath = new ArrayList<>();
-    callPath.add(BigInteger.TWO);
-
-    otherBlockchain.segment(
-        rootBlockchain.blockchainId, rootBlockchain.crossBlockchainControlContract.getContractAddress(),
-        transactionReceiptRoot, encodedStartTxReceiptBytes, proofOffsets, proof, callPath);
-    //TODO
+    LOG.info("root");
+    rootBlockchain.root(
+        startTxReceiptRoot, startEncodedTxReceiptBytes, startProofOffsets, startProof,
+        segmentBlockchainIds, segmentBlockchainCBCs,
+        segmentTxReceiptRoots, segmentTxReceipts, segmentProofOffsets, segmentProofs);
 
 
-    LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
+      LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
 
 
 

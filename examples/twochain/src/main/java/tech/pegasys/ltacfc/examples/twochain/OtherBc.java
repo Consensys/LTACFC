@@ -62,7 +62,7 @@ public class OtherBc extends AbstractBlockchain {
     return  isLocked;
   }
 
-  public void segment(
+  public TransactionReceipt segment(
       BigInteger rootBlockchainId, String rootBlockchainCBC, byte[] startTxReceiptRoot, byte[] startTxReceipt, List<BigInteger> proofOffsets, List<byte[]> proof,
       List<BigInteger> callPath) throws Exception {
 
@@ -94,6 +94,8 @@ public class OtherBc extends AbstractBlockchain {
 //    for (String lockedContractAddress: segmentEventResponse._lockedContracts) {
 //      LOG.info(" locked contracts: {}", lockedContractAddress);
 //    }
+
+    return txR;
   }
 
   private void check(byte[] txReceipt) {

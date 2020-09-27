@@ -27,6 +27,7 @@ import org.web3j.tx.gas.StaticGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.RootBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
+import tech.pegasys.ltacfc.rlp.RlpDumper;
 import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
@@ -67,7 +68,7 @@ public class RootBc extends AbstractBlockchain {
             otherContractAddress,
             this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.rootBlockchainContract.getContractAddress()).send();
-    LOG.info(" Other Blockchain Contract: {}", this.rootBlockchainContract.getContractAddress());
+    LOG.info(" Root Blockchain Contract: {}", this.rootBlockchainContract.getContractAddress());
     LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
   }
 
@@ -82,6 +83,36 @@ public class RootBc extends AbstractBlockchain {
     LOG.info("Call Graph: {}", cG.toString(16));
     return this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
   }
+
+
+  public void root(
+      byte[] startTxReceiptRoot, byte[] startTxReceipt, List<BigInteger> startProofOffsets, List<byte[]> startProof,
+      List<BigInteger> segmentBlockchainIds, List<String> segmentBlockchainCBCs,
+      List<byte[]> segmentTxReceiptRoots, List<byte[]> segmentTxReceipts, List<List<BigInteger>> segmentProofOffsets, List<List<byte[]>> segmentProofs) throws Exception {
+
+      segmentBlockchainIds.add(0, this.blockchainId);
+      segmentBlockchainCBCs.add(0, this.crossBlockchainControlContract.getContractAddress());
+      segmentTxReceiptRoots.add(0, startTxReceiptRoot);
+      segmentTxReceipts.add(0, startTxReceipt);
+      segmentProofOffsets.add(0, startProofOffsets);
+      segmentProofs.add(0, startProof);
+
+//    RlpDumper.dump(RLP.input(Bytes.wrap(startTxReceipt)));
+
+    TransactionReceipt txR = this.crossBlockchainControlContract.root(
+        segmentBlockchainIds, segmentBlockchainCBCs,
+        segmentTxReceiptRoots, segmentTxReceipts, segmentProofOffsets, segmentProofs).send();
+    if (!txR.isStatusOK()) {
+      throw new Exception("Root transaction failed");
+    }
+
+    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
+    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
+    LOG.info("Root Event:");
+    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
+    LOG.info(" _success: {}", rootEventResponse._success);
+  }
+
 
   public void OLD_getProofForTxReceipt(TransactionReceipt aReceipt) throws Exception {
     // Calculate receipt root based on logs for all receipts of all transactions in the block.
