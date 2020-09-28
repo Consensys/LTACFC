@@ -12,14 +12,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 
 import "./ERC165.sol";
 
-contract ERC165MappingImplementation is ERC165 {
+abstract contract ERC165MappingImplementation is ERC165 {
     /// @dev You must not set element 0xffffffff to true
     mapping(bytes4 => bool) internal supportedInterfaces;
-    constructor() internal {
+    constructor() {
         supportedInterfaces[type(ERC165).interfaceId] = true;
     }
     function supportsInterface(bytes4 interfaceID) external override view returns (bool) {

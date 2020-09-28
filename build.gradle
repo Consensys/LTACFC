@@ -16,5 +16,5 @@ web3j {
 
 solidity {
     allowPaths = ['blockheader/src/main/solidity','registrar/contracts']
-    version = '0.6.9'
+    version = '0.7.1'
 }

@@ -206,22 +206,17 @@ public class RootBc extends AbstractBlockchain {
     }
 //    assertEquals(besuCalculatedReceiptsRoot.toHexString(), org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode).toHexString());
 
-    TransactionReceipt txR;
     try {
-      txR = this.txReceiptsRootStorageContract.verify(
+      this.txReceiptsRootStorageContract.verify(
           this.blockchainId,
           besuCalculatedReceiptsRoot.toArray(),
           transactionReceipt.toArray(),
           proofOffsets,
           proofs
       ).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
-      txR = ex.getTransactionReceipt().orElseThrow(Exception::new);
     }
-    if (!txR.isStatusOK()) {
-      System.out.println("Verify failed: " + txR.getRevertReason());
-    }
-    assert(txR.isStatusOK());
   }
 
 

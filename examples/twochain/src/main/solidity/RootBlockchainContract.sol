@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 
 import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControl.sol";
 import "./OtherBlockchainContractInterface.sol";
@@ -26,7 +26,7 @@ contract RootBlockchainContract is LockableStorageWrapper {
     uint256 private KEY_LOCAL_UINT;
 
     constructor (address _crossBlockchainControl, uint256 _otherBlockchainId, address _otherContract, address _storageContract)
-        LockableStorageWrapper(_storageContract) public {
+        LockableStorageWrapper(_storageContract) {
         crossBlockchainControlContract = CrossBlockchainControl(_crossBlockchainControl);
         otherBlockchainId = _otherBlockchainId;
         otherContract = OtherBlockchainContractInterface(_otherContract);

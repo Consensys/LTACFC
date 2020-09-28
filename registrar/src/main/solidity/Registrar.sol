@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.4.23;
+pragma solidity >=0.7.1;
 
 import "./RegistrarInterface.sol";
 import "./VotingAlgInterface.sol";
@@ -100,7 +100,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
 
 
 
-    constructor() public {
+    constructor() {
         // Have msg.sender deploying this contract as an admin
         adminsArray.push(msg.sender);
         // The value is the offset into the array + 1.
@@ -213,7 +213,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         bytes32[] calldata _sigR,
         bytes32[] calldata _sigS,
         uint8[] calldata _sigV,
-        bytes calldata _plainText) external override(RegistrarInterface) {
+        bytes calldata _plainText) external view override(RegistrarInterface) returns (bool){
 
         uint256 signersLength = _signers.length;
         require(signersLength == _sigR.length);
@@ -228,6 +228,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
             // Verify the signature
             require(verifySigComponents(_signers[i], _plainText, _sigR[i], _sigS[i], _sigV[i]));
         }
+        return true;
     }
 
 

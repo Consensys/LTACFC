@@ -12,14 +12,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 import "./OtherBlockchainContractInterface.sol";
 import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
 
 contract OtherBlockchainContract is OtherBlockchainContractInterface, LockableStorageWrapper {
     uint256 constant private KEY_FOR_VAL = 1;
 
-    constructor (address _storageContract) LockableStorageWrapper(_storageContract) public {
+    constructor (address _storageContract) LockableStorageWrapper(_storageContract) {
     }
 
 

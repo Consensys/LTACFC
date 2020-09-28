@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
 import "../../../../common/src/main/solidity/ERC165.sol";
@@ -84,7 +84,7 @@ interface TxReceiptsRootStorageInterface is ERC165 {
      *
      */
     function verify(uint256 _blockchainId, bytes32 _txReceiptsRoot, bytes calldata _txReceipt,
-        uint256[] calldata _proofOffsets, bytes[] calldata _proof) external;
+        uint256[] calldata _proofOffsets, bytes[] calldata _proof) external view returns (bool) ;
 
 
     /**

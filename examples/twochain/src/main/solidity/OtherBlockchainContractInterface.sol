@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 
 interface OtherBlockchainContractInterface {
     function setVal(uint256 _val) external;

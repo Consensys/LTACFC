@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 
 /**
  * Signature verification for ECDSA / KECCAK256 using secp256k1 curve.

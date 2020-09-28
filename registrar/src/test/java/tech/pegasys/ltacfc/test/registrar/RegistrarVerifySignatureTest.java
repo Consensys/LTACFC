@@ -53,8 +53,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData.getV()[0]));
 
     // This will revert if the signature does not verify
-    receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-    assert(receipt.isStatusOK());
+    this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
   }
 
   @Test
@@ -89,8 +88,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     // This will revert if the signature does not verify
-    receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-    assert(receipt.isStatusOK());
+    this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
   }
 
 
@@ -120,8 +118,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
 
     // This will revert if the signature does not verify
     try {
-      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      assertFalse(receipt.isStatusOK());
+      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
       // ignore
     }
@@ -153,8 +151,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
 
     // This will revert as signer2 is has not been registered for the blockchain
     try {
-      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      assertFalse(receipt.isStatusOK());
+      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
       // ignore
     }
@@ -192,8 +190,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      assertFalse(receipt.isStatusOK());
+      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
       // ignore
     }
@@ -231,8 +229,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      assertFalse(receipt.isStatusOK());
+      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
       // ignore
     }
@@ -270,8 +268,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      assertFalse(receipt.isStatusOK());
+      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
       // ignore
     }
@@ -309,8 +307,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     //sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      receipt = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      assertFalse(receipt.isStatusOK());
+      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying");
     } catch (TransactionException ex) {
       // ignore
     }

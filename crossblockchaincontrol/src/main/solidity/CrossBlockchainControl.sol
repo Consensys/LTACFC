@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
 import "./CrossBlockchainControlInterface.sol";
@@ -53,7 +53,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     address[] private activeCallLockedContracts;
 
 
-    constructor(uint256 _myBlockchainId, address _txReceiptRootStorage) public {
+    constructor(uint256 _myBlockchainId, address _txReceiptRootStorage) {
         myBlockchainId = _myBlockchainId;
         txReceiptRootStorage = TxReceiptsRootStorageInterface(_txReceiptRootStorage);
     }

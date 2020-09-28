@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
 import "../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControlInterface.sol";
@@ -85,7 +85,7 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
     }
 
 
-    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override view returns (uint256) {
+    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override pure returns (uint256) {
         return uint256(0);
     }
 
@@ -94,26 +94,26 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
 
     }
 
-    function crossBlockchainTransactionExists(uint256 /* _crossBlockchainTransactionId */) external override view returns (bool) {
+    function crossBlockchainTransactionExists(uint256 /* _crossBlockchainTransactionId */) external override pure returns (bool) {
         return false;
     }
 
-    function crossBlockchainTransactionTimeout(uint256 /* _crossBlockchainTransactionId */ ) external override view returns (uint256) {
+    function crossBlockchainTransactionTimeout(uint256 /* _crossBlockchainTransactionId */ ) external override pure returns (uint256) {
         return uint256(0);
     }
 
 
 
     // Accessor functions for public variables.
-    function myBlockchainId() external override view returns(uint256) {
+    function myBlockchainId() external override pure returns(uint256) {
         return uint256(0);
     }
 
-    function timeout(uint256) external override view returns(uint256) {
+    function timeout(uint256) external override pure returns(uint256) {
         return uint256(0);
     }
 
-    function callGraphs(uint256) external override view returns(bytes memory) {
+    function callGraphs(uint256) external override pure returns(bytes memory) {
         return "";
     }
 }

@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 
 import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControlInterface.sol";
 
@@ -100,7 +100,7 @@ contract LockableStorage {
         _;
     }
 
-    constructor (address _crossBlockchainControl) public {
+    constructor (address _crossBlockchainControl) {
         deployer = msg.sender;
         crossBlockchainControl = CrossBlockchainControlInterface(_crossBlockchainControl);
     }

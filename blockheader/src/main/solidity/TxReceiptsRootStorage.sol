@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
 import "../../../../registrar/src/main/solidity/Registrar.sol";
@@ -28,7 +28,7 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingI
     mapping(uint256=>mapping(bytes32 => bool)) private txReceiptsRoots;
 
 
-    constructor(address _registrar) public {
+    constructor(address _registrar) {
         registrar = Registrar(_registrar);
 
         supportedInterfaces[type(TxReceiptsRootStorageInterface).interfaceId] = true;
@@ -55,7 +55,7 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingI
         bytes calldata _txReceipt,
         uint256[] calldata _proofOffsets,
         bytes[] calldata _proof
-    ) external override(TxReceiptsRootStorageInterface) {
+    ) external view override(TxReceiptsRootStorageInterface) returns (bool) {
         require(txReceiptsRoots[_blockchainId][_txReceiptsRoot], "Transaction receipt root does not exist for blockchain id");
         require(_proof.length == _proofOffsets.length, "Length of proofs and proofsOffsets does not match");
 
@@ -66,6 +66,7 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingI
             hash = keccak256(_proof[i]);
         }
         require(_txReceiptsRoot == hash, "Root Hash did not match calculated hash");
+        return true;
     }
 
 

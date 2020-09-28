@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-pragma solidity >=0.6.9;
+pragma solidity >=0.7.1;
 
 import "../../../../common/src/main/solidity/ERC165.sol";
 
@@ -113,7 +113,7 @@ interface RegistrarInterface is ERC165 {
         bytes32[] calldata _sigR,
         bytes32[] calldata _sigS,
         uint8[] calldata _sigV,
-        bytes calldata _plainText) external;
+        bytes calldata _plainText) external view returns (bool);
 
 
     function adminArraySize() external view returns (uint256);
