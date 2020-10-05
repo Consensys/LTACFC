@@ -62,7 +62,12 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
 
     }
 
-    function root(Info calldata, Info calldata, Info calldata) external override {
+    function root() external override {
+    }
+
+    function rootPrep(uint256, address, bytes32,
+        bytes calldata, uint256[] calldata, bytes[] calldata) external override {
+
     }
 
 

@@ -13,9 +13,6 @@ d5d6b09c: activeCallCrossBlockchainTransactionId()
 b4c3b756: isSingleBlockchainCall()
 439160df: myBlockchainId()
 f3a90df9: root((uint256,address,bytes32,bytes,uint256[],bytes[]),(uint256,address,bytes32,bytes,uint256[],bytes[]),(uint256,address,bytes32,bytes,uint256[],bytes[]))
-
-root((uint256,address,bytes32,bytes,dynamicarray,dynamicarray),(uint256,address,bytes32,bytes,dynamicarray,dynamicarray),(uint256,address,bytes32,bytes,dynamicarray,dynamicarray))
-
 3cdc7104: segment(uint256,address,bytes32,bytes,uint256[],bytes[],uint256[])
 3ab56127: signalling(bytes32,bytes)
 df1bba01: start(uint256,uint256,bytes)

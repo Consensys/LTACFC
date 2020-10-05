@@ -5,14 +5,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
-import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.DynamicBytes;
-import org.web3j.abi.datatypes.DynamicStruct;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
@@ -34,7 +30,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  */
 @SuppressWarnings("rawtypes")
 public class MockCbcForLockableStorageTest extends Contract {
-    public static final String BINARY = "608060405234801561001057600080fd5b50610681806100206000396000f3fe608060405234801561001057600080fd5b50600436106101165760003560e01c806366b79f5a116100a25780639ad8a5b6116100715780639ad8a5b6146101f0578063b4c3b7561461020b578063bae3cdc814610213578063df1bba0114610226578063f3a90df91461023457610116565b806366b79f5a146101af5780637c5fc7f5146101b75780638e22d534146101ca57806392b2c335146101dd57610116565b80633ab56127116100e95780633ab56127146101445780633cdc710414610174578063439160df146101875780634c97042e1461011b578063653cf5a61461018f57610116565b806308148f7a1461011b5780631a26720c14610144578063336d5b091461015957806339ce107e14610161575b600080fd5b61012e61012936600461044f565b610242565b60405161013b9190610642565b60405180910390f35b610157610152366004610381565b610248565b005b61012e61024d565b61015761016f36600461035f565b610253565b610157610182366004610467565b610256565b61012e610263565b6101a261019d36600461044f565b610268565b60405161013b91906105ef565b61012e61027b565b6101576101c536600461044f565b610281565b61012e6101d8366004610552565b610286565b6101576101eb366004610552565b610290565b6101fe61012936600461044f565b60405161013b91906105e4565b6101fe610296565b61015761022136600461044f565b61029d565b6101576101eb3660046105ab565b6101576101523660046103cb565b50600090565b505050565b60005490565b50565b5050505050505050505050565b600090565b5060408051602081019091526000815290565b60015490565b600155565b6000949350505050565b50505050565b6000541590565b600055565b80356001600160a01b03811681146102b957600080fd5b92915050565b60008083601f8401126102d0578182fd5b50813567ffffffffffffffff8111156102e7578182fd5b602083019150836020808302850101111561030157600080fd5b9250929050565b60008083601f840112610319578182fd5b50813567ffffffffffffffff811115610330578182fd5b60208301915083602082850101111561030157600080fd5b600060c08284031215610359578081fd5b50919050565b600060208284031215610370578081fd5b61037a83836102a2565b9392505050565b600080600060408486031215610395578182fd5b83359250602084013567ffffffffffffffff8111156103b2578283fd5b6103be86828701610308565b9497909650939450505050565b6000806000606084860312156103df578283fd5b833567ffffffffffffffff808211156103f6578485fd5b61040287838801610348565b94506020860135915080821115610417578384fd5b61042387838801610348565b93506040860135915080821115610438578283fd5b5061044586828701610348565b9150509250925092565b600060208284031215610460578081fd5b5035919050565b600080600080600080600080600080600060e08c8e031215610487578687fd5b8b359a506104988d60208e016102a2565b995060408c0135985067ffffffffffffffff8060608e013511156104ba578788fd5b6104ca8e60608f01358f01610308565b909950975060808d01358110156104df578687fd5b6104ef8e60808f01358f016102bf565b909750955060a08d0135811015610504578485fd5b6105148e60a08f01358f016102bf565b909550935060c08d0135811015610529578283fd5b5061053a8d60c08e01358e016102bf565b81935080925050509295989b509295989b9093969950565b60008060008060608587031215610567578384fd5b8435935061057886602087016102a2565b9250604085013567ffffffffffffffff811115610593578283fd5b61059f87828801610308565b95989497509550505050565b600080600080606085870312156105c0578384fd5b8435935060208501359250604085013567ffffffffffffffff811115610593578283fd5b901515815260200190565b6000602080835283518082850152825b8181101561061b578581018301518582016040015282016105ff565b8181111561062c5783604083870101525b50601f01601f1916929092016040019392505050565b9081526020019056fea2646970667358221220386d10ca8a88a4e805c05cd8826103361364b81229de112f70583af5408464d364736f6c63430007010033";
+    public static final String BINARY = "608060405234801561001057600080fd5b506106c8806100206000396000f3fe608060405234801561001057600080fd5b50600436106101215760003560e01c8063653cf5a6116100ad5780639ad8a5b6116100715780639ad8a5b61461020e578063b4c3b75614610229578063bae3cdc814610231578063df1bba0114610244578063ebf0c7171461025257610121565b8063653cf5a6146101ad57806366b79f5a146101cd5780637c5fc7f5146101d55780638e22d534146101e857806392b2c335146101fb57610121565b80633ab56127116100f45780633ab561271461014f5780633cdc71041461017f578063439160df146101925780634c97042e14610126578063541ac8621461019a57610121565b806308148f7a146101265780631a26720c1461014f578063336d5b091461016457806339ce107e1461016c575b600080fd5b6101396101343660046103d9565b61025a565b6040516101469190610689565b60405180910390f35b61016261015d36600461038f565b610260565b005b610139610265565b61016261017a36600461036d565b61026b565b61016261018d3660046104ae565b61026e565b61013961027b565b6101626101a83660046103f1565b610280565b6101c06101bb3660046103d9565b61028b565b6040516101469190610636565b61013961029e565b6101626101e33660046103d9565b6102a4565b6101396101f6366004610599565b6102a9565b610162610209366004610599565b6102b3565b61021c6101343660046103d9565b604051610146919061062b565b61021c6102b9565b61016261023f3660046103d9565b6102c0565b6101626102093660046105f2565b6101626102c5565b50600090565b505050565b60005490565b50565b5050505050505050505050565b600090565b505050505050505050565b5060408051602081019091526000815290565b60015490565b600155565b6000949350505050565b50505050565b6000541590565b600055565b565b80356001600160a01b03811681146102de57600080fd5b92915050565b60008083601f8401126102f5578182fd5b50813567ffffffffffffffff81111561030c578182fd5b602083019150836020808302850101111561032657600080fd5b9250929050565b60008083601f84011261033e578182fd5b50813567ffffffffffffffff811115610355578182fd5b60208301915083602082850101111561032657600080fd5b60006020828403121561037e578081fd5b61038883836102c7565b9392505050565b6000806000604084860312156103a3578182fd5b83359250602084013567ffffffffffffffff8111156103c0578283fd5b6103cc8682870161032d565b9497909650939450505050565b6000602082840312156103ea578081fd5b5035919050565b600080600080600080600080600060c08a8c03121561040e578485fd5b8935985061041f8b60208c016102c7565b975060408a0135965060608a013567ffffffffffffffff80821115610442578687fd5b61044e8d838e0161032d565b909850965060808c0135915080821115610466578586fd5b6104728d838e016102e4565b909650945060a08c013591508082111561048a578384fd5b506104978c828d016102e4565b915080935050809150509295985092959850929598565b600080600080600080600080600080600060e08c8e0312156104ce578182fd5b8b359a506104df8d60208e016102c7565b995060408c0135985067ffffffffffffffff8060608e01351115610501578283fd5b6105118e60608f01358f0161032d565b909950975060808d0135811015610526578283fd5b6105368e60808f01358f016102e4565b909750955060a08d013581101561054b578283fd5b61055b8e60a08f01358f016102e4565b909550935060c08d0135811015610570578283fd5b506105818d60c08e01358e016102e4565b81935080925050509295989b509295989b9093969950565b600080600080606085870312156105ae578384fd5b843593506105bf86602087016102c7565b9250604085013567ffffffffffffffff8111156105da578283fd5b6105e68782880161032d565b95989497509550505050565b60008060008060608587031215610607578384fd5b8435935060208501359250604085013567ffffffffffffffff8111156105da578283fd5b901515815260200190565b6000602080835283518082850152825b8181101561066257858101830151858201604001528201610646565b818111156106735783604083870101525b50601f01601f1916929092016040019392505050565b9081526020019056fea26469706673582212206aa0ff65a38bfc7335c71c05a03119915b34ae551c41b468afa4755c3ad2e2a364736f6c63430007010033";
 
     public static final String FUNC_ADDTOLISTOFLOCKEDCONTRACTS = "addToListOfLockedContracts";
 
@@ -59,6 +55,8 @@ public class MockCbcForLockableStorageTest extends Contract {
     public static final String FUNC_MYBLOCKCHAINID = "myBlockchainId";
 
     public static final String FUNC_ROOT = "root";
+
+    public static final String FUNC_ROOTPREP = "rootPrep";
 
     public static final String FUNC_SEGMENT = "segment";
 
@@ -259,22 +257,52 @@ public class MockCbcForLockableStorageTest extends Contract {
         return org.web3j.abi.FunctionEncoder.encode(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> root(Info param0, Info param1, Info param2) {
+    public RemoteFunctionCall<TransactionReceipt> root() {
         final Function function = new Function(
                 FUNC_ROOT, 
-                Arrays.<Type>asList(param0, 
-                param1, 
-                param2), 
+                Arrays.<Type>asList(), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public String getRLP_root(Info param0, Info param1, Info param2) {
+    public String getRLP_root() {
         final Function function = new Function(
                 FUNC_ROOT, 
-                Arrays.<Type>asList(param0, 
-                param1, 
-                param2), 
+                Arrays.<Type>asList(), 
+                Collections.<TypeReference<?>>emptyList());
+        return org.web3j.abi.FunctionEncoder.encode(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> rootPrep(BigInteger param0, String param1, byte[] param2, byte[] param3, List<BigInteger> param4, List<byte[]> param5) {
+        final Function function = new Function(
+                FUNC_ROOTPREP, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0), 
+                new org.web3j.abi.datatypes.Address(160, param1), 
+                new org.web3j.abi.datatypes.generated.Bytes32(param2), 
+                new org.web3j.abi.datatypes.DynamicBytes(param3), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
+                        org.web3j.abi.datatypes.generated.Uint256.class,
+                        org.web3j.abi.Utils.typeMap(param4, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.DynamicBytes>(
+                        org.web3j.abi.datatypes.DynamicBytes.class,
+                        org.web3j.abi.Utils.typeMap(param5, org.web3j.abi.datatypes.DynamicBytes.class))), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public String getRLP_rootPrep(BigInteger param0, String param1, byte[] param2, byte[] param3, List<BigInteger> param4, List<byte[]> param5) {
+        final Function function = new Function(
+                FUNC_ROOTPREP, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0), 
+                new org.web3j.abi.datatypes.Address(160, param1), 
+                new org.web3j.abi.datatypes.generated.Bytes32(param2), 
+                new org.web3j.abi.datatypes.DynamicBytes(param3), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
+                        org.web3j.abi.datatypes.generated.Uint256.class,
+                        org.web3j.abi.Utils.typeMap(param4, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.DynamicBytes>(
+                        org.web3j.abi.datatypes.DynamicBytes.class,
+                        org.web3j.abi.Utils.typeMap(param5, org.web3j.abi.datatypes.DynamicBytes.class))), 
                 Collections.<TypeReference<?>>emptyList());
         return org.web3j.abi.FunctionEncoder.encode(function);
     }
@@ -429,61 +457,5 @@ public class MockCbcForLockableStorageTest extends Contract {
     @Deprecated
     public static RemoteCall<MockCbcForLockableStorageTest> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         return deployRemoteCall(MockCbcForLockableStorageTest.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, "");
-    }
-
-    public static class Info extends DynamicStruct {
-        public BigInteger blockchainId;
-
-        public String cBCContract;
-
-        public byte[] txReceiptRoot;
-
-        public byte[] txReceipt;
-
-        public List<BigInteger> proofOffset;
-
-        public List<byte[]> proof;
-
-        public Info(BigInteger blockchainId, String cBCContract, byte[] txReceiptRoot, byte[] txReceipt, List<BigInteger> proofOffset, List<byte[]> proof) {
-            super(new org.web3j.abi.datatypes.generated.Uint256(blockchainId),new org.web3j.abi.datatypes.Address(cBCContract),new org.web3j.abi.datatypes.generated.Bytes32(txReceiptRoot),new org.web3j.abi.datatypes.DynamicBytes(txReceipt),new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(org.web3j.abi.datatypes.generated.Uint256.class, convertTo_uint256(proofOffset)),new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.DynamicBytes>(org.web3j.abi.datatypes.DynamicBytes.class, convertTo_bytes(proof)));
-            this.blockchainId = blockchainId;
-            this.cBCContract = cBCContract;
-            this.txReceiptRoot = txReceiptRoot;
-            this.txReceipt = txReceipt;
-            this.proofOffset = proofOffset;
-            this.proof = proof;
-        }
-
-        public Info(Uint256 blockchainId, Address cBCContract, Bytes32 txReceiptRoot, DynamicBytes txReceipt, DynamicArray<Uint256> proofOffset, DynamicArray<DynamicBytes> proof) {
-            super(blockchainId,cBCContract,txReceiptRoot,txReceipt,proofOffset,proof);
-            this.blockchainId = blockchainId.getValue();
-            this.cBCContract = cBCContract.getValue();
-            this.txReceiptRoot = txReceiptRoot.getValue();
-            this.txReceipt = txReceipt.getValue();
-            this.proofOffset = new java.util.ArrayList<>();;
-            for (org.web3j.abi.datatypes.generated.Uint256 z: proofOffset.getValue()) {;
-            this.proofOffset.add(z.getValue());;
-            };
-            this.proof = new java.util.ArrayList<>();;
-            for (org.web3j.abi.datatypes.DynamicBytes z: proof.getValue()) {;
-            this.proof.add(z.getValue());;
-            };
-        }
-
-        static List convertTo_uint256(List<BigInteger> param) {
-            List<Uint256> z = new java.util.ArrayList<>();
-            for (BigInteger a: param) {;
-               z.add(new Uint256(a));
-            };
-            return z;
-        }
-
-        static List convertTo_bytes(List<byte[]> param) {
-            List<org.web3j.abi.datatypes.DynamicBytes> z = new java.util.ArrayList<>();
-            for (byte[] a: param) {;
-               z.add(new org.web3j.abi.datatypes.DynamicBytes(a));
-            };
-            return z;
-        }
     }
 }

@@ -115,31 +115,54 @@ public class RootBc extends AbstractBlockchain {
         segmentTxReceiptRoots.get(2), segmentTxReceipts.get(2), segmentProofOffsets.get(2), segmentProofs.get(2));
 
 
+    for (int i = 0; i <= 2; i++) {
 
-
-    String rlpRoot = this.crossBlockchainControlContract.getRLP_root(rootInfo, seg1Info, seg2Info);
-    LOG.info("RLP Root Transaction: {}", rlpRoot);
-
-    LOG.info("root function sig: {}", buildRootFunctionSignature(rootInfo, seg1Info, seg2Info));
-
-    TransactionReceipt txR = this.crossBlockchainControlContract.root(rootInfo, seg1Info, seg2Info).send();
+      TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
+          segmentBlockchainIds.get(i), segmentBlockchainCBCs.get(i),
+          segmentTxReceiptRoots.get(i), segmentTxReceipts.get(i), segmentProofOffsets.get(i), segmentProofs.get(i)).send();
 //    TransactionReceipt txR = this.crossBlockchainControlContract.root(
 //        segmentBlockchainIds, segmentBlockchainCBCs,
 //        segmentTxReceiptRoots, segmentTxReceipts,
 //        //segmentProofOffsets,
 //        segmentProofs
 //    ).send();
-    if (!txR.isStatusOK()) {
-      throw new Exception("Root transaction failed");
+      if (!txR.isStatusOK()) {
+        throw new Exception("Root transaction failed");
+      }
+
+
+//    String rlpRoot = this.crossBlockchainControlContract.getRLP_root(rootInfo, seg1Info, seg2Info);
+//    LOG.info("RLP Root Transaction: {}", rlpRoot);
+//
+////    LOG.info("root function sig: {}", buildRootFunctionSignature(rootInfo, seg1Info, seg2Info));
+//
+//    TransactionReceipt txR = this.crossBlockchainControlContract.root(rootInfo, seg1Info, seg2Info).send();
+////    TransactionReceipt txR = this.crossBlockchainControlContract.root(
+////        segmentBlockchainIds, segmentBlockchainCBCs,
+////        segmentTxReceiptRoots, segmentTxReceipts,
+////        //segmentProofOffsets,
+////        segmentProofs
+////    ).send();
+//    if (!txR.isStatusOK()) {
+//      throw new Exception("Root transaction failed");
+//    }
+
+//    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
+//    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
+//    LOG.info("Root Event:");
+//    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
+//    LOG.info(" _success: {}", rootEventResponse._success);
+
+      LOG.info("Root 2 Events");
+      List<CrossBlockchainControl.Root2EventResponse> root2EventResponses = this.crossBlockchainControlContract.getRoot2Events(txR);
+      for (CrossBlockchainControl.Root2EventResponse root2EventResponse : root2EventResponses) {
+        LOG.info("  Event:");
+        LOG.info("   _bcId: {}", root2EventResponse._bcId.toString(16));
+        LOG.info("   _cbc Contract: {}", root2EventResponse._cbcContract);
+        LOG.info("   _receipt Root: {}", new BigInteger(1, root2EventResponse._receiptRoot).toString(16));
+        LOG.info("   _encoded tx receipt: {}", new BigInteger(1, root2EventResponse._encodedTxReceipt).toString(16));
+      }
     }
-
-    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
-    LOG.info("Root Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _success: {}", rootEventResponse._success);
-
-
 
 //    List<List<BigInteger>> bi1 = new ArrayList<>();
 //    List<BigInteger> bi2 = new ArrayList<>();
@@ -166,50 +189,50 @@ public class RootBc extends AbstractBlockchain {
   }
 
 
-  static String buildRoot1FunctionSignature(List<List<BigInteger>> _i) {
-    final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-        FUNC_ROOT1,
-        Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.DynamicArray>(
-            org.web3j.abi.datatypes.DynamicArray.class,
-            org.web3j.abi.Utils.typeMap(_i, org.web3j.abi.datatypes.DynamicArray.class,
-                org.web3j.abi.datatypes.generated.Uint256.class))),
-        Collections.<TypeReference<?>>emptyList());
-    final List<Type> parameters = function.getInputParameters();
-    return buildMethodSignature(function.getName(), parameters);
-  }
+//  static String buildRoot1FunctionSignature(List<List<BigInteger>> _i) {
+//    final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+//        FUNC_ROOT1,
+//        Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.DynamicArray>(
+//            org.web3j.abi.datatypes.DynamicArray.class,
+//            org.web3j.abi.Utils.typeMap(_i, org.web3j.abi.datatypes.DynamicArray.class,
+//                org.web3j.abi.datatypes.generated.Uint256.class))),
+//        Collections.<TypeReference<?>>emptyList());
+//    final List<Type> parameters = function.getInputParameters();
+//    return buildMethodSignature(function.getName(), parameters);
+//  }
 
 
-  static String buildRootFunctionSignature(CrossBlockchainControl.Info _start, CrossBlockchainControl.Info _seg0, CrossBlockchainControl.Info _seg1) {
-      final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-          FUNC_ROOT,
-          Arrays.<Type>asList(_start,
-              _seg0,
-              _seg1),
-          Collections.<TypeReference<?>>emptyList());
-
-    final List<Type> parameters = function.getInputParameters();
-    return buildMethodSignature(function.getName(), parameters);
-  }
-
-  static String buildMethodSignature(
-      final String methodName, final List<Type> parameters) {
-
-    final StringBuilder result = new StringBuilder();
-    result.append(methodName);
-    result.append("(");
-//    final String params =
-//        parameters.stream().map(Type::getTypeAsString).collect(Collectors.joining(","));
-//    result.append(params);
-
-    for (int i=0; i<parameters.size(); i++) {
-      if (i!=0) {
-        result.append(",");
-      }
-      result.append(parameters.get(i).getTypeAsString());
-    }
-    result.append(")");
-    return result.toString();
-  }
+//  static String buildRootFunctionSignature(CrossBlockchainControl.Info _start, CrossBlockchainControl.Info _seg0, CrossBlockchainControl.Info _seg1) {
+//      final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+//          FUNC_ROOT,
+//          Arrays.<Type>asList(_start,
+//              _seg0,
+//              _seg1),
+//          Collections.<TypeReference<?>>emptyList());
+//
+//    final List<Type> parameters = function.getInputParameters();
+//    return buildMethodSignature(function.getName(), parameters);
+//  }
+//
+//  static String buildMethodSignature(
+//      final String methodName, final List<Type> parameters) {
+//
+//    final StringBuilder result = new StringBuilder();
+//    result.append(methodName);
+//    result.append("(");
+////    final String params =
+////        parameters.stream().map(Type::getTypeAsString).collect(Collectors.joining(","));
+////    result.append(params);
+//
+//    for (int i=0; i<parameters.size(); i++) {
+//      if (i!=0) {
+//        result.append(",");
+//      }
+//      result.append(parameters.get(i).getTypeAsString());
+//    }
+//    result.append(")");
+//    return result.toString();
+//  }
 
 
   public void OLD_getProofForTxReceipt(TransactionReceipt aReceipt) throws Exception {

@@ -121,9 +121,49 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         delete activeCallLockedContracts;
     }
 
-    function root(Info calldata _start, Info calldata _seg0, Info calldata _seg1) external override {
+    event Root2(uint256 _bcId, address _cbcContract, bytes32 _receiptRoot, bytes _encodedTxReceipt /* , uint256[] _proofOffsets, bytes[] proof */);
+
+    Info[] rootCalls;
+
+    function rootPrep(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptRoot,
+        bytes calldata _encodedTxReceipt, uint256[] calldata _proofOffsets, bytes[] calldata _proof) external override {
+        uint256[] memory proofOffsets = new uint256[](_proofOffsets.length);
+        for (uint256 i = 0; i < _proofOffsets.length; i++) {
+            proofOffsets[i] = _proofOffsets[i];
+        }
+        bytes[] memory proof = new bytes[](_proof.length);
+        for (uint256 i = 0; i < _proof.length; i++) {
+            proof[i] = _proof[i];
+        }
+        emit Root2(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt);
+        Info memory call = Info(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt, proofOffsets, proof);
+        rootCalls.push(call);
+
+        txReceiptRootStorage.verify(_blockchainId, _txReceiptRoot, _encodedTxReceipt, _proofOffsets, _proof);
+
+    }
+
+
+    function root() external override {
+
+
+
+//emit Root2(_start.blockchainId, _start.txReceiptRoot,  _start.txReceipt,  _start.proofOffset, _start.proof);
+
+        // Start by verifying the transaction receipts.
+        // txReceiptRootStorage.verify(_start.blockchainId, _start.txReceiptRoot, _start.txReceipt, _start.proofOffset, _start.proof);
+//        txReceiptRootStorage.verify(_seg0.blockchainId, _seg0.txReceiptRoot, _seg0.txReceipt, _seg0.proofOffset, _seg0.proof);
+
+
+
         emit Root(13, true);
     }
+
+// TODO should be Info[]
+    function root2(Info calldata) external {
+    }
+
+
 
     function root1(uint256[][] calldata _start) external {
         emit Root(17, true);

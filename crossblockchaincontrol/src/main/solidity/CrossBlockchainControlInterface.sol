@@ -35,14 +35,17 @@ interface CrossBlockchainControlInterface {
 
     struct Info {
         uint256 blockchainId;
-        address cBCContract;
+        address cbcContract;
         bytes32 txReceiptRoot;
         bytes txReceipt;
         uint256[] proofOffset;
         bytes[] proof;
     }
 
-    function root(Info calldata _start, Info calldata _seg0, Info calldata _seg1) external;
+    function rootPrep(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptRoot,
+        bytes calldata _txReceipt, uint256[] calldata _proofOffsets, bytes[] calldata _proof) external;
+
+    function root() external;
 
 
 
