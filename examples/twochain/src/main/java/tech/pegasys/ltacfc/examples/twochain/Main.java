@@ -244,8 +244,7 @@ public class Main {
         segmentBlockchainIds, segmentBlockchainCBCs,
         segmentTxReceiptRoots, segmentTxReceipts, segmentProofOffsets, segmentProofs);
 
-
-      LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
+    LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
 
 
 

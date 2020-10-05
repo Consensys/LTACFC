@@ -1,0 +1,44 @@
+[{"inputs":[{"internalType":"uint256","name":"_myBlockchainId","type":"uint256"},{"internalType":"address","name":"_txReceiptRootStorage","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"}],"name":"Close","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bcId","type":"uint256"},{"indexed":false,"internalType":"address","name":"_addr","type":"address"},{"indexed":false,"internalType":"bytes","name":"_functionCall","type":"bytes"}],"name":"Dump","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"_success","type":"bool"}],"name":"Root","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"_hashOfCallGraph","type":"bytes32"},{"indexed":false,"internalType":"uint256[]","name":"_callPath","type":"uint256[]"},{"indexed":false,"internalType":"address[]","name":"_lockedContracts","type":"address[]"},{"indexed":false,"internalType":"bool","name":"_success","type":"bool"},{"indexed":false,"internalType":"bytes","name":"_returnValue","type":"bytes"}],"name":"Segment","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"}],"name":"Signalling","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"_timeout","type":"uint256"},{"indexed":false,"internalType":"bytes","name":"_callGraph","type":"bytes"}],"name":"Start","type":"event"},{"inputs":[],"name":"activeCallCrossBlockchainTransactionId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"activeCallGraph","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"activeCallRootBlockchainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_contractToLock","type":"address"}],"name":"addToListOfLockedContracts","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"callGraphs","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"close","outputs":[],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"address","name":"","type":"address"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"crossBlockchainCall","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"address","name":"","type":"address"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"crossBlockchainCallReturnsUint256","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"}],"name":"crossBlockchainTransactionExists","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"}],"name":"crossBlockchainTransactionTimeout","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getActiveCallCrossBlockchainTransactionId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getActiveCallRootBlockchainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isSingleBlockchainCall","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+{"inputs":[],"name":"myBlockchainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+
+{"inputs":[{"components":[{"internalType":"uint256","name":"blockchainId","type":"uint256"},
+{"internalType":"address","name":"cBCContract","type":"address"},
+{"internalType":"bytes32","name":"txReceiptRoot","type":"bytes32"},
+{"internalType":"bytes","name":"txReceipt","type":"bytes"},
+{"internalType":"uint256[]","name":"proofOffset","type":"uint256[]"},
+{"internalType":"bytes[]","name":"proof","type":"bytes[]"}],
+"internalType":"struct CrossBlockchainControlInterface.Info",
+"name":"_start","type":"tuple"},
+
+{"components":[{"internalType":"uint256","name":"blockchainId","type":"uint256"},
+{"internalType":"address","name":"cBCContract","type":"address"},
+{"internalType":"bytes32","name":"txReceiptRoot","type":"bytes32"},
+{"internalType":"bytes","name":"txReceipt","type":"bytes"},
+{"internalType":"uint256[]","name":"proofOffset","type":"uint256[]"},
+{"internalType":"bytes[]","name":"proof","type":"bytes[]"}],
+"internalType":"struct CrossBlockchainControlInterface.Info","name":"_seg0","type":"tuple"},
+
+{"components":[{"internalType":"uint256","name":"blockchainId","type":"uint256"},
+{"internalType":"address","name":"cBCContract","type":"address"},
+{"internalType":"bytes32","name":"txReceiptRoot","type":"bytes32"},
+{"internalType":"bytes","name":"txReceipt","type":"bytes"},
+{"internalType":"uint256[]","name":"proofOffset","type":"uint256[]"},
+{"internalType":"bytes[]","name":"proof","type":"bytes[]"}],
+"internalType":"struct CrossBlockchainControlInterface.Info","name":"_seg1","type":"tuple"}]
+,"name":"root","outputs":[],"stateMutability":"nonpayable","type":"function"},
+
+
+
+
+{"inputs":[{"internalType":"uint256","name":"_rootBlockchainId","type":"uint256"},
+{"internalType":"address","name":"_rootCBCContract","type":"address"},
+{"internalType":"bytes32","name":"_startEventTxReceiptRoot","type":"bytes32"},
+{"internalType":"bytes","name":"_encodedStartTxReceipt","type":"bytes"},
+{"internalType":"uint256[]","name":"_proofOffsets","type":"uint256[]"},
+{"internalType":"bytes[]","name":"_proof","type":"bytes[]"},
+{"internalType":"uint256[]","name":"_callPath","type":"uint256[]"}],
+
+"name":"segment","outputs":[],"stateMutability":"nonpayable","type":"function"},
+{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"signalling","outputs":[],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_crossBlockchainTransactionId","type":"uint256"},{"internalType":"uint256","name":"_timeout","type":"uint256"},{"internalType":"bytes","name":"_callGraph","type":"bytes"}],"name":"start","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"timeout","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+
+{"inputs":[],"name":"txReceiptRootStorage","outputs":[{"internalType":"contract TxReceiptsRootStorageInterface","name":"","type":"address"}],"stateMutability":"view","type":"function"}]

@@ -24,15 +24,29 @@ interface CrossBlockchainControlInterface {
         bytes32 _startEventTxReceiptRoot, bytes calldata _startTxReceipt,
         uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external;
 
-    function root(
-        uint256[] calldata _rootAndSegmentBlockchainIds,
-        address[] calldata _rootAndSegmentCBCContracts,
-        bytes32[] calldata _startAndSegmentTxReceiptRoots,
-        bytes[] calldata _startAndSegmentTxReceipts,
-        uint256[][] calldata _startAndSegmentProofOffsets,
-        bytes[][] calldata _startAndSegmentProofs) external;
+//    function root(
+//        uint256[] calldata _rootAndSegmentBlockchainIds,
+//        address[] calldata _rootAndSegmentCBCContracts,
+//        bytes32[] calldata _startAndSegmentTxReceiptRoots,
+//        bytes[] calldata _startAndSegmentTxReceipts,
+////        uint256[][] calldata _startAndSegmentProofOffsets //,
+//        bytes[][] calldata _startAndSegmentProofs
+//    ) external;
 
-function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
+    struct Info {
+        uint256 blockchainId;
+        address cBCContract;
+        bytes32 txReceiptRoot;
+        bytes txReceipt;
+        uint256[] proofOffset;
+        bytes[] proof;
+    }
+
+    function root(Info calldata _start, Info calldata _seg0, Info calldata _seg1) external;
+
+
+
+    function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 
     function close(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
 

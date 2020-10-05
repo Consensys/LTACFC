@@ -121,17 +121,32 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         delete activeCallLockedContracts;
     }
 
-    function root(
-        uint256[] calldata _rootAndSegmentBlockchainIds,
-        address[] calldata _rootAndSegmentCBCContracts,
-        bytes32[] calldata _startAndSegmentTxReceiptRoots,
-        bytes[] calldata _startAndSegmentTxReceipts,
-        uint256[][] calldata _startAndSegmentProofOffsets,
-        bytes[][] calldata _startAndSegmentProofs) external override {
-
-        emit Root(7, true);
-
+    function root(Info calldata _start, Info calldata _seg0, Info calldata _seg1) external override {
+        emit Root(13, true);
     }
+
+    function root1(uint256[][] calldata _start) external {
+        emit Root(17, true);
+    }
+
+
+//    function root(
+//        uint256[] calldata _rootAndSegmentBlockchainIds,
+//        address[] calldata _rootAndSegmentCBCContracts,
+//        bytes32[] calldata _startAndSegmentTxReceiptRoots,
+//        bytes[] calldata _startAndSegmentTxReceipts,
+////        uint256[][] calldata _startAndSegmentProofOffsets,
+//        bytes[][] calldata _startAndSegmentProofs
+//) external override {
+//
+//        emit Root(7, true);
+//
+//    }
+
+//    function root2(Info[] calldata /* _startAndSegments */ ) external override {
+//        emit Root(13, true);
+//    }
+
 
     function signalling(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
 
