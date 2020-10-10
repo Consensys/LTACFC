@@ -25,7 +25,15 @@ abstract contract BytesUtil {
 
     // TODO find something faster than this.
     // From stack overflow here: https://ethereum.stackexchange.com/questions/7702/how-to-convert-byte-array-to-bytes32-in-solidity
-    function bytesToBytes32(bytes calldata b, uint offset) internal pure returns (bytes32) {
+    function bytesToBytes32CallData(bytes calldata b, uint offset) internal pure returns (bytes32) {
+        bytes32 out;
+
+        for (uint i = 0; i < 32; i++) {
+            out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+        }
+        return out;
+    }
+    function bytesToBytes32(bytes memory b, uint offset) internal pure returns (bytes32) {
         bytes32 out;
 
         for (uint i = 0; i < 32; i++) {

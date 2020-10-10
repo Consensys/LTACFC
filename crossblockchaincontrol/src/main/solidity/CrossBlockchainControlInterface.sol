@@ -37,8 +37,8 @@ interface CrossBlockchainControlInterface {
         uint256 blockchainId;
         address cbcContract;
         bytes32 txReceiptRoot;
-        bytes txReceipt;
-        uint256[] proofOffset;
+        bytes encodedTxReceipt;
+        uint256[] proofOffsets;
         bytes[] proof;
     }
 
@@ -56,7 +56,7 @@ interface CrossBlockchainControlInterface {
     function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external;
 
 
-    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external view returns (uint256);
+    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external returns (uint256);
 
     // Called by a provisional storage contract indicating the contract needs to be locked.
     function addToListOfLockedContracts(address _contractToLock) external;
@@ -78,4 +78,5 @@ interface CrossBlockchainControlInterface {
     function myBlockchainId() external view returns(uint256);
     function timeout(uint256) external view returns(uint256);
     function callGraphs(uint256) external view returns(bytes memory);
+    function previousCallResult(uint256) external view returns(uint256);
 }

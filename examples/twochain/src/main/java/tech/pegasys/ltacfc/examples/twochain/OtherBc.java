@@ -77,17 +77,12 @@ public class OtherBc extends AbstractBlockchain {
     LOG.info("Cross Bc Id: {}", this.crossBlockchainControlContract.activeCallCrossBlockchainTransactionId().send().toString(16));
     LOG.info("CallGraph: {}", new BigInteger(1, this.crossBlockchainControlContract.activeCallGraph().send()).toString(16));
 
-    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    CrossBlockchainControl.DumpEventResponse event = dumpEventResponses.get(0);
-    LOG.info("Bc Id: {}", event._bcId.toString(16));
-    LOG.info("Addr: {}", event._addr);
-    LOG.info("Function Call: {}", (new BigInteger(1, event._functionCall)).toString(16));
-
     List<CrossBlockchainControl.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
     CrossBlockchainControl.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
     LOG.info("Segment Event:");
     LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
     LOG.info(" _callPath len: {}", segmentEventResponse._callPath.size());
+    LOG.info(" _hashOfCallGraph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
     LOG.info(" _success: {}", segmentEventResponse._success);
     LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
     LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());

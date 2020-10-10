@@ -48,7 +48,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import static tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl.FUNC_ROOT;
-import static tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl.FUNC_ROOT1;
+
 
 public class RootBc extends AbstractBlockchain {
   static final Logger LOG = LogManager.getLogger(RootBc.class);
@@ -107,52 +107,21 @@ public class RootBc extends AbstractBlockchain {
 
 //    RlpDumper.dump(RLP.input(Bytes.wrap(startTxReceipt)));
 
-    CrossBlockchainControl.Info rootInfo = new CrossBlockchainControl.Info(segmentBlockchainIds.get(0), segmentBlockchainCBCs.get(0),
-        segmentTxReceiptRoots.get(0), segmentTxReceipts.get(0), segmentProofOffsets.get(0), segmentProofs.get(0));
-    CrossBlockchainControl.Info seg1Info = new CrossBlockchainControl.Info(segmentBlockchainIds.get(1), segmentBlockchainCBCs.get(1),
-        segmentTxReceiptRoots.get(1), segmentTxReceipts.get(1), segmentProofOffsets.get(1), segmentProofs.get(1));
-    CrossBlockchainControl.Info seg2Info = new CrossBlockchainControl.Info(segmentBlockchainIds.get(2), segmentBlockchainCBCs.get(2),
-        segmentTxReceiptRoots.get(2), segmentTxReceipts.get(2), segmentProofOffsets.get(2), segmentProofs.get(2));
+//    CrossBlockchainControl.Info rootInfo = new CrossBlockchainControl.Info(segmentBlockchainIds.get(0), segmentBlockchainCBCs.get(0),
+//        segmentTxReceiptRoots.get(0), segmentTxReceipts.get(0), segmentProofOffsets.get(0), segmentProofs.get(0));
+//    CrossBlockchainControl.Info seg1Info = new CrossBlockchainControl.Info(segmentBlockchainIds.get(1), segmentBlockchainCBCs.get(1),
+//        segmentTxReceiptRoots.get(1), segmentTxReceipts.get(1), segmentProofOffsets.get(1), segmentProofs.get(1));
+//    CrossBlockchainControl.Info seg2Info = new CrossBlockchainControl.Info(segmentBlockchainIds.get(2), segmentBlockchainCBCs.get(2),
+//        segmentTxReceiptRoots.get(2), segmentTxReceipts.get(2), segmentProofOffsets.get(2), segmentProofs.get(2));
 
 
     for (int i = 0; i <= 2; i++) {
-
       TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
           segmentBlockchainIds.get(i), segmentBlockchainCBCs.get(i),
           segmentTxReceiptRoots.get(i), segmentTxReceipts.get(i), segmentProofOffsets.get(i), segmentProofs.get(i)).send();
-//    TransactionReceipt txR = this.crossBlockchainControlContract.root(
-//        segmentBlockchainIds, segmentBlockchainCBCs,
-//        segmentTxReceiptRoots, segmentTxReceipts,
-//        //segmentProofOffsets,
-//        segmentProofs
-//    ).send();
       if (!txR.isStatusOK()) {
         throw new Exception("Root transaction failed");
       }
-
-
-//    String rlpRoot = this.crossBlockchainControlContract.getRLP_root(rootInfo, seg1Info, seg2Info);
-//    LOG.info("RLP Root Transaction: {}", rlpRoot);
-//
-////    LOG.info("root function sig: {}", buildRootFunctionSignature(rootInfo, seg1Info, seg2Info));
-//
-//    TransactionReceipt txR = this.crossBlockchainControlContract.root(rootInfo, seg1Info, seg2Info).send();
-////    TransactionReceipt txR = this.crossBlockchainControlContract.root(
-////        segmentBlockchainIds, segmentBlockchainCBCs,
-////        segmentTxReceiptRoots, segmentTxReceipts,
-////        //segmentProofOffsets,
-////        segmentProofs
-////    ).send();
-//    if (!txR.isStatusOK()) {
-//      throw new Exception("Root transaction failed");
-//    }
-
-//    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-//    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
-//    LOG.info("Root Event:");
-//    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
-//    LOG.info(" _success: {}", rootEventResponse._success);
-
       LOG.info("Root 2 Events");
       List<CrossBlockchainControl.Root2EventResponse> root2EventResponses = this.crossBlockchainControlContract.getRoot2Events(txR);
       for (CrossBlockchainControl.Root2EventResponse root2EventResponse : root2EventResponses) {
@@ -163,6 +132,42 @@ public class RootBc extends AbstractBlockchain {
         LOG.info("   _encoded tx receipt: {}", new BigInteger(1, root2EventResponse._encodedTxReceipt).toString(16));
       }
     }
+
+    TransactionReceipt txR = this.crossBlockchainControlContract.root().send();
+//    TransactionReceipt txR = this.crossBlockchainControlContract.root(
+//        segmentBlockchainIds, segmentBlockchainCBCs,
+//        segmentTxReceiptRoots, segmentTxReceipts,
+//        //segmentProofOffsets,
+//        segmentProofs
+//    ).send();
+    if (!txR.isStatusOK()) {
+      throw new Exception("Root transaction failed");
+    }
+
+    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
+    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
+    LOG.info("Root Event:");
+    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
+    LOG.info(" _success: {}", rootEventResponse._success);
+
+
+    LOG.info("Dump Events");
+    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
+    for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses) {
+      LOG.info("  Event:");
+      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
+      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
+      LOG.info("   3: {}", dumpEventResponse._val3);
+      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
+    }
+
+    BigInteger val = this.rootBlockchainContract.getLocalVal().send();
+    BigInteger other = this.rootBlockchainContract.getLocalValOther().send();
+    LOG.info("val: 0x{}", val.toString(16));
+    LOG.info("other: 0x{}", other.toString(16));
+
+
+
 
 //    List<List<BigInteger>> bi1 = new ArrayList<>();
 //    List<BigInteger> bi2 = new ArrayList<>();
