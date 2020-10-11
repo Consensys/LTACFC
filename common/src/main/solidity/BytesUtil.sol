@@ -133,4 +133,12 @@ abstract contract BytesUtil {
     function slice(bytes memory _bytes, uint256 _start) internal pure returns (bytes memory) {
         return slice(_bytes, _start, (_bytes.length - _start));
     }
+
+    function compare(bytes memory _a, bytes memory _b) internal pure returns (bool) {
+        if(_a.length != _b.length) {
+            return false;
+        } else {
+            return keccak256(_a) == keccak256(_b);
+        }
+    }
 }

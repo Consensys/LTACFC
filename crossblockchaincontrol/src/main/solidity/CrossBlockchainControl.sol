@@ -33,6 +33,13 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     event Signalling(uint256 _crossBlockchainTransactionId);
     event Close(uint256 _crossBlockchainTransactionId);
 
+    event Call(
+        uint256 _expectedBlockchainId, uint256 _actualBlockchainId,
+        address _expectedContract, address _actualContract,
+        bytes _expectedFunctionCall, bytes _actualFunctionCall,
+        bytes _retVal);
+    event NotEnoughCalls(uint256 _expectedNumberOfCalls, uint256 _actualNumberOfCalls);
+
     event Dump(uint256 _val1, bytes32 _val2, address _val3, bytes _val4);
 
     uint256 public override myBlockchainId;
@@ -60,6 +67,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     uint256 private activeCallReturnValuesIndex;
     mapping(address => bool) private activeCallLockedContractsMap;
     address[] private activeCallLockedContracts;
+    bool private activeCallFailed;
 
 
     constructor(uint256 _myBlockchainId, address _txReceiptRootStorage) {
@@ -289,11 +297,18 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         bool isSuccess;
         (isSuccess, ) = targetContract.call(functionCall);
 
-        // TODO check that all cross-blockchain calls were used.
+        // Check that all cross-blockchain calls were used.
+        if (activeCallReturnValues.length != activeCallReturnValuesIndex) {
+            emit NotEnoughCalls(activeCallReturnValues.length, activeCallReturnValuesIndex);
+            isSuccess = false;
+        }
+
+        isSuccess = activeCallFailed ? false : isSuccess;
+
 
         unlockContracts(isSuccess);
 
-        emit Root(activeCallCrossBlockchainTransactionId, true);
+        emit Root(activeCallCrossBlockchainTransactionId, isSuccess);
         cleanupAfterCall();
     }
 
@@ -336,23 +351,16 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
     }
 
-    function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override {
-        require(activeCallReturnValuesIndex < activeCallReturnValues.length, "Call to cross call without return value");
+    function crossBlockchainCall(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) external override {
+        bytes memory returnValue = commonCallProcessing(_blockchainId, _contract, _functionCallData);
 
-        // Check that this function call should occur and register if this is an error.
-
-        // TODO if return values != empty then assert
-
-        activeCallReturnValuesIndex++;
-
+        // Revert if return value != empty then assert
+        require(compare(returnValue, bytes("")));
     }
 
 
-    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override returns (uint256){
-        // Check that this function call should occur and register if this is an error.
-        require(activeCallReturnValuesIndex < activeCallReturnValues.length, "Call to cross call without return value");
-
-        bytes memory returnValue = activeCallReturnValues[activeCallReturnValuesIndex++];
+    function crossBlockchainCallReturnsUint256(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) external override returns (uint256){
+        bytes memory returnValue = commonCallProcessing(_blockchainId, _contract, _functionCallData);
         return BytesUtil.bytesToUint256(returnValue, 0);
     }
 
@@ -453,6 +461,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         delete activeCallLockedContracts;
         delete activeCallReturnValues;
         delete activeCallReturnValuesIndex;
+        delete activeCallFailed;
     }
 
     function unlockContracts(bool _commit) private {
@@ -463,4 +472,31 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
             lockableStorageContract.finalise(_commit);
         }
     }
+
+
+    function commonCallProcessing(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) private returns(bytes memory) {
+        emit Dump(_blockchainId, bytes32(0), _contract, _functionCallData);
+
+        require(activeCallReturnValuesIndex < activeCallReturnValues.length, "Call to cross call without return value");
+
+        // Check that this function call should occur
+        uint256[] memory callPath = new uint256[](activeCallsCallPath.length + 1);
+        for (uint i = 0; i < activeCallsCallPath.length; i++) {
+            callPath[i] = activeCallsCallPath[i];
+        }
+        callPath[callPath.length - 1] = activeCallReturnValuesIndex + 1;
+        (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(activeCallGraph, callPath);
+
+        if (_blockchainId != targetBlockchainId ||
+            _contract != targetContract ||
+            !compare(_functionCallData, functionCall)) {
+            activeCallFailed = true;
+        }
+        bytes memory retVal = activeCallReturnValues[activeCallReturnValuesIndex++];
+
+        emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, retVal);
+
+        return retVal;
+}
+
 }

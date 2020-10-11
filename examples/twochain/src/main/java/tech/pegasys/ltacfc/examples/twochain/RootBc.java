@@ -161,6 +161,19 @@ public class RootBc extends AbstractBlockchain {
       LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
     }
 
+    LOG.info("Call Events");
+    List<CrossBlockchainControl.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
+    for (CrossBlockchainControl.CallEventResponse callEventResponse : callEventResponses) {
+      LOG.info("  Event:");
+      LOG.info("   Expected Blockchain Id: {}", callEventResponse._expectedBlockchainId.toString(16));
+      LOG.info("   Actual Blockchain Id: {}", callEventResponse._actualBlockchainId.toString(16));
+      LOG.info("   Expected Contract: {}", callEventResponse._expectedContract);
+      LOG.info("   Actual Contract: {}", callEventResponse._actualContract);
+      LOG.info("   Expected Function Call: {}", new BigInteger(1, callEventResponse._expectedFunctionCall).toString(16));
+      LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
+      LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
+    }
+
     BigInteger val = this.rootBlockchainContract.getLocalVal().send();
     BigInteger other = this.rootBlockchainContract.getLocalValOther().send();
     LOG.info("val: 0x{}", val.toString(16));
