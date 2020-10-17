@@ -26,6 +26,7 @@ import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
+import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.RootBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
@@ -93,32 +94,17 @@ public class RootBc extends AbstractBlockchain {
   }
 
 
-  public void root(
-      byte[] startTxReceiptRoot, byte[] startTxReceipt, List<BigInteger> startProofOffsets, List<byte[]> startProof,
-      List<BigInteger> segmentBlockchainIds, List<String> segmentBlockchainCBCs,
-      List<byte[]> segmentTxReceiptRoots, List<byte[]> segmentTxReceipts, List<List<BigInteger>> segmentProofOffsets, List<List<byte[]>> segmentProofs) throws Exception {
+  public void root(CrossEventProof startProof, List<CrossEventProof> segProofs) throws Exception {
+    segProofs.add(0, startProof);
 
-      segmentBlockchainIds.add(0, this.blockchainId);
-      segmentBlockchainCBCs.add(0, this.crossBlockchainControlContract.getContractAddress());
-      segmentTxReceiptRoots.add(0, startTxReceiptRoot);
-      segmentTxReceipts.add(0, startTxReceipt);
-      segmentProofOffsets.add(0, startProofOffsets);
-      segmentProofs.add(0, startProof);
-
-//    RlpDumper.dump(RLP.input(Bytes.wrap(startTxReceipt)));
-
-//    CrossBlockchainControl.Info rootInfo = new CrossBlockchainControl.Info(segmentBlockchainIds.get(0), segmentBlockchainCBCs.get(0),
-//        segmentTxReceiptRoots.get(0), segmentTxReceipts.get(0), segmentProofOffsets.get(0), segmentProofs.get(0));
-//    CrossBlockchainControl.Info seg1Info = new CrossBlockchainControl.Info(segmentBlockchainIds.get(1), segmentBlockchainCBCs.get(1),
-//        segmentTxReceiptRoots.get(1), segmentTxReceipts.get(1), segmentProofOffsets.get(1), segmentProofs.get(1));
-//    CrossBlockchainControl.Info seg2Info = new CrossBlockchainControl.Info(segmentBlockchainIds.get(2), segmentBlockchainCBCs.get(2),
-//        segmentTxReceiptRoots.get(2), segmentTxReceipts.get(2), segmentProofOffsets.get(2), segmentProofs.get(2));
-
-
-    for (int i = 0; i <= 2; i++) {
+    for (CrossEventProof proofInfo: segProofs) {
       TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
-          segmentBlockchainIds.get(i), segmentBlockchainCBCs.get(i),
-          segmentTxReceiptRoots.get(i), segmentTxReceipts.get(i), segmentProofOffsets.get(i), segmentProofs.get(i)).send();
+          proofInfo.getBlockchainId(),
+          proofInfo.getCrossBlockchainControlContract(),
+          proofInfo.getTransactionReceiptRoot(),
+          proofInfo.getTransactionReceipt(),
+          proofInfo.getProofOffsets(),
+          proofInfo.getProofs()).send();
       if (!txR.isStatusOK()) {
         throw new Exception("Root transaction failed");
       }

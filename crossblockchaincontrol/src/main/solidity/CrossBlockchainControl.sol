@@ -24,6 +24,7 @@ import "../../../../lockablestorage/src/main/solidity/LockableStorage.sol";
 contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     bytes32 constant private START_EVENT_SIGNATURE = keccak256("Start(uint256,uint256,bytes)");
     bytes32 constant private SEGMENT_EVENT_SIGNATURE = keccak256("Segment(uint256,bytes32,uint256[],address[],bool,bytes)");
+    bytes32 constant private ROOT_EVENT_SIGNATURE = keccak256("Root(uint256,bool)");
 
 
     event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
@@ -74,6 +75,8 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         myBlockchainId = _myBlockchainId;
         txReceiptRootStorage = TxReceiptsRootStorageInterface(_txReceiptRootStorage);
     }
+
+//TODO is there a short circuit way of adding the transaction receipt root for this blockchain without having to have it multi-signed.
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external override {
 // TODO
@@ -133,6 +136,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         (isSuccess, returnValueEncoded) = targetContract.call(functionCall);
 
         bytes32 hashOfCallGraph = keccak256(callGraph);
+        // TODO emit segments understanding of root blockhain id
         emit Segment(activeCallCrossBlockchainTransactionId, hashOfCallGraph, _callPath, activeCallLockedContracts, isSuccess, returnValueEncoded);
 
         cleanupAfterCall();
@@ -156,7 +160,14 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         Info memory call = Info(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt, proofOffsets, proof);
         rootCalls.push(call);
 
-        txReceiptRootStorage.verify(_blockchainId, _txReceiptRoot, _encodedTxReceipt, _proofOffsets, _proof);
+        // This verification code doesn't need to be here - the verificaiton happens in the funciton.
+        // However, having the verify here helps with debug.
+        txReceiptRootStorage.verify(
+            _blockchainId,
+            _txReceiptRoot,
+            _encodedTxReceipt,
+            _proofOffsets,
+            _proof);
     }
 
 
@@ -164,47 +175,10 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     /**
      * Root call.
      *
-     * Function parameters:
-    //_startEvent: The Start Event emitted during the call to start().
-//_startBlockNumber: The block when start() was called.
-//_startMerkleProof: Merkle Proof that proves Start Event is valid.
-//_calls: Array of return values for the Segment Events emitted during calls.
-//_blockNumbers: Array of block numbers that Segments were called on.
-//_proofs: Array of Merkle Proofs for Segment Events.
-//
-//Processing:
-//Check that tx.origin == msg.sender. This call must be issued by an EOA.
-    // TODO WHY?
-//Check that Crosschain Transaction Id as shown in the Start Event is still active.
-//Check that the root transactions blockchain Id as shown in the Start Event matches this blockchain.
-//Verify the event information for the Start Event, checking the Merkle proof with the block hash for the blockchain and block number.
-//If the block number is after the timeout indicated in the Start Event, GOTO Ignore.
-//Check that the tx.origin matches the account that submitted the Start transaction, by checking the Start Event. Exit if it doesn’t.
-//This means that only the initiator of the transaction can call this function call prior to the time-out.
-//Verify the event information for the Segment Events, checking the Merkle proof with the block hash for the blockchain and block number. Check that the Segment Events correspond to function calls that the Start Event indicates that the root function call should have been called.
-//Exit if the information doesn’t match.
-//If any of the Segment Events indicate an error, Goto Ignore.
-//Extract the function calls in Start Event and return results from _calls to create the list of expected blockchain ids, addresses, function ids,  parameters, and the return results. Store them in an Expected Calls state variable.
-//Call the entry point function call with the parameters, using the values in the Start Event that indicated the root function. Have the call inside a try-catch block (a Solidity 6 feature).
-//Check lockability and lock state for any state reads or writes. Modify as per the rules described later in this document.
-//Each time a cross blockchain function call occurs, the crossCall function will be called. Check that the actual and expected blockchain ids, addresses, function ids, parameters match the values in Expected Calls. Return the function results to the calling code.
-//If the actual and expected values don’t match: set a state variable to indicate there has been an error and throw an error in the function.
-//When the entry point function call for this shard completes:
-//Check that all cross blockchain function calls in Expected Calls were called and that no error was reported. If not goto Ignore.
-//If the code threw an error, goto Ignore.
-//Emit a Root Event indicating the cross blockchain transaction should be committed.
-//Unlock all contracts locked at part of the root function.
-//Add the cross blockchain transaction id to the completed set of transactions RSA accumulator.
-//End
-//Igore:
-//Emit a Root Event indicating the cross blockchain transaction should be ignored.
-//Add the cross blockchain transaction id to the completed set of transactions RSA accumulator.
-//End
-//
-//
-//The Root Event contains:
-//Cross Blockchain Transaction Id
-//Commit or Ignore.
+     * The parameter should be an array of Info[], with the array offset 0 being the start event,
+     * and the other array elements being for segment events. Note that the segment events must be
+     * in order of the functions called.
+     *
     **/
     function root() external override {
         //Verify the start event and all segment events.
@@ -221,30 +195,22 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         // that we can check that the tx.origin for this call matches what is in the start event.
         require(tx.origin == msg.sender, "Transaction must be instigated by an EOA");
 
-        bytes memory _encodedStartTxReceiptLocal = rootCalls[0].encodedTxReceipt;
-        require(address(this) == rootCalls[0].cbcContract, "Root blockchain CBC contract was not this one");
-        bytes memory startEventData = extractStartEventData(address(this), _encodedStartTxReceiptLocal);
-
-        //Check that Crosschain Transaction Id as shown in the Start Event is still active.
-        activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
-        uint256 timeoutForCall = timeout[activeCallCrossBlockchainTransactionId];
-        require(timeoutForCall != 0, "Call not active");
-
         //Check that the blockchain Id that can be used with the transaction receipt for verification matches this
         // blockchain. That is, check that this is the root blockchain.
         require(myBlockchainId == rootCalls[0].blockchainId, "This is not the root blockchain");
         activeCallRootBlockchainId = myBlockchainId;
 
-        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x60);
-        bytes memory callGraph = BytesUtil.slice(startEventData, 0x80, lenOfActiveCallGraph);
-        activeCallGraph = callGraph;
-        bytes32 hashOfCallGraph = keccak256(callGraph);
+        // Ensure this is the cross-blockchain contract contract that generated the start event.
+        require(address(this) == rootCalls[0].cbcContract, "Root blockchain CBC contract was not this one");
 
+        // Extract the start event from the RLP encoded receipt trie data.
+        bytes memory _encodedStartTxReceiptLocal = rootCalls[0].encodedTxReceipt;
+        bytes memory startEventData = extractStartEventData(address(this), _encodedStartTxReceiptLocal);
 
-
-//        emit Dump(block.timestamp, bytes32(0), address(0), "");
-//        emit Dump(timeoutForCall, bytes32(0), address(0), "");
-//
+        // Check that Cross-blockchain Transaction Id as shown in the Start Event is still active.
+        activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
+        uint256 timeoutForCall = timeout[activeCallCrossBlockchainTransactionId];
+        require(timeoutForCall != 0, "Call not active");
 
         //Check if the cross-blockchain transaction has timed-out.
         if (block.timestamp > timeoutForCall) {
@@ -255,6 +221,13 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
         // TODO Check that the tx.origin matches the account that submitted the Start transaction, by checking the Start Event. Exit if it doesn’t.
         //This means that only the initiator of the cross-blockchain transaction can call this function call prior to the time-out.
+
+        // Determine the hash of the call graph described in the start event. This is needed to check the segment
+        // event information.
+        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x60);
+        bytes memory callGraph = BytesUtil.slice(startEventData, 0x80, lenOfActiveCallGraph);
+        activeCallGraph = callGraph;
+        bytes32 hashOfCallGraph = keccak256(callGraph);
 
         //Verify the event information in the Segment Events.
         // Check that the Segment Events correspond to function calls that the Start Event indicates that the
@@ -284,6 +257,11 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
             emit Dump(locationOfReturnValue, hashOfCallGraph, address(0), segmentEvent);
             emit Dump(lenOfReturnValue, hashOfCallGraph, address(0), returnValue);
 
+            // TODO check hash of start event: This ensures the same call graph was executed by all parts of the call graph.
+            // TODO check cross blockchain tx id
+            // TODO fail is success == false
+
+            // Store the extracted return results from segment events.
             activeCallReturnValues.push(returnValue);
         }
 
@@ -313,43 +291,75 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     }
 
 
+    /**
+     * Signalling call: Commit or ignore updates + unlock any locked contracts.
+     *
+     * The parameter should be an array of Info[], with the array offset 0 being the root event,
+     * and the other array elements being for segment events that have locked contracts.
+     *
+     * User rootPrep to set-up the parameters
+     **/
+    function signalling() external override {
+        //Verify the root event and all segment events.
+        for (uint256 i = 0; i < rootCalls.length; i++) {
+            txReceiptRootStorage.verify(
+            rootCalls[i].blockchainId,
+            rootCalls[i].txReceiptRoot,
+            rootCalls[i].encodedTxReceipt,
+            rootCalls[i].proofOffsets,
+            rootCalls[i].proof);
+        }
 
-// TODO should be Info[]
-//    function root2(Info calldata) external {
-//    }
+        // Extract the root event from the RLP encoded receipt trie data.
+        bytes memory _encodedRootTxReceiptLocal = rootCalls[0].encodedTxReceipt;
+        bytes memory rootEventData = extractRootEventData(rootCalls[0].cbcContract, _encodedRootTxReceiptLocal);
+
+        // Extract information from the root event.
+        uint256 rootEventCrossBlockchainTxId = BytesUtil.bytesToUint256(rootEventData, 0);
+        uint256 success = BytesUtil.bytesToUint256(rootEventData, 0x20);
+        // The fact that the event verified implies that the root blockchain id value can be trusted.
+        uint256 rootBlockchainId = rootCalls[0].blockchainId;
+
+        // Check that all of the Segment Events are for the same transaction id, and are for this blockchain.
+        for (uint256 i = 1; i < rootCalls.length; i++) {
+            //Check that the blockchain Id for the segment was matches this contract's blockchain id.
+            require(myBlockchainId == rootCalls[i].blockchainId, "Not the correct blockchain id");
+
+            // Ensure this is the cross-blockchain contract contract that generated the segment event.
+            require(address(this) == rootCalls[i].cbcContract, "Segment blockchain CBC contract was not this one");
+
+            bytes memory segmentEvent = extractSegmentEventData(rootCalls[i].cbcContract, rootCalls[i].encodedTxReceipt);
+
+            // Recall Segment event is defined as:
+            // event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
+            //        address[] _lockedContracts, bool _success, bytes _returnValue);
+            uint256 segmentEventCrossBlockchainTxId = BytesUtil.bytesToUint256(segmentEvent, 0);
+            // Check that the cross blockchain transaction id is the same for the root and the segment event.
+            require(rootEventCrossBlockchainTxId == segmentEventCrossBlockchainTxId);
+            // TODO check the Root Blockchain id indicated in the segment matches the one from the root transaction.
 
 
+            // TODO Check that the cross chain transaction id for the root blockchain id is in use on this blockchain but has not been added to the completed list.
 
-//    function root1(uint256[][] calldata _start) external {
-//        emit Root(17, true);
-//    }
+            // For each address indicated in the Segment Event as being locked, Commit or Ignore updates
+            // according to what the Root Event says.
+            uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(segmentEvent, 0x60);
+            uint256 numElementsOfArray = BytesUtil.bytesToUint256(segmentEvent, locationOfLockedContracts);
+            for (uint256 j = 0; j < numElementsOfArray; j++) {
+                address lockedContractAddr = BytesUtil.bytesToAddress1(segmentEvent, locationOfLockedContracts + 0x20 + 0x20 * j);
+                LockableStorage lockedContract = LockableStorage(lockedContractAddr);
+                // Check that the contract really has been locked by this transaction.
+                require(lockedContract.locked());
+                require(lockedContract.lockedByRootBlockchainId() == rootBlockchainId);
+                require(lockedContract.lockedByTransactionId() == rootEventCrossBlockchainTxId);
+                lockedContract.finalise(success != 0);
+            }
+        }
 
-
-//    function root(
-//        uint256[] calldata _rootAndSegmentBlockchainIds,
-//        address[] calldata _rootAndSegmentCBCContracts,
-//        bytes32[] calldata _startAndSegmentTxReceiptRoots,
-//        bytes[] calldata _startAndSegmentTxReceipts,
-////        uint256[][] calldata _startAndSegmentProofOffsets,
-//        bytes[][] calldata _startAndSegmentProofs
-//) external override {
-//
-//        emit Root(7, true);
-//
-//    }
-
-//    function root2(Info[] calldata /* _startAndSegments */ ) external override {
-//        emit Root(13, true);
-//    }
-
-
-    function signalling(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
-
+//        emit Dump(locationOfLockedContracts, bytes32(0), address(0), segmentEvent);
     }
 
-    function close(bytes32 /* _startEventTxReceiptRoot */, bytes calldata /* _startEvent */) external override  view {
 
-    }
 
     function crossBlockchainCall(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) external override {
         bytes memory returnValue = commonCallProcessing(_blockchainId, _contract, _functionCallData);
@@ -374,6 +384,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
 
     function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) public override view returns (bool) {
+// TODO also check past cross-blockchain transaction calls
         return 0 != timeout[_crossBlockchainTransactionId];
     }
 
@@ -438,6 +449,16 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         (, segmentEventData) = extractEvent(_cBCContract, SEGMENT_EVENT_SIGNATURE, receiptBytes);
         return segmentEventData;
     }
+
+    function extractRootEventData(address _cBCContract, bytes memory _encodedTxReceipt) private pure returns (bytes memory) {
+        RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedTxReceipt));
+        bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
+        //        (RLP.RLPItem[] memory startEventTopics, bytes memory startEventData) =
+        bytes memory rootEventData;
+        (, rootEventData) = extractEvent(_cBCContract, ROOT_EVENT_SIGNATURE, receiptBytes);
+        return rootEventData;
+    }
+
 
     function failRootTransaction() private {
         timeout[activeCallCrossBlockchainTransactionId] = 0;

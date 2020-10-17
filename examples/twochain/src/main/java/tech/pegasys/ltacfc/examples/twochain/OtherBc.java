@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import tech.pegasys.ltacfc.rlp.RlpDumper;
@@ -62,14 +63,18 @@ public class OtherBc extends AbstractBlockchain {
     return  isLocked;
   }
 
-  public TransactionReceipt segment(
-      BigInteger rootBlockchainId, String rootBlockchainCBC, byte[] startTxReceiptRoot, byte[] startTxReceipt, List<BigInteger> proofOffsets, List<byte[]> proof,
-      List<BigInteger> callPath) throws Exception {
+  public TransactionReceipt segment(CrossEventProof startProof, List<BigInteger> callPath) throws Exception {
 
-    RlpDumper.dump(RLP.input(Bytes.wrap(startTxReceipt)));
+    RlpDumper.dump(RLP.input(Bytes.wrap(startProof.getTransactionReceipt())));
 
-    TransactionReceipt txR = this.crossBlockchainControlContract.segment(rootBlockchainId, rootBlockchainCBC,
-        startTxReceiptRoot, startTxReceipt, proofOffsets, proof, callPath).send();
+    TransactionReceipt txR = this.crossBlockchainControlContract.segment(
+        startProof.getBlockchainId(),
+        startProof.getCrossBlockchainControlContract(),
+        startProof.getTransactionReceiptRoot(),
+        startProof.getTransactionReceipt(),
+        startProof.getProofOffsets(),
+        startProof.getProofs(),
+        callPath).send();
     if (!txR.isStatusOK()) {
       throw new Exception("Segment transaction failed");
     }

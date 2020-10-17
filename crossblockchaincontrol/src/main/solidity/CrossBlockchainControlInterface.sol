@@ -49,9 +49,7 @@ interface CrossBlockchainControlInterface {
 
 
 
-    function signalling(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
-
-    function close(bytes32 _startEventTxReceiptRoot, bytes calldata /* _startEvent */) external view;
+    function signalling() external;
 
     function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external;
 

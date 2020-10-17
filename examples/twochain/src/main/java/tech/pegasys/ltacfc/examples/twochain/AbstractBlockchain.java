@@ -27,6 +27,7 @@ import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
+import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
@@ -138,7 +139,7 @@ public abstract class AbstractBlockchain {
   }
 
 
-  public Tuple<List<byte[]>, List<BigInteger>, byte[]> getProofForTxReceipt(TransactionReceipt aReceipt) throws Exception {
+  public CrossEventProof getProofForTxReceipt(BigInteger blockchainId, String cbcContractAddress, TransactionReceipt aReceipt) throws Exception {
     // Calculate receipt root based on logs for all receipts of all transactions in the block.
     String blockHash = aReceipt.getBlockHash();
     EthGetBlockTransactionCountByHash transactionCountByHash = this.web3j.ethGetBlockTransactionCountByHash(blockHash).send();
@@ -231,8 +232,13 @@ public abstract class AbstractBlockchain {
     if (!besuCalculatedReceiptsRoot.toHexString().equalsIgnoreCase(nodeHash.toHexString())) {
       throw new Error("Transaction receipt root calculated using proof did not match actual receipt root");
     }
-
-    return new Tuple(proofs, proofOffsets, encodedTransactionReceipt.toArray());
+    return new CrossEventProof(
+        blockchainId,
+        cbcContractAddress,
+        getTransactionReceiptRoot(aReceipt),
+        encodedTransactionReceipt.toArray(),
+        proofOffsets,
+        proofs);
   }
 
   protected static int findOffset(Bytes rlpOfNode, Bytes nodeRef) {

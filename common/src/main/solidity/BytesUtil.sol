@@ -16,12 +16,19 @@ pragma solidity >=0.7.1;
 
 abstract contract BytesUtil {
 
-    // From stack overflow here: https://ethereum.stackexchange.com/questions/15350/how-to-convert-an-bytes-to-address-in-solidity
-    function bytesToAddress(bytes memory bys) internal pure returns (address addr) {
+    // Based on stack overflow here: https://ethereum.stackexchange.com/questions/15350/how-to-convert-an-bytes-to-address-in-solidity
+    function bytesToAddress1(bytes memory _b, uint256 _startOffset) internal pure returns (address addr) {
         assembly {
-            addr := mload(add(bys,20))
+            addr := mload(add(_b, add(20, _startOffset)))
         }
     }
+
+    function bytesToAddress(bytes memory _b) internal pure returns (address addr) {
+        assembly {
+            addr := mload(add(_b, 20))
+        }
+    }
+
 
     // TODO find something faster than this.
     // From stack overflow here: https://ethereum.stackexchange.com/questions/7702/how-to-convert-byte-array-to-bytes32-in-solidity
