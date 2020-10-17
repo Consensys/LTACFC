@@ -94,7 +94,7 @@ public class RootBc extends AbstractBlockchain {
   }
 
 
-  public void root(CrossEventProof startProof, List<CrossEventProof> segProofs) throws Exception {
+  public TransactionReceipt root(CrossEventProof startProof, List<CrossEventProof> segProofs) throws Exception {
     segProofs.add(0, startProof);
 
     for (CrossEventProof proofInfo: segProofs) {
@@ -190,6 +190,8 @@ public class RootBc extends AbstractBlockchain {
 //    LOG.info("Root Event2:");
 //    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
 //    LOG.info(" _success: {}", rootEventResponse._success);
+
+    return txR;
   }
 
 

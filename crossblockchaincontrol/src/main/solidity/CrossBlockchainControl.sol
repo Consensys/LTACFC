@@ -31,7 +31,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
         address[] _lockedContracts, bool _success, bytes _returnValue);
     event Root(uint256 _crossBlockchainTransactionId, bool _success);
-    event Signalling(uint256 _crossBlockchainTransactionId);
+    event Signalling(uint256 _rootBcId, uint256 _crossBlockchainTransactionId);
     event Close(uint256 _crossBlockchainTransactionId);
 
     event Call(
@@ -250,12 +250,12 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
             uint256 lenOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, locationOfReturnValue);
             bytes memory returnValue = BytesUtil.slice(segmentEvent, locationOfReturnValue + 0x20, lenOfReturnValue);
 
-            emit Dump(crossBlockchainTxId, hashOfCallGraphFromSegment, address(0), segmentEvent);
-            emit Dump(locationOfCallPath, hashOfCallGraphFromSegment, address(0), segmentEvent);
-            emit Dump(locationOfLockedContracts, hashOfCallGraphFromSegment, address(0), segmentEvent);
-            emit Dump(success, hashOfCallGraph, address(0), segmentEvent);
-            emit Dump(locationOfReturnValue, hashOfCallGraph, address(0), segmentEvent);
-            emit Dump(lenOfReturnValue, hashOfCallGraph, address(0), returnValue);
+//            emit Dump(crossBlockchainTxId, hashOfCallGraphFromSegment, address(0), segmentEvent);
+//            emit Dump(locationOfCallPath, hashOfCallGraphFromSegment, address(0), segmentEvent);
+//            emit Dump(locationOfLockedContracts, hashOfCallGraphFromSegment, address(0), segmentEvent);
+//            emit Dump(success, hashOfCallGraph, address(0), segmentEvent);
+//            emit Dump(locationOfReturnValue, hashOfCallGraph, address(0), segmentEvent);
+//            emit Dump(lenOfReturnValue, hashOfCallGraph, address(0), returnValue);
 
             // TODO check hash of start event: This ensures the same call graph was executed by all parts of the call graph.
             // TODO check cross blockchain tx id
@@ -344,9 +344,12 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
             // For each address indicated in the Segment Event as being locked, Commit or Ignore updates
             // according to what the Root Event says.
             uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(segmentEvent, 0x60);
+            emit Dump(locationOfLockedContracts, bytes32(0), address(0), segmentEvent);
             uint256 numElementsOfArray = BytesUtil.bytesToUint256(segmentEvent, locationOfLockedContracts);
+            emit Dump(numElementsOfArray, bytes32(0), address(0), segmentEvent);
             for (uint256 j = 0; j < numElementsOfArray; j++) {
                 address lockedContractAddr = BytesUtil.bytesToAddress1(segmentEvent, locationOfLockedContracts + 0x20 + 0x20 * j);
+                emit Dump(0, bytes32(0), lockedContractAddr, segmentEvent);
                 LockableStorage lockedContract = LockableStorage(lockedContractAddr);
                 // Check that the contract really has been locked by this transaction.
                 require(lockedContract.locked());
@@ -356,7 +359,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
             }
         }
 
-//        emit Dump(locationOfLockedContracts, bytes32(0), address(0), segmentEvent);
+        emit Signalling(rootBlockchainId, rootEventCrossBlockchainTxId);
     }
 
 

@@ -2,18 +2,7 @@ package tech.pegasys.ltacfc.examples.twochain;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
-import org.hyperledger.besu.ethereum.core.Hash;
-import org.hyperledger.besu.ethereum.core.LogTopic;
-import org.hyperledger.besu.ethereum.rlp.RLP;
-import org.hyperledger.besu.ethereum.rlp.RLPInput;
-import org.web3j.abi.EventEncoder;
 import org.web3j.crypto.Credentials;
-import org.web3j.crypto.Sign;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
@@ -21,12 +10,8 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
-import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
-import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.rlp.RlpDumper;
-import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
@@ -128,8 +113,11 @@ public class Main {
     rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
 
 
-    // Prepare for root transaction
+    // Set of all segment proofs needed for the root call.
     List<CrossEventProof> allSegmentProofs = new ArrayList<>();
+    // Set of all segments need for the signal call on Other Blockchain.
+    List<CrossEventProof> signalSegProofs = new ArrayList<>();
+
 
     LOG.info("segment: getVal");
     List<BigInteger> getValCallPath = new ArrayList<>();
@@ -148,6 +136,7 @@ public class Main {
       TransactionReceipt segSetValuesTxReceipt = otherBlockchain.segment(startProof, setValuesCallPath);
       CrossEventProof segSetValuesProof = otherBlockchain.getProofForTxReceipt(otherBcId, otherBcCbcContractAddr, segSetValuesTxReceipt);
       allSegmentProofs.add(segSetValuesProof);
+      signalSegProofs.add(segSetValuesProof);
       // Add tx receipt root so event will be trusted.
       otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
       rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
@@ -159,19 +148,22 @@ public class Main {
       TransactionReceipt segSetValTxReceipt = otherBlockchain.segment(startProof, setValCallPath);
       CrossEventProof segSetValProof = otherBlockchain.getProofForTxReceipt(otherBcId, otherBcCbcContractAddr, segSetValTxReceipt);
       allSegmentProofs.add(segSetValProof);
+      signalSegProofs.add(segSetValProof);
       // Add tx receipt root so event will be trusted.
       otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
       rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
     }
 
     LOG.info("root");
-    rootBlockchain.root(startProof, allSegmentProofs);
+    TransactionReceipt rootTxReceipt = rootBlockchain.root(startProof, allSegmentProofs);
+    CrossEventProof rootProof = rootBlockchain.getProofForTxReceipt(rootBcId, rootBcCbcContractAddr, rootTxReceipt);
+    // Add tx receipt root so event will be trusted.
+    otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
+//    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
 
     LOG.info("signalling");
-//    otherBlockchain.signal(
-//        rootTxReceiptRoot, rootEncodedTxReceiptBytes, rootProofOffsets, rootProof,
-//        segmentBlockchainIds, segmentBlockchainCBCs,
-//        segmentTxReceiptRoots, segmentTxReceipts, segmentProofOffsets, segmentProofs);
+    // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
+    otherBlockchain.signalling(rootProof, signalSegProofs);
 
 
     LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());

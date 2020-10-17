@@ -19,7 +19,7 @@ abstract contract BytesUtil {
     // Based on stack overflow here: https://ethereum.stackexchange.com/questions/15350/how-to-convert-an-bytes-to-address-in-solidity
     function bytesToAddress1(bytes memory _b, uint256 _startOffset) internal pure returns (address addr) {
         assembly {
-            addr := mload(add(_b, add(20, _startOffset)))
+            addr := mload(add(_b, add(32, _startOffset)))
         }
     }
 

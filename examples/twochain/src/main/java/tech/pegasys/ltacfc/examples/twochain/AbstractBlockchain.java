@@ -241,6 +241,69 @@ public abstract class AbstractBlockchain {
         proofs);
   }
 
+
+
+
+  public TransactionReceipt signalling(CrossEventProof rootProof, List<CrossEventProof> segProofs) throws Exception {
+    segProofs.add(0, rootProof);
+
+    for (CrossEventProof proofInfo: segProofs) {
+      TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
+          proofInfo.getBlockchainId(),
+          proofInfo.getCrossBlockchainControlContract(),
+          proofInfo.getTransactionReceiptRoot(),
+          proofInfo.getTransactionReceipt(),
+          proofInfo.getProofOffsets(),
+          proofInfo.getProofs()).send();
+      if (!txR.isStatusOK()) {
+        throw new Exception("Root transaction failed");
+      }
+      LOG.info("RootPrep Events");
+      List<CrossBlockchainControl.Root2EventResponse> root2EventResponses = this.crossBlockchainControlContract.getRoot2Events(txR);
+      for (CrossBlockchainControl.Root2EventResponse root2EventResponse : root2EventResponses) {
+        LOG.info("  Event:");
+        LOG.info("   _bcId: {}", root2EventResponse._bcId.toString(16));
+        LOG.info("   _cbc Contract: {}", root2EventResponse._cbcContract);
+        LOG.info("   _receipt Root: {}", new BigInteger(1, root2EventResponse._receiptRoot).toString(16));
+        LOG.info("   _encoded tx receipt: {}", new BigInteger(1, root2EventResponse._encodedTxReceipt).toString(16));
+      }
+    }
+
+    TransactionReceipt txR = this.crossBlockchainControlContract.signalling().send();
+//    TransactionReceipt txR = this.crossBlockchainControlContract.root(
+//        segmentBlockchainIds, segmentBlockchainCBCs,
+//        segmentTxReceiptRoots, segmentTxReceipts,
+//        //segmentProofOffsets,
+//        segmentProofs
+//    ).send();
+    if (!txR.isStatusOK()) {
+      throw new Exception("Signalling transaction failed");
+    }
+
+    List<CrossBlockchainControl.SignallingEventResponse> sigEventResponses = this.crossBlockchainControlContract.getSignallingEvents(txR);
+    CrossBlockchainControl.SignallingEventResponse sigEventResponse = sigEventResponses.get(0);
+    LOG.info("Signalling Event:");
+    LOG.info(" _rootBlockchainId: {}", sigEventResponse._rootBcId.toString(16));
+    LOG.info(" _crossBlockchainTransactionId: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
+
+
+    LOG.info("Dump Events");
+    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
+    for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses) {
+      LOG.info("  Event:");
+      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
+      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
+      LOG.info("   3: {}", dumpEventResponse._val3);
+      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
+    }
+
+    return txR;
+  }
+
+
+
+
+
   protected static int findOffset(Bytes rlpOfNode, Bytes nodeRef) {
     int sizeNodeRef = nodeRef.size();
     for (int i = 0; i < rlpOfNode.size() - sizeNodeRef; i++) {
