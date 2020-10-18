@@ -23,12 +23,12 @@ import "../../../../lockablestorage/src/main/solidity/LockableStorage.sol";
 
 
 contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableStorageInterface, Receipts {
-    bytes32 constant private START_EVENT_SIGNATURE = keccak256("Start(uint256,uint256,bytes)");
+    bytes32 constant private START_EVENT_SIGNATURE = keccak256("Start(uint256,address,uint256,bytes)");
     bytes32 constant private SEGMENT_EVENT_SIGNATURE = keccak256("Segment(uint256,bytes32,uint256[],address[],bool,bytes)");
     bytes32 constant private ROOT_EVENT_SIGNATURE = keccak256("Root(uint256,bool)");
 
 
-    event Start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes _callGraph);
+    event Start(uint256 _crossBlockchainTransactionId, address _caller, uint256 _timeout, bytes _callGraph);
     event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
         address[] _lockedContracts, bool _success, bytes _returnValue);
     event Root(uint256 _crossBlockchainTransactionId, bool _success);
@@ -88,8 +88,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         require(transactionInformation[_crossBlockchainTransactionId] == NOT_USED, "Transaction already registered");
         transactionInformation[_crossBlockchainTransactionId] = _timeout + block.timestamp;
 
-// TODO emit the account that was the EOA
-        emit Start(_crossBlockchainTransactionId, _timeout, _callGraph);
+        emit Start(_crossBlockchainTransactionId, msg.sender, _timeout, _callGraph);
     }
 
 
@@ -114,18 +113,19 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
             RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedStartTxReceiptLocal));
             bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
     //        (RLP.RLPItem[] memory startEventTopics, bytes memory startEventData) =
-            (, startEventData) =
-                extractEvent(_rootCBCContract, START_EVENT_SIGNATURE, receiptBytes);
+            (, startEventData) = extractEvent(_rootCBCContract, START_EVENT_SIGNATURE, receiptBytes);
         }
 
-// TODO check that account that submitted the transaction is the same one that submitted the start transaction (check the start event)
+
 
         // TODO use transaction id in conjunction with call path to prevent replay attacks.
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
-        //tempActiveTimeout = BytesUtil.bytesToUint256(startEventData, 0x20);
-        // Skip the type field at 0x40.
-        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x60);
-        bytes memory callGraph = BytesUtil.slice(startEventData, 0x80, lenOfActiveCallGraph);
+        address startCaller = BytesUtil.bytesToAddress1(startEventData, 0x20);
+        require(startCaller == tx.origin, "EOA does not match start event");
+        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x80);
+        emit Dump(lenOfActiveCallGraph, bytes32(0), address(0), bytes(""));
+
+        bytes memory callGraph = BytesUtil.slice(startEventData, 0xA0, lenOfActiveCallGraph);
         activeCallGraph = callGraph;
 
         activeCallRootBlockchainId = _rootBlockchainId;
@@ -133,7 +133,6 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
 
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, _callPath);
         require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
-//        execute(targetContract, functionCall);
 
         bool isSuccess;
         bytes memory returnValueEncoded;
@@ -225,13 +224,17 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
             return;
         }
 
-        // TODO Check that the tx.origin matches the account that submitted the Start transaction, by checking the Start Event. Exit if it doesn’t.
-        //This means that only the initiator of the cross-blockchain transaction can call this function call prior to the time-out.
+        // Check that the tx.origin matches the account that submitted the Start transaction,
+        // by checking the Start Event. Exit if it doesn’t.
+        // This means that only the initiator of the cross-blockchain transaction can call this
+        // function call prior to the time-out.
+        address startCaller = BytesUtil.bytesToAddress1(startEventData, 0x20);
+        require(startCaller == tx.origin, "EOA does not match start event");
 
         // Determine the hash of the call graph described in the start event. This is needed to check the segment
         // event information.
-        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x60);
-        bytes memory callGraph = BytesUtil.slice(startEventData, 0x80, lenOfActiveCallGraph);
+        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x80);
+        bytes memory callGraph = BytesUtil.slice(startEventData, 0xA0, lenOfActiveCallGraph);
         activeCallGraph = callGraph;
         bytes32 hashOfCallGraph = keccak256(callGraph);
 
