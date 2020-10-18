@@ -15,10 +15,10 @@
 pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
-import "../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControlInterface.sol";
+import "../../../../crossblockchaincontrol/src/main/solidity/CbcLockableStorageInterface.sol";
 
 
-contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
+contract MockCbcForLockableStorageTest is CbcLockableStorageInterface {
     uint256 private rootBlockchainId;
     uint256 private transactionId;
 
@@ -50,31 +50,6 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
 
     // ****** Functions below here not used in this test ****
 
-
-
-    function start(uint256, uint256, bytes calldata) external override {
-
-    }
-
-    function segment(
-        uint256, address, bytes32, bytes calldata ,
-        uint256[] calldata, bytes[] calldata, uint256[] calldata) external override {
-
-    }
-
-    function root() external override {
-    }
-
-    function rootPrep(uint256, address, bytes32,
-        bytes calldata, uint256[] calldata, bytes[] calldata) external override {
-
-    }
-
-
-    function signalling() external override {
-
-    }
-
     function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external override {
 
     }
@@ -88,32 +63,4 @@ contract MockCbcForLockableStorageTest is CrossBlockchainControlInterface {
     function addToListOfLockedContracts(address /* _contractToLock */ ) external override {
 
     }
-
-    function crossBlockchainTransactionExists(uint256 /* _crossBlockchainTransactionId */) external override pure returns (bool) {
-        return false;
-    }
-
-    function crossBlockchainTransactionTimeout(uint256 /* _crossBlockchainTransactionId */ ) external override pure returns (uint256) {
-        return uint256(0);
-    }
-
-
-
-    // Accessor functions for public variables.
-    function myBlockchainId() external override pure returns(uint256) {
-        return uint256(0);
-    }
-
-    function timeout(uint256) external override pure returns(uint256) {
-        return uint256(0);
-    }
-
-    function callGraphs(uint256) external override pure returns(bytes memory) {
-        return "";
-    }
-
-    function previousCallResult(uint256) external override pure returns(uint256) {
-        return 0;
-    }
-
 }

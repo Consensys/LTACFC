@@ -15,13 +15,14 @@
 pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
+import "./CbcLockableStorageInterface.sol";
 import "./CrossBlockchainControlInterface.sol";
 import "../../../../blockheader/src/main/solidity/TxReceiptsRootStorageInterface.sol";
 import "../../../../receipts/src/main/solidity/Receipts.sol";
 import "../../../../lockablestorage/src/main/solidity/LockableStorage.sol";
 
 
-contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
+contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableStorageInterface, Receipts {
     bytes32 constant private START_EVENT_SIGNATURE = keccak256("Start(uint256,uint256,bytes)");
     bytes32 constant private SEGMENT_EVENT_SIGNATURE = keccak256("Segment(uint256,bytes32,uint256[],address[],bool,bytes)");
     bytes32 constant private ROOT_EVENT_SIGNATURE = keccak256("Root(uint256,bool)");
@@ -46,15 +47,16 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     uint256 public override myBlockchainId;
     TxReceiptsRootStorageInterface public txReceiptRootStorage;
 
-    // Mapping of cross-blockchain transaction id to time-out block time stamp.
-    mapping (uint256=> uint256) public override  timeout;
-    // Mapping of cross-blockchain transaction id to call graphs, for calls instigated from this blockchain.
-    // TODO why is this needed?
-    mapping (uint256=> bytes) public override  callGraphs;
-
+    // For Root Blockchain:
+    // Mapping of cross-blockchain transaction id to transaction information.
+    // 0: Never used.
+    // 1: The transaction has completed and was successful.
+    // 2: The transaction has completed and was not successful.
+    // Otherwise: time-out for the transaction: as seconds since unix epoch.
+    uint256 constant private NOT_USED = 0;
     uint256 constant private SUCCESS = 1;
     uint256 constant private FAILURE = 2;
-    mapping (uint256=> uint256) public override previousCallResult;
+    mapping (uint256=> uint256) public override transactionInformation;
 
 
     // Storage variables that are just stored for the life of a transaction. They need to
@@ -76,15 +78,15 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         txReceiptRootStorage = TxReceiptsRootStorageInterface(_txReceiptRootStorage);
     }
 
-//TODO is there a short circuit way of adding the transaction receipt root for this blockchain without having to have it multi-signed.
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external override {
-// TODO
-//Check that tx.origin == msg.sender. This call must be issued by an EOA.
+        // The tx.origin needs to be the same on all blockchains that are party to the
+        // cross-blockchain transaction. As such, ensure start is only called from an
+        // EOA.
+        require(tx.origin == msg.sender, "Start must be called from an EOA");
 
-        require(crossBlockchainTransactionExists(_crossBlockchainTransactionId) == false, "Transaction already registered");
-        timeout[_crossBlockchainTransactionId] = _timeout + block.timestamp;
-        callGraphs[_crossBlockchainTransactionId] = _callGraph;
+        require(transactionInformation[_crossBlockchainTransactionId] == NOT_USED, "Transaction already registered");
+        transactionInformation[_crossBlockchainTransactionId] = _timeout + block.timestamp;
 
 // TODO emit the account that was the EOA
         emit Start(_crossBlockchainTransactionId, _timeout, _callGraph);
@@ -96,8 +98,10 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
         bytes32 _startEventTxReceiptRoot, bytes calldata _encodedStartTxReceipt,
         uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external override {
 
-// TODO
-//Check that tx.origin == msg.sender. This call must be issued by an EOA.
+        // The tx.origin needs to be the same on all blockchains that are party to the
+        // cross-blockchain transaction. As such, ensure start is only called from an
+        // EOA.
+        require(tx.origin == msg.sender, "Start must be called from an EOA");
 
         // TODO require call path length >= 1
 
@@ -209,8 +213,10 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
         // Check that Cross-blockchain Transaction Id as shown in the Start Event is still active.
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
-        uint256 timeoutForCall = timeout[activeCallCrossBlockchainTransactionId];
-        require(timeoutForCall != 0, "Call not active");
+        uint256 timeoutForCall = transactionInformation[activeCallCrossBlockchainTransactionId];
+        require(timeoutForCall != NOT_USED, "Call not active");
+        require(timeoutForCall != SUCCESS, "Call ended");
+        require(timeoutForCall != FAILURE, "Call ended");
 
         //Check if the cross-blockchain transaction has timed-out.
         if (block.timestamp > timeoutForCall) {
@@ -285,6 +291,8 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
 
         unlockContracts(isSuccess);
+
+        transactionInformation[activeCallCrossBlockchainTransactionId] = isSuccess ? SUCCESS : FAILURE;
 
         emit Root(activeCallCrossBlockchainTransactionId, isSuccess);
         cleanupAfterCall();
@@ -386,15 +394,6 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
     }
 
 
-    function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) public override view returns (bool) {
-// TODO also check past cross-blockchain transaction calls
-        return 0 != timeout[_crossBlockchainTransactionId];
-    }
-
-    function crossBlockchainTransactionTimeout(uint256 _crossBlockchainTransactionId) external override view returns (uint256) {
-        return timeout[_crossBlockchainTransactionId];
-    }
-
     /**
      * @return false if the current transaction execution is part of a cross-blockchain call\.
      */
@@ -464,8 +463,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, Receipts {
 
 
     function failRootTransaction() private {
-        timeout[activeCallCrossBlockchainTransactionId] = 0;
-        previousCallResult[activeCallCrossBlockchainTransactionId] = FAILURE;
+        transactionInformation[activeCallCrossBlockchainTransactionId] = FAILURE;
         emit Root(activeCallCrossBlockchainTransactionId, false);
     }
 

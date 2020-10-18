@@ -15,6 +15,11 @@
 pragma solidity >=0.7.1;
 pragma experimental ABIEncoderV2;
 
+/**
+ * Interface to be used for Externally Owned Accounts to execute segments of cross-blockchain
+ * transactions.
+ *
+ */
 interface CrossBlockchainControlInterface {
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external;
@@ -23,15 +28,6 @@ interface CrossBlockchainControlInterface {
         uint256 _rootBlockchainId, address _rootCBCContract,
         bytes32 _startEventTxReceiptRoot, bytes calldata _startTxReceipt,
         uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external;
-
-//    function root(
-//        uint256[] calldata _rootAndSegmentBlockchainIds,
-//        address[] calldata _rootAndSegmentCBCContracts,
-//        bytes32[] calldata _startAndSegmentTxReceiptRoots,
-//        bytes[] calldata _startAndSegmentTxReceipts,
-////        uint256[][] calldata _startAndSegmentProofOffsets //,
-//        bytes[][] calldata _startAndSegmentProofs
-//    ) external;
 
     struct Info {
         uint256 blockchainId;
@@ -47,34 +43,9 @@ interface CrossBlockchainControlInterface {
 
     function root() external;
 
-
-
     function signalling() external;
-
-    function crossBlockchainCall(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external;
-
-
-    function crossBlockchainCallReturnsUint256(uint256 /* _blockchain */, address /* _contract */, bytes calldata /* _functionCallData */) external returns (uint256);
-
-    // Called by a provisional storage contract indicating the contract needs to be locked.
-    function addToListOfLockedContracts(address _contractToLock) external;
-
-    function crossBlockchainTransactionExists(uint256 _crossBlockchainTransactionId) external view returns (bool);
-
-    function crossBlockchainTransactionTimeout(uint256 _crossBlockchainTransactionId) external view returns (uint256);
-
-    /**
-     * @return false if the current transaction execution is part of a cross-blockchain call\.
-     */
-    function isSingleBlockchainCall() external view returns (bool);
-
-    function getActiveCallRootBlockchainId() external view returns (uint256);
-
-    function getActiveCallCrossBlockchainTransactionId() external view returns (uint256);
 
     // Accessor functions for public variables.
     function myBlockchainId() external view returns(uint256);
-    function timeout(uint256) external view returns(uint256);
-    function callGraphs(uint256) external view returns(bytes memory);
-    function previousCallResult(uint256) external view returns(uint256);
+    function transactionInformation(uint256) external view returns(uint256);
 }
