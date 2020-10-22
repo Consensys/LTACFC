@@ -1,3 +1,17 @@
+/*
+ * Copyright 2019 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package tech.pegasys.ltacfc.examples.twochain;
 
 import org.apache.logging.log4j.LogManager;
@@ -9,6 +23,12 @@ import org.hyperledger.besu.ethereum.core.Hash;
 import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
+import org.web3j.abi.FunctionReturnDecoder;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.AbiTypes;
+import org.web3j.abi.datatypes.Int;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
@@ -41,8 +61,10 @@ import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTri
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.SimpleMerklePatriciaTrie;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -50,25 +72,23 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public abstract class AbstractBlockchain {
   private static final Logger LOG = LogManager.getLogger(AbstractBlockchain.class);
 
-  // Have the polling interval equal to the block time.
-  protected static final int POLLING_INTERVAL = 2000;
   // Retry requests to Ethereum Clients up to five times.
-  protected static final int RETRY = 5;
+  protected static final int RETRY = 20;
 
   protected Credentials credentials;
-  // A gas provider which indicates no gas is charged for transactions.
-  protected static ContractGasProvider freeGasProvider =  new StaticGasProvider(BigInteger.ZERO, DefaultGasProvider.GAS_LIMIT);
 
 
   protected BigInteger blockchainId;
-  protected String ipPort;
   protected String uri;
+  // Polling interval should be equal to the block time.
+  protected int pollingInterval;
+  protected DynamicGasProvider gasProvider;
 
-  protected AbstractBlockchain(BigInteger bcId, String ipPort) {
-    this.blockchainId = bcId;
-    this.ipPort = ipPort;
-    this.uri = "http://" + ipPort + "/";
-
+  protected AbstractBlockchain(String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+    this.blockchainId = new BigInteger(bcId, 16);
+    this.uri = uri;
+    this.pollingInterval = Integer.valueOf(blockPeriod);
+    this.gasProvider = new DynamicGasProvider(uri, this.pollingInterval, gasPriceStrategy);
   }
 
   Registrar registrarContract;
@@ -80,26 +100,32 @@ public abstract class AbstractBlockchain {
 
   public void setupWeb3(Credentials creds) throws Exception {
     this.credentials = creds;
-    this.web3j = Web3j.build(new HttpService(this.uri), POLLING_INTERVAL, new ScheduledThreadPoolExecutor(5));
-    this.tm = new RawTransactionManager(this.web3j, this.credentials, this.blockchainId.longValue(), RETRY, POLLING_INTERVAL);
+    this.web3j = Web3j.build(new HttpService(this.uri), this.pollingInterval, new ScheduledThreadPoolExecutor(5));
+    this.tm = new RawTransactionManager(this.web3j, this.credentials, this.blockchainId.longValue(), RETRY, this.pollingInterval);
   }
 
   protected void deployContracts() throws Exception {
-    this.registrarContract = Registrar.deploy(this.web3j, this.tm, this.freeGasProvider).send();
+    this.registrarContract = Registrar.deploy(this.web3j, this.tm, this.gasProvider).send();
     this.txReceiptsRootStorageContract =
-        TxReceiptsRootStorage.deploy(this.web3j, this.tm, this.freeGasProvider,
+        TxReceiptsRootStorage.deploy(this.web3j, this.tm, this.gasProvider,
             this.registrarContract.getContractAddress()).send();
     this.crossBlockchainControlContract =
-        CrossBlockchainControl.deploy(this.web3j, this.tm, this.freeGasProvider,
+        CrossBlockchainControl.deploy(this.web3j, this.tm, this.gasProvider,
             this.blockchainId, this.txReceiptsRootStorageContract.getContractAddress()).send();
     LOG.info(" Registrar Contract: {}", this.registrarContract.getContractAddress());
     LOG.info(" TxReceiptRoot Contract: {}", this.txReceiptsRootStorageContract.getContractAddress());
     LOG.info(" Cross Blockchain Contract Contract: {}", this.crossBlockchainControlContract.getContractAddress());
   }
 
-  public void registerSigner(AnIdentity signer) throws Exception {
+  public void registerSignerThisBlockchain(AnIdentity signer) throws Exception {
+    registerSigner(signer, this.blockchainId);
+  }
+
+  public void registerSigner(AnIdentity signer, BigInteger bcId) throws Exception {
+    LOG.info("Registering signer {} as signer for blockchain {} in registration contract on blockchain {}",
+        signer.getAddressAsBigInt(), bcId, this.blockchainId);
     TransactionReceipt receipt1 = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), this.blockchainId, signer.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), bcId, signer.getAddressAsBigInt()).send();
     if (!receipt1.isStatusOK()) {
       throw new Exception("Transaction to register signer failed");
     }
@@ -132,9 +158,15 @@ public abstract class AbstractBlockchain {
     }
 
     // This will revert if the signature does not verify
-    TransactionReceipt receipt5 = this.txReceiptsRootStorageContract.addTxReceiptRoot(sourceBlockchainId, theSigners, sigR, sigS, sigV, transactionReceiptRoot).send();
-    if (!receipt5.isStatusOK()) {
-      throw new Exception("Transaction to add transaction receipt root failed");
+    try {
+      TransactionReceipt receipt5 = this.txReceiptsRootStorageContract.addTxReceiptRoot(sourceBlockchainId, theSigners, sigR, sigS, sigV, transactionReceiptRoot).send();
+      if (!receipt5.isStatusOK()) {
+        throw new Exception("Transaction to add transaction receipt root failed");
+      }
+    } catch (TransactionException txe) {
+      String revertReason = txe.getTransactionReceipt().get().getRevertReason();
+      LOG.error("Revert Reason: {}", decodeRevertReason(revertReason));
+      throw txe;
     }
   }
 
@@ -331,7 +363,18 @@ public abstract class AbstractBlockchain {
   }
 
 
+  public String decodeRevertReason(String revertReasonEncoded) {
+    String errorMethodId = "0x08c379a0"; // Numeric.toHexString(Hash.sha3("Error(string)".getBytes())).substring(0, 10)
+    List<TypeReference<Type>> revertReasonTypes = Collections.singletonList(TypeReference.create((Class<Type>) AbiTypes.getType("string")));
 
+    if (revertReasonEncoded.startsWith(errorMethodId)) {
+      String encodedRevertReason = revertReasonEncoded.substring(errorMethodId.length());
+      List<Type> decoded = FunctionReturnDecoder.decode(encodedRevertReason, revertReasonTypes);
+      Utf8String decodedRevertReason = (Utf8String) decoded.get(0);
+      return decodedRevertReason.getValue();
+    }
+    return revertReasonEncoded;
+  }
 
 
 

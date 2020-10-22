@@ -44,10 +44,8 @@ contract TxReceiptsRootStorage is TxReceiptsRootStorageInterface, ERC165MappingI
 
         bytes memory txReceiptsRootBytes = abi.encodePacked(_txReceiptsRoot);
         registrar.verify(_blockchainId, _signers, _sigR, _sigS, _sigV, txReceiptsRootBytes);
-
         txReceiptsRoots[_blockchainId][_txReceiptsRoot] = true;
     }
-
 
     function verify(
         uint256 _blockchainId,

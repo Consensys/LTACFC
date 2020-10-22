@@ -216,17 +216,17 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         bytes calldata _plainText) external view override(RegistrarInterface) returns (bool){
 
         uint256 signersLength = _signers.length;
-        require(signersLength == _sigR.length);
-        require(signersLength == _sigS.length);
-        require(signersLength == _sigV.length);
+        require(signersLength == _sigR.length, "sigR length mismatch");
+        require(signersLength == _sigS.length, "sigS length mismatch");
+        require(signersLength == _sigV.length, "sigV length mismatch");
 
-        require(signersLength >= blockchains[_blockchainId].signingThreshold);
+        require(signersLength >= blockchains[_blockchainId].signingThreshold, "Not enough signers");
 
         for (uint256 i=0; i<signersLength; i++) {
             // Check that signer is a signer for this blockchain
-            require(blockchains[_blockchainId].signersMap[_signers[i]] != 0);
+            require(blockchains[_blockchainId].signersMap[_signers[i]] != 0, "Signer not signer for this blockchain");
             // Verify the signature
-            require(verifySigComponents(_signers[i], _plainText, _sigR[i], _sigS[i], _sigV[i]));
+            require(verifySigComponents(_signers[i], _plainText, _sigR[i], _sigS[i], _sigV[i]), "Signature did not verify");
         }
         return true;
     }

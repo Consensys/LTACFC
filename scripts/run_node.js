@@ -23,4 +23,4 @@ const destPath = process.env.HOME+`/cltacfc_data`;
 const chainPath = `${destPath}/chain${chainId}`;
 const nodePath = `${chainPath}/node${nodeNum}`;
 
-let child = cp.execSync(`${executable} --config-file=${nodePath}/config.toml --data-path=${nodePath} --genesis-file=${chainPath}/genesis.json `+ (process.argv[4] || ""), { stdio: 'inherit' })//, { shell: false });
+let child = cp.execSync(`${executable} --revert-reason-enabled=true --config-file=${nodePath}/config.toml --data-path=${nodePath} --genesis-file=${chainPath}/genesis.json `+ (process.argv[4] || ""), { stdio: 'inherit' })//, { shell: false });
