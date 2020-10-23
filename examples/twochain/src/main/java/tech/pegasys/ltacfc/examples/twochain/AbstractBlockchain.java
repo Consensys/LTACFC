@@ -84,13 +84,6 @@ public abstract class AbstractBlockchain {
   protected int pollingInterval;
   protected DynamicGasProvider gasProvider;
 
-  protected AbstractBlockchain(String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
-    this.blockchainId = new BigInteger(bcId, 16);
-    this.uri = uri;
-    this.pollingInterval = Integer.valueOf(blockPeriod);
-    this.gasProvider = new DynamicGasProvider(uri, this.pollingInterval, gasPriceStrategy);
-  }
-
   Registrar registrarContract;
   TxReceiptsRootStorage txReceiptsRootStorageContract;
   CrossBlockchainControl crossBlockchainControlContract;
@@ -98,10 +91,18 @@ public abstract class AbstractBlockchain {
   TransactionManager tm;
 
 
-  public void setupWeb3(Credentials creds) throws Exception {
-    this.credentials = creds;
+  protected AbstractBlockchain(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+    this.blockchainId = new BigInteger(bcId, 16);
+    this.uri = uri;
+    this.pollingInterval = Integer.parseInt(blockPeriod);
+    this.credentials = credentials;
     this.web3j = Web3j.build(new HttpService(this.uri), this.pollingInterval, new ScheduledThreadPoolExecutor(5));
     this.tm = new RawTransactionManager(this.web3j, this.credentials, this.blockchainId.longValue(), RETRY, this.pollingInterval);
+    this.gasProvider = new DynamicGasProvider(this.web3j, uri, gasPriceStrategy);
+  }
+
+  public void shutdown() {
+    this.web3j.shutdown();
   }
 
   protected void deployContracts() throws Exception {
@@ -236,6 +237,7 @@ public abstract class AbstractBlockchain {
     EthBlock.Block b1 = block.getBlock();
     String receiptsRoot = b1.getReceiptsRoot();
     if (!besuCalculatedReceiptsRootStr.equalsIgnoreCase( receiptsRoot)) {
+      LOG.error("Calculated transaction receipt root {} does not match actual receipt root {}", besuCalculatedReceiptsRootStr, receiptsRoot);
       throw new Error("Calculated transaction receipt root does not match actual receipt root");
     }
 

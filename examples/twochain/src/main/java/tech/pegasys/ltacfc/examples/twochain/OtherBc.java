@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
@@ -41,12 +42,12 @@ public class OtherBc extends AbstractBlockchain {
   LockableStorage lockableStorageContract;
 
 
-  public OtherBc() throws IOException {
-    super(OTHER_BLOCKCHAIN_ID, OTHER_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
+  public OtherBc(Credentials credentials) throws IOException {
+    this(credentials, OTHER_BLOCKCHAIN_ID, OTHER_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
   }
 
-  public OtherBc(String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
-    super(bcId, uri, gasPriceStrategy, blockPeriod);
+  public OtherBc(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+    super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
 

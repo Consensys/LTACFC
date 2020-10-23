@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.core.Hash;
 import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthGetBlockTransactionCountByHash;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
@@ -55,14 +56,15 @@ public class RootBc extends AbstractBlockchain {
   RootBlockchainContract rootBlockchainContract;
   LockableStorage lockableStorageContract;
 
-  public RootBc() throws IOException {
-    super(ROOT_BLOCKCHAIN_ID, ROOT_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
+  long crossBlockchainTransactionTimeout = 0;
+
+  public RootBc(Credentials credentials) throws IOException {
+    this(credentials, ROOT_BLOCKCHAIN_ID, ROOT_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
   }
 
-  public RootBc(String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
-    super(bcId, uri, gasPriceStrategy, blockPeriod);
+  public RootBc(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+    super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
-
 
   public void deployContracts(BigInteger otherBlockchainId, String otherContractAddress) throws Exception {
     LOG.info("Deploy Root Blockchain Contracts");
@@ -86,10 +88,14 @@ public class RootBc extends AbstractBlockchain {
 
   public TransactionReceipt start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
     LOG.info("TxId: {}", transactionId.toString(16));
-    LOG.info("Timeout: {}", timeout);
     BigInteger cG = new BigInteger(1, callGraph);
-    LOG.info("Call Graph: {}", cG.toString(16));
-    return this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
+    TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
+    List<CrossBlockchainControl.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
+    CrossBlockchainControl.StartEventResponse startEvent = startEvents.get(0);
+    LOG.info("Timeout: {} seconds from unix epoc, given request: {}", startEvent._timeout, timeout);
+    LOG.info(" Current time on this computer: {}", System.currentTimeMillis() / 1000);
+    this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
+    return txR;
   }
 
 
@@ -118,13 +124,15 @@ public class RootBc extends AbstractBlockchain {
       }
     }
 
+    LOG.info(" Current time on this computer: {}; Transaction time-out: {}", System.currentTimeMillis() / 1000, this.crossBlockchainTransactionTimeout);
+    if (this.crossBlockchainTransactionTimeout > System.currentTimeMillis() / 1000) {
+      LOG.warn(" Cross-Blockchain transaction will fail as transaction has timed-out");
+    }
+    else if (this.crossBlockchainTransactionTimeout > (System.currentTimeMillis() / 1000 - 2)) {
+      LOG.warn(" Cross-Blockchain transaction might fail as transaction time-out is soon");
+    }
+
     TransactionReceipt txR = this.crossBlockchainControlContract.root().send();
-//    TransactionReceipt txR = this.crossBlockchainControlContract.root(
-//        segmentBlockchainIds, segmentBlockchainCBCs,
-//        segmentTxReceiptRoots, segmentTxReceipts,
-//        //segmentProofOffsets,
-//        segmentProofs
-//    ).send();
     if (!txR.isStatusOK()) {
       throw new Exception("Root transaction failed");
     }

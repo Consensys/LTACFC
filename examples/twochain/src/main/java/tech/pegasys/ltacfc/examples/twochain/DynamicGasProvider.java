@@ -23,16 +23,13 @@ import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthGetBlockTransactionCountByHash;
 import org.web3j.protocol.core.methods.response.EthTransaction;
 import org.web3j.protocol.core.methods.response.Transaction;
-import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.ContractGasProvider;
-import org.web3j.tx.gas.DefaultGasProvider;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class DynamicGasProvider implements ContractGasProvider {
   enum Strategy {
@@ -46,8 +43,9 @@ public class DynamicGasProvider implements ContractGasProvider {
 
   private static final Logger LOG = LogManager.getLogger(DynamicGasProvider.class);
 
-  protected String uri;
   Web3j web3j;
+  String uri;
+  Strategy pricingStrategy;
 
   BigInteger lowest;
   BigInteger highest;
@@ -55,18 +53,15 @@ public class DynamicGasProvider implements ContractGasProvider {
   BigInteger median;
   BigInteger ethGasPrice;
 
-  Strategy pricingStrategy;
-
-
-  public DynamicGasProvider(String uri, int pollingInterval, String pricingStrategy) throws IOException {
-    this(uri, pollingInterval, Strategy.valueOf(pricingStrategy));
+  public DynamicGasProvider(Web3j web3j, String uri, String pricingStrategy) throws IOException {
+    this(web3j, uri, Strategy.valueOf(pricingStrategy));
   }
 
 
-  public DynamicGasProvider(String uri, int pollingInterval, Strategy pricingStrategy) throws IOException {
-    this.uri = uri;
+  public DynamicGasProvider(Web3j web3j, String uri, Strategy pricingStrategy) throws IOException {
     this.pricingStrategy = pricingStrategy;
-    this.web3j = Web3j.build(new HttpService(this.uri), pollingInterval, new ScheduledThreadPoolExecutor(5));
+    this.uri = uri;
+    this.web3j = web3j;
     detertermineNewGasPrice();
   }
 
@@ -124,7 +119,7 @@ public class DynamicGasProvider implements ContractGasProvider {
     sortedList.sort(BigInteger::compareTo);
     this.median = sortedList.get(sortedList.size() / 2);
 
-    LOG.info("Gas Price for Ethereum network: {}", uri);
+    LOG.info("Gas Price for Ethereum network: {}", this.uri);
     LOG.info(" EthGasPrice: {}", this.ethGasPrice);
     LOG.info(" Lowest:      {}", this.lowest);
     LOG.info(" Average:     {}", this.average);
@@ -170,8 +165,6 @@ public class DynamicGasProvider implements ContractGasProvider {
 
   @Override
   public BigInteger getGasLimit() {
-
-
     return GAS_LIMIT;
   }
 }

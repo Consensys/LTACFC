@@ -29,8 +29,10 @@ dependencies {
     implementation files('../../../web3j-rlp/crypto/build/libs/crypto-4.7.0-SNAPSHOT.jar')
     implementation files('../../../web3j-rlp/rlp/build/libs/rlp-4.7.0-SNAPSHOT.jar')
     implementation files('../../../web3j-rlp/utils/build/libs/utils-4.7.0-SNAPSHOT.jar')
-    compile "com.squareup.okhttp3:okhttp:4.3.1"
-    compile "com.squareup.okhttp3:logging-interceptor:4.3.1"
+//    compile "com.squareup.okhttp3:okhttp:4.3.1"
+//    compile "com.squareup.okhttp3:logging-interceptor:4.3.1"
+    compile "com.squareup.okhttp3:okhttp:4.9.0"
+    compile "com.squareup.okhttp3:logging-interceptor:4.9.0"
 
     // compile ('org.web3j:core:4.6.3')
 }

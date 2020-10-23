@@ -86,9 +86,10 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         require(tx.origin == msg.sender, "Start must be called from an EOA");
 
         require(transactionInformation[_crossBlockchainTransactionId] == NOT_USED, "Transaction already registered");
-        transactionInformation[_crossBlockchainTransactionId] = _timeout + block.timestamp;
+        uint256 transactionTimeoutSeconds = _timeout + block.timestamp;
+        transactionInformation[_crossBlockchainTransactionId] = transactionTimeoutSeconds;
 
-        emit Start(_crossBlockchainTransactionId, msg.sender, _timeout, _callGraph);
+        emit Start(_crossBlockchainTransactionId, msg.sender, transactionTimeoutSeconds, _callGraph);
     }
 
 
@@ -163,7 +164,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         Info memory call = Info(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt, proofOffsets, proof);
         rootCalls.push(call);
 
-        // This verification code doesn't need to be here - the verificaiton happens in the funciton.
+        // This verification code doesn't need to be here - the verification happens in the function.
         // However, having the verify here helps with debug.
         txReceiptRootStorage.verify(
             _blockchainId,

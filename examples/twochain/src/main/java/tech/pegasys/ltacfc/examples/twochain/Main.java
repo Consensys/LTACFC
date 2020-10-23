@@ -49,8 +49,8 @@ public class Main {
     switch (args.length) {
       case 0:
         creds = createCredentials();
-        otherBlockchain = new OtherBc();
-        rootBlockchain = new RootBc();
+        otherBlockchain = new OtherBc(creds);
+        rootBlockchain = new RootBc(creds);
         break;
       case 1:
         PropertiesLoader propsLoader = new PropertiesLoader(args[0]);
@@ -63,7 +63,7 @@ public class Main {
         LOG.info(" OTHER_GAS: {}", gasPriceStrategy);
         String blockPeriod = propsLoader.getProperty("OTHER_PERIOD");
         LOG.info(" OTHER_PERIOD: {}", blockPeriod);
-        otherBlockchain = new OtherBc(bcId, uri, gasPriceStrategy, blockPeriod);
+        otherBlockchain = new OtherBc(creds, bcId, uri, gasPriceStrategy, blockPeriod);
 
         bcId = propsLoader.getProperty("ROOT_BC_ID");
         LOG.info(" ROOT_BC_ID: {}", bcId);
@@ -73,7 +73,7 @@ public class Main {
         LOG.info(" ROOT_GAS: {}", gasPriceStrategy);
         blockPeriod = propsLoader.getProperty("ROOT_PERIOD");
         LOG.info(" ROOT_PERIOD: {}", blockPeriod);
-        rootBlockchain = new RootBc(bcId, uri, gasPriceStrategy, blockPeriod);
+        rootBlockchain = new RootBc(creds, bcId, uri, gasPriceStrategy, blockPeriod);
         break;
       default:
         LOG.info("Usage: [properties file name]");
@@ -82,13 +82,11 @@ public class Main {
 
 
     // Set-up client side and deploy contracts on the blockchains.
-    otherBlockchain.setupWeb3(creds);
     otherBlockchain.deployContracts();
 
     BigInteger otherBcId = otherBlockchain.blockchainId;
     String otherContractAddress = otherBlockchain.otherBlockchainContract.getContractAddress();
 
-    rootBlockchain.setupWeb3(creds);
     rootBlockchain.deployContracts(otherBcId, otherContractAddress);
 
 
@@ -156,11 +154,12 @@ public class Main {
     final SecureRandom rand = SecureRandom.getInstance("DRBG",
         DrbgParameters.instantiation(256, RESEED_ONLY, new byte[]{0x01}));
     BigInteger crossBlockchainTransactionId1 = new BigInteger(255, rand);
-    BigInteger timeout = BigInteger.valueOf(100);
+    BigInteger timeout = BigInteger.valueOf(300);
 
     LOG.info("start");
     TransactionReceipt startTxReceipt = rootBlockchain.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
     CrossEventProof startProof = rootBlockchain.getProofForTxReceipt(rootBcId, rootBcCbcContractAddr, startTxReceipt);
+
     // Add tx receipt root so event will be trusted.
     otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
     rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
@@ -221,8 +220,8 @@ public class Main {
 
     LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
 
-
-
+    rootBlockchain.shutdown();
+    otherBlockchain.shutdown();
   }
 
 
