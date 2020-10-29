@@ -318,7 +318,7 @@ public abstract class AbstractBlockchain {
     segProofs.add(0, rootProof);
 
     for (CrossEventProof proofInfo: segProofs) {
-      TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
+      TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
           proofInfo.getBlockchainId(),
           proofInfo.getCrossBlockchainControlContract(),
           proofInfo.getTransactionReceiptRoot(),
@@ -327,15 +327,6 @@ public abstract class AbstractBlockchain {
           proofInfo.getProofs()).send();
       if (!txR.isStatusOK()) {
         throw new Exception("Root transaction failed");
-      }
-      LOG.info("RootPrep Events");
-      List<CrossBlockchainControl.Root2EventResponse> root2EventResponses = this.crossBlockchainControlContract.getRoot2Events(txR);
-      for (CrossBlockchainControl.Root2EventResponse root2EventResponse : root2EventResponses) {
-        LOG.info("  Event:");
-        LOG.info("   _bcId: {}", root2EventResponse._bcId.toString(16));
-        LOG.info("   _cbc Contract: {}", root2EventResponse._cbcContract);
-        LOG.info("   _receipt Root: {}", new BigInteger(1, root2EventResponse._receiptRoot).toString(16));
-        LOG.info("   _encoded tx receipt: {}", new BigInteger(1, root2EventResponse._encodedTxReceipt).toString(16));
       }
     }
 

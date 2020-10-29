@@ -81,9 +81,9 @@ public class CrossEventProof {
     return proofs;
   }
 
-  public CrossBlockchainControl.EventProof asEventProof() {
-    return new CrossBlockchainControl.EventProof(
-        this.blockchainId, this.crossBlockchainControlContract,
-        this.transactionReceiptRoot, this.transactionReceipt, this.proofOffsets, this.proofs);
-  }
+//  public CrossBlockchainControl.EventProof asEventProof() {
+//    return new CrossBlockchainControl.EventProof(
+//        this.blockchainId, this.crossBlockchainControlContract,
+//        this.transactionReceiptRoot, this.transactionReceipt, this.proofOffsets, this.proofs);
+//  }
 }

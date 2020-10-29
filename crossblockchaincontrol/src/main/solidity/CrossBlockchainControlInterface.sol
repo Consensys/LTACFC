@@ -38,12 +38,16 @@ interface CrossBlockchainControlInterface {
         uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external;
 
 
-    function rootPrep(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptRoot,
+    /**
+     * This function is needed to load up event proof information for transaction receipt root transfer method.
+     * The reason this is needed is bbecause struct parameters containing arrays of bytes, or even arrays of
+     * arrays does yet not work (at of 0.7.4). To get around this, information is loaded across several
+     * calls into temporary storage.
+     */
+    function callPrep(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptRoot,
         bytes calldata _txReceipt, uint256[] calldata _proofOffsets, bytes[] calldata _proof) external;
 
     function root() external;
-
-    function root1(EventProof[] calldata _eventProofs) external;
 
     function signalling() external;
 

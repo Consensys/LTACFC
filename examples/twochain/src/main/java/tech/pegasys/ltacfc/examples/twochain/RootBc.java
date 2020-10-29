@@ -150,7 +150,7 @@ public class RootBc extends AbstractBlockchain {
 
 
     for (CrossEventProof proofInfo: segProofs) {
-      TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
+      TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
           proofInfo.getBlockchainId(),
           proofInfo.getCrossBlockchainControlContract(),
           proofInfo.getTransactionReceiptRoot(),
@@ -159,15 +159,6 @@ public class RootBc extends AbstractBlockchain {
           proofInfo.getProofs()).send();
       if (!txR.isStatusOK()) {
         throw new Exception("Root transaction failed");
-      }
-      LOG.info("Root 2 Events");
-      List<CrossBlockchainControl.Root2EventResponse> root2EventResponses = this.crossBlockchainControlContract.getRoot2Events(txR);
-      for (CrossBlockchainControl.Root2EventResponse root2EventResponse : root2EventResponses) {
-        LOG.info("  Event:");
-        LOG.info("   _bcId: {}", root2EventResponse._bcId.toString(16));
-        LOG.info("   _cbc Contract: {}", root2EventResponse._cbcContract);
-        LOG.info("   _receipt Root: {}", new BigInteger(1, root2EventResponse._receiptRoot).toString(16));
-        LOG.info("   _encoded tx receipt: {}", new BigInteger(1, root2EventResponse._encodedTxReceipt).toString(16));
       }
     }
 
@@ -227,32 +218,6 @@ public class RootBc extends AbstractBlockchain {
     BigInteger other = this.rootBlockchainContract.getLocalValOther().send();
     LOG.info("val: 0x{}", val.toString(16));
     LOG.info("other: 0x{}", other.toString(16));
-
-
-
-
-//    List<List<BigInteger>> bi1 = new ArrayList<>();
-//    List<BigInteger> bi2 = new ArrayList<>();
-//    bi2.add(BigInteger.valueOf(23));
-//    bi1.add(bi2);
-//
-//    LOG.info("root1 function sig: {}", buildRoot1FunctionSignature(bi1));
-//    txR = this.crossBlockchainControlContract.root1(bi1).send();
-////    TransactionReceipt txR = this.crossBlockchainControlContract.root(
-////        segmentBlockchainIds, segmentBlockchainCBCs,
-////        segmentTxReceiptRoots, segmentTxReceipts,
-////        //segmentProofOffsets,
-////        segmentProofs
-////    ).send();
-//    if (!txR.isStatusOK()) {
-//      throw new Exception("Root transaction failed");
-//    }
-//
-//    rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-//    rootEventResponse = rootEventResponses.get(0);
-//    LOG.info("Root Event2:");
-//    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
-//    LOG.info(" _success: {}", rootEventResponse._success);
 
     return txR;
   }
