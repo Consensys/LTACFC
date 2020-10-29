@@ -221,8 +221,18 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         bytes memory _encodedStartTxReceiptLocal = rootCalls[0].encodedTxReceipt;
         bytes memory startEventData = extractStartEventData(address(this), _encodedStartTxReceiptLocal);
 
+        // Extract segment events
+        bytes[] memory segmentEvents = new bytes[](rootCalls.length - 1);
+        for (uint256 i = 1; i < rootCalls.length; i++) {
+            segmentEvents[i-1] = extractSegmentEventData(rootCalls[i].cbcContract, rootCalls[i].encodedTxReceipt);
+        }
+
+        rootProcessing(startEventData, segmentEvents);
+    }
+
+    function rootProcessing(bytes memory _startEventData, bytes[] memory _segmentEvents) private {
         // Check that Cross-blockchain Transaction Id as shown in the Start Event is still active.
-        activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(startEventData, 0);
+        activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(_startEventData, 0);
         uint256 timeoutForCall = transactionInformation[activeCallCrossBlockchainTransactionId];
         require(timeoutForCall != NOT_USED, "Call not active");
         require(timeoutForCall != SUCCESS, "Call ended");
@@ -239,13 +249,13 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         // by checking the Start Event. Exit if it doesn’t.
         // This means that only the initiator of the cross-blockchain transaction can call this
         // function call prior to the time-out.
-        address startCaller = BytesUtil.bytesToAddress1(startEventData, 0x20);
+        address startCaller = BytesUtil.bytesToAddress1(_startEventData, 0x20);
         require(startCaller == tx.origin, "EOA does not match start event");
 
         // Determine the hash of the call graph described in the start event. This is needed to check the segment
         // event information.
-        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(startEventData, 0x80);
-        bytes memory callGraph = BytesUtil.slice(startEventData, 0xA0, lenOfActiveCallGraph);
+        uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(_startEventData, 0x80);
+        bytes memory callGraph = BytesUtil.slice(_startEventData, 0xA0, lenOfActiveCallGraph);
         activeCallGraph = callGraph;
         bytes32 hashOfCallGraph = keccak256(callGraph);
 
@@ -254,8 +264,8 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         //  root function call should have been called.
         // Exit if the information doesn’t match.
         //If any of the Segment Events indicate an error, Goto Ignore.
-        for (uint256 i = 1; i < rootCalls.length; i++) {
-            bytes memory segmentEvent = extractSegmentEventData(rootCalls[i].cbcContract, rootCalls[i].encodedTxReceipt);
+        for (uint256 i = 0; i < _segmentEvents.length; i++) {
+            bytes memory segmentEvent = _segmentEvents[i];
 
             // Recall Segment event is defined as:
             // event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
@@ -285,7 +295,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
             activeCallReturnValues.push(returnValue);
         }
 
-        // The elememnt will be the default, 0.
+        // The element will be the default, 0.
         uint256[] memory callPathForStart = new uint256[](1);
 
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, callPathForStart);
