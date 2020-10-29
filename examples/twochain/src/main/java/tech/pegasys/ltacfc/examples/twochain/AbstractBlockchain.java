@@ -22,11 +22,9 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.ethereum.core.Hash;
 import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.hyperledger.besu.ethereum.rlp.RLP;
-import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.AbiTypes;
-import org.web3j.abi.datatypes.Int;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.crypto.Credentials;
@@ -41,22 +39,15 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.rlp.RlpEncoder;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.TransactionManager;
-import org.web3j.tx.gas.ContractGasProvider;
-import org.web3j.tx.gas.DefaultGasProvider;
-import org.web3j.tx.gas.StaticGasProvider;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
-import tech.pegasys.ltacfc.common.Tuple;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
+import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.rlp.RlpDumper;
 import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
-import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTrie;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.SimpleMerklePatriciaTrie;
@@ -241,6 +232,51 @@ public abstract class AbstractBlockchain {
       throw new Error("Calculated transaction receipt root does not match actual receipt root");
     }
 
+    // TODO remove
+    Bytes32 parentHash = Bytes32.fromHexString(b1.getParentHash());
+    Bytes32 ommersHash = Bytes32.fromHexString(b1.getSha3Uncles());
+    Bytes coinbase = Bytes.fromHexString(b1.getMiner());
+    Bytes32 stateRoot = Bytes32.fromHexString(b1.getStateRoot());
+    Bytes32 transactionsRoot = Bytes32.fromHexString(b1.getTransactionsRoot());
+    Bytes32 receiptsRoot1 = Bytes32.fromHexString(b1.getReceiptsRoot());
+    Bytes logsBloom = Bytes.fromHexString(b1.getLogsBloom());
+    BigInteger difficulty = b1.getDifficulty();
+    BigInteger number = b1.getNumber();
+    BigInteger gasLimit = b1.getGasLimit();
+    BigInteger gasUsed = b1.getGasUsed();
+    BigInteger timestamp = b1.getTimestamp();
+    Bytes extraData = Bytes.fromHexString(b1.getExtraData());
+    Bytes32 mixHash = Bytes32.fromHexString(b1.getMixHash());
+    BigInteger nonce = b1.getNonce();
+
+    Bytes blockHash1 = Hash.hash(
+        RLP.encode(
+            out -> {
+              out.startList();
+              out.writeBytes(parentHash);
+              out.writeBytes(ommersHash);
+              out.writeBytes(coinbase);
+              out.writeBytes(stateRoot);
+              out.writeBytes(transactionsRoot);
+              out.writeBytes(receiptsRoot1);
+              out.writeBytes(logsBloom);
+              out.writeBytes(UInt256.valueOf(difficulty).toMinimalBytes());
+              out.writeLongScalar(number.longValue());
+              out.writeLongScalar(gasLimit.longValue());
+              out.writeLongScalar(gasUsed.longValue());
+              out.writeLongScalar(timestamp.longValue());
+              out.writeBytes(extraData);
+              out.writeBytes(mixHash);
+              out.writeLong(nonce.longValue());
+//    if (ExperimentalEIPs.eip1559Enabled && baseFee != null) {
+//      out.writeLongScalar(baseFee);
+//    }
+              out.endList();
+            }));
+    LOG.info("Block Hash Calculated***: {} should be: {}", blockHash1.toHexString(), blockHash);
+
+
+    // TODO end remove
 
     BigInteger txIndex = aReceipt.getTransactionIndex();
     Bytes aKey = indexKey((int)txIndex.longValue());

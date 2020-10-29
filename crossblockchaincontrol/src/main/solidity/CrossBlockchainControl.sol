@@ -148,7 +148,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
 
     event Root2(uint256 _bcId, address _cbcContract, bytes32 _receiptRoot, bytes _encodedTxReceipt /* , uint256[] _proofOffsets, bytes[] proof */);
 
-    Info[] rootCalls;
+    EventProof[] rootCalls;
 
     function rootPrep(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptRoot,
         bytes calldata _encodedTxReceipt, uint256[] calldata _proofOffsets, bytes[] calldata _proof) external override {
@@ -161,7 +161,7 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
             proof[i] = _proof[i];
         }
         emit Root2(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt);
-        Info memory call = Info(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt, proofOffsets, proof);
+        EventProof memory call = EventProof(_blockchainId, _cbcContract, _txReceiptRoot, _encodedTxReceipt, proofOffsets, proof);
         rootCalls.push(call);
 
         // This verification code doesn't need to be here - the verification happens in the function.
@@ -174,6 +174,16 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
             _proof);
     }
 
+    function root2(EventProof calldata _eventProof) external {
+        emit Dump(_eventProof.blockchainId, bytes32(0), address(0), bytes(""));
+    }
+
+
+    function root1(EventProof[] calldata _eventProofs) external override {
+        emit Dump(_eventProofs.length, bytes32(0), address(0), bytes(""));
+        emit Dump(_eventProofs[0].blockchainId, bytes32(0), address(0), bytes(""));
+
+    }
 
 
     /**
@@ -429,15 +439,6 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         functionCall = RLP.toData(func[2]);
     }
 
-//    function execute(address _targetContract, bytes memory _functionCall) private {
-//        bool isSuccess;
-//        bytes memory returnValueEncoded;
-//        (isSuccess, returnValueEncoded) = _targetContract.call(_functionCall);
-//        // TODO unlock contracts if failed and revert state, and indicate an error in the event below.
-////        emit Segment(activeCallRootBlockchainId, activeCallCrossBlockchainTransactionId, activeCallsCallPath,
-////            activeCallLockedContracts, returnValueEncoded);
-//    }
-
     function extractStartEventData(address _rootCBCContract, bytes memory _encodedStartTxReceipt) private pure returns (bytes memory) {
         RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedStartTxReceipt));
         bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
@@ -523,6 +524,5 @@ contract CrossBlockchainControl is CrossBlockchainControlInterface, CbcLockableS
         emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, retVal);
 
         return retVal;
-}
-
+    }
 }

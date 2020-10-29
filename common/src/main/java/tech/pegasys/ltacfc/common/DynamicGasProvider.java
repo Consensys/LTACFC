@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.examples.twochain;
+package tech.pegasys.ltacfc.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class DynamicGasProvider implements ContractGasProvider {
-  enum Strategy {
+  public enum Strategy {
     ETH_GAS_PRICE,
     LOWEST,
     HIGHEST,

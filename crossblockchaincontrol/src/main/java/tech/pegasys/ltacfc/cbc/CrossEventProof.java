@@ -14,6 +14,8 @@
  */
 package tech.pegasys.ltacfc.cbc;
 
+import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
+
 import java.math.BigInteger;
 import java.util.List;
 
@@ -77,5 +79,11 @@ public class CrossEventProof {
 
   public List<byte[]> getProofs() {
     return proofs;
+  }
+
+  public CrossBlockchainControl.EventProof asEventProof() {
+    return new CrossBlockchainControl.EventProof(
+        this.blockchainId, this.crossBlockchainControlContract,
+        this.transactionReceiptRoot, this.transactionReceipt, this.proofOffsets, this.proofs);
   }
 }

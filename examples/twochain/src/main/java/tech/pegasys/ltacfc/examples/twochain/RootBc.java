@@ -31,6 +31,7 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
+import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.RootBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
@@ -102,6 +103,52 @@ public class RootBc extends AbstractBlockchain {
   public TransactionReceipt root(CrossEventProof startProof, List<CrossEventProof> segProofs) throws Exception {
     segProofs.add(0, startProof);
 
+
+
+
+//    List<CrossBlockchainControl.EventProof> proofs = new ArrayList<CrossBlockchainControl.EventProof>();
+////    int i = 0;
+//    for (CrossEventProof proofInfo: segProofs) {
+//      proofs.add(proofInfo.asEventProof());
+//
+////      LOG.info("ROOT PREP:");
+////      this.crossBlockchainControlContract.rootPrep(
+////          proofInfo.getBlockchainId(),
+////          proofInfo.getCrossBlockchainControlContract(),
+////          proofInfo.getTransactionReceiptRoot(),
+////          proofInfo.getTransactionReceipt(),
+////          proofInfo.getProofOffsets(),
+////          proofInfo.getProofs()).send();
+//
+//
+////      LOG.info("ROOT2:");
+////      TransactionReceipt txR5 = this.crossBlockchainControlContract.root2(proofInfo.asEventProof()).send();
+////      List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses2 = this.crossBlockchainControlContract.getDumpEvents(txR5);
+////      for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses2) {
+////        LOG.info("  Event:");
+////        LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
+////        LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
+////        LOG.info("   3: {}", dumpEventResponse._val3);
+////        LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
+////      }
+////
+//    }
+////    LOG.info("ROOT1:");
+////    TransactionReceipt txR4 = this.crossBlockchainControlContract.root1(proofs).send();
+////    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses1 = this.crossBlockchainControlContract.getDumpEvents(txR4);
+////    for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses1) {
+////      LOG.info("  Event:");
+////      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
+////      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
+////      LOG.info("   3: {}", dumpEventResponse._val3);
+////      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
+////    }
+//
+//
+//
+
+
+
     for (CrossEventProof proofInfo: segProofs) {
       TransactionReceipt txR = this.crossBlockchainControlContract.rootPrep(
           proofInfo.getBlockchainId(),
@@ -132,18 +179,18 @@ public class RootBc extends AbstractBlockchain {
       LOG.warn(" Cross-Blockchain transaction might fail as transaction time-out is soon");
     }
 
-    TransactionReceipt txR = this.crossBlockchainControlContract.root().send();
+    TransactionReceipt txR;
+    try {
+      txR = this.crossBlockchainControlContract.root().send();
+    }
+    catch (TransactionException ex) {
+      LOG.error(" Revert Reason: {}", decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
+      throw ex;
+    }
+
     if (!txR.isStatusOK()) {
       throw new Exception("Root transaction failed");
     }
-
-    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
-    LOG.info("Root Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _success: {}", rootEventResponse._success);
-
-
     LOG.info("Dump Events");
     List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
     for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses) {
@@ -153,6 +200,15 @@ public class RootBc extends AbstractBlockchain {
       LOG.info("   3: {}", dumpEventResponse._val3);
       LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
     }
+
+
+    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
+    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
+    LOG.info("Root Event:");
+    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
+    LOG.info(" _success: {}", rootEventResponse._success);
+
+
 
     LOG.info("Call Events");
     List<CrossBlockchainControl.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
@@ -352,6 +408,4 @@ public class RootBc extends AbstractBlockchain {
     } catch (TransactionException ex) {
     }
   }
-
-
 }

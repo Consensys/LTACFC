@@ -21,6 +21,7 @@ import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
+import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import tech.pegasys.ltacfc.rlp.RlpDumper;

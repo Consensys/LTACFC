@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.examples.twochain;
+package tech.pegasys.ltacfc.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +30,7 @@ public class PropertiesLoader {
   public Properties properties = new Properties();
 
 
-  protected PropertiesLoader(String fileName) throws IOException {
+  public PropertiesLoader(String fileName) throws IOException {
     Path propertiesFile = Paths.get(System.getProperty("user.dir"), fileName);
     FileInputStream fis = new FileInputStream(propertiesFile.toFile());
     this.properties.load(fis);

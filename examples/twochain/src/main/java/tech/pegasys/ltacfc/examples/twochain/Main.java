@@ -24,6 +24,8 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
 import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
@@ -44,6 +46,7 @@ public class Main {
     Credentials creds;
     OtherBc otherBlockchain;
     RootBc rootBlockchain;
+    CrossBlockchainConsensus consensusMethodology;
 
 
     switch (args.length) {
@@ -51,6 +54,7 @@ public class Main {
         creds = createCredentials();
         otherBlockchain = new OtherBc(creds);
         rootBlockchain = new RootBc(creds);
+        consensusMethodology = CrossBlockchainConsensus.EVENT_SIGNING;
         break;
       case 1:
         PropertiesLoader propsLoader = new PropertiesLoader(args[0]);
@@ -74,6 +78,9 @@ public class Main {
         blockPeriod = propsLoader.getProperty("ROOT_PERIOD");
         LOG.info(" ROOT_PERIOD: {}", blockPeriod);
         rootBlockchain = new RootBc(creds, bcId, uri, gasPriceStrategy, blockPeriod);
+
+        String consensus = propsLoader.getProperty("CONSENSUS_METHODOLOGY");
+        consensusMethodology = CrossBlockchainConsensus.valueOf(consensus);
         break;
       default:
         LOG.info("Usage: [properties file name]");
@@ -94,6 +101,7 @@ public class Main {
     String rootBcCbcContractAddr = rootBlockchain.crossBlockchainControlContract.getContractAddress();
     String otherBcCbcContractAddr = otherBlockchain.crossBlockchainControlContract.getContractAddress();
 
+    // To make the example simple, just have one signer, and have the same signer for all blockchains.
     AnIdentity signer = new AnIdentity();
     otherBlockchain.registerSignerThisBlockchain(signer);
     otherBlockchain.registerSigner(signer, rootBcId);
