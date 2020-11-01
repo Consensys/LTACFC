@@ -22,6 +22,7 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
+import tech.pegasys.ltacfc.cbc.AbstractCbc;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
@@ -91,15 +92,13 @@ public class Main {
     // Set-up client side and deploy contracts on the blockchains.
     otherBlockchain.deployContracts();
 
-    BigInteger otherBcId = otherBlockchain.blockchainId;
+    BigInteger otherBcId = otherBlockchain.getBlockchainId();
     String otherContractAddress = otherBlockchain.otherBlockchainContract.getContractAddress();
 
     rootBlockchain.deployContracts(otherBcId, otherContractAddress);
 
 
-    BigInteger rootBcId = rootBlockchain.blockchainId;
-    String rootBcCbcContractAddr = rootBlockchain.crossBlockchainControlContract.getContractAddress();
-    String otherBcCbcContractAddr = otherBlockchain.crossBlockchainControlContract.getContractAddress();
+    BigInteger rootBcId = rootBlockchain.getBlockchainId();
 
     // To make the example simple, just have one signer, and have the same signer for all blockchains.
     AnIdentity signer = new AnIdentity();
@@ -112,12 +111,21 @@ public class Main {
     SimOtherContract simOtherContract = new SimOtherContract();
     SimRootContract simRootContract = new SimRootContract(simOtherContract);
 
-    // Do some single blockchain calls to set things up.
-    BigInteger param = BigInteger.TEN;
-    simOtherContract.setVal(param);
-    otherBlockchain.setVal(param);
+    // Do some single blockchain calls to set things up, to show that values have changed.
+    // Ensure the simulator is set-up the same way.
+    BigInteger otherBcValInitialValue = BigInteger.valueOf(77);
+    simOtherContract.setVal(otherBcValInitialValue);
+    otherBlockchain.setVal(otherBcValInitialValue);
 
-    param = BigInteger.valueOf(7);
+    BigInteger rootBcVal1InitialValue = BigInteger.valueOf(78);
+    simRootContract.setVal1(rootBcVal1InitialValue);
+    rootBlockchain.setVal1(rootBcVal1InitialValue);
+    BigInteger rootBcVal2InitialValue = BigInteger.valueOf(79);
+    simRootContract.setVal2(rootBcVal2InitialValue);
+    rootBlockchain.setVal2(rootBcVal2InitialValue);
+
+    // Simulate passing in the parameter value 7 for the cross-blockchain call.
+    BigInteger param = BigInteger.valueOf(7);
     simRootContract.someComplexBusinessLogic(param);
 
     String rlpFunctionCall_SomeComplexBusinessLogic = rootBlockchain.getRlpFunctionSignature_SomeComplexBusinessLogic(param);
@@ -139,34 +147,30 @@ public class Main {
 
     RlpList callGraph;
     if (simRootContract.someComplexBusinessLogicIfTrue) {
-      RlpList getVal = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_GetVal);
-      RlpList setValues = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_SetValues);
+      RlpList getVal = createLeafFunctionCall(otherBcId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_GetVal);
+      RlpList setValues = createLeafFunctionCall(otherBcId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_SetValues);
       List<RlpType> calls = new ArrayList<>();
       calls.add(getVal);
       calls.add(setValues);
       callGraph = createRootFunctionCall(
-          rootBlockchain.blockchainId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic, calls);
+          rootBcId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic, calls);
     }
     else {
-      RlpList getVal = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_GetVal);
-      RlpList setVal = createLeafFunctionCall(otherBlockchain.blockchainId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_SetVal);
+      RlpList getVal = createLeafFunctionCall(otherBcId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_GetVal);
+      RlpList setVal = createLeafFunctionCall(otherBcId, otherBlockchain.otherBlockchainContract.getContractAddress(), rlpFunctionCall_SetVal);
       List<RlpType> calls = new ArrayList<>();
       calls.add(getVal);
       calls.add(setVal);
       callGraph = createRootFunctionCall(
-          rootBlockchain.blockchainId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic, calls);
+          rootBcId, rootBlockchain.rootBlockchainContract.getContractAddress(), rlpFunctionCall_SomeComplexBusinessLogic, calls);
     }
 
-
-    // TODO put this into the crypto module and do a better job or this + reseeding.
-    final SecureRandom rand = SecureRandom.getInstance("DRBG",
-        DrbgParameters.instantiation(256, RESEED_ONLY, new byte[]{0x01}));
-    BigInteger crossBlockchainTransactionId1 = new BigInteger(255, rand);
+    BigInteger crossBlockchainTransactionId1 = AbstractCbc.generateRandomCrossBlockchainTransactionId();
     BigInteger timeout = BigInteger.valueOf(300);
 
     LOG.info("start");
     TransactionReceipt startTxReceipt = rootBlockchain.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
-    CrossEventProof startProof = rootBlockchain.getProofForTxReceipt(rootBcId, rootBcCbcContractAddr, startTxReceipt);
+    CrossEventProof startProof = rootBlockchain.getStartEventProof(startTxReceipt);
 
     // Add tx receipt root so event will be trusted.
     otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
@@ -183,7 +187,7 @@ public class Main {
     List<BigInteger> getValCallPath = new ArrayList<>();
     getValCallPath.add(BigInteger.ONE);
     TransactionReceipt segGetValTxReceipt = otherBlockchain.segment(startProof, getValCallPath);
-    CrossEventProof segGetValProof = otherBlockchain.getProofForTxReceipt(otherBcId, otherBcCbcContractAddr, segGetValTxReceipt);
+    CrossEventProof segGetValProof = otherBlockchain.getSegmentEventProof(segGetValTxReceipt);
     allSegmentProofs.add(segGetValProof);
     // Add tx receipt root so event will be trusted.
     otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
@@ -194,7 +198,7 @@ public class Main {
       List<BigInteger> setValuesCallPath = new ArrayList<>();
       setValuesCallPath.add(BigInteger.TWO);
       TransactionReceipt segSetValuesTxReceipt = otherBlockchain.segment(startProof, setValuesCallPath);
-      CrossEventProof segSetValuesProof = otherBlockchain.getProofForTxReceipt(otherBcId, otherBcCbcContractAddr, segSetValuesTxReceipt);
+      CrossEventProof segSetValuesProof = otherBlockchain.getSegmentEventProof(segSetValuesTxReceipt);
       allSegmentProofs.add(segSetValuesProof);
       signalSegProofs.add(segSetValuesProof);
       // Add tx receipt root so event will be trusted.
@@ -206,7 +210,7 @@ public class Main {
       List<BigInteger> setValCallPath = new ArrayList<>();
       setValCallPath.add(BigInteger.TWO);
       TransactionReceipt segSetValTxReceipt = otherBlockchain.segment(startProof, setValCallPath);
-      CrossEventProof segSetValProof = otherBlockchain.getProofForTxReceipt(otherBcId, otherBcCbcContractAddr, segSetValTxReceipt);
+      CrossEventProof segSetValProof = otherBlockchain.getSegmentEventProof(segSetValTxReceipt);
       allSegmentProofs.add(segSetValProof);
       signalSegProofs.add(segSetValProof);
       // Add tx receipt root so event will be trusted.
@@ -216,7 +220,7 @@ public class Main {
 
     LOG.info("root");
     TransactionReceipt rootTxReceipt = rootBlockchain.root(startProof, allSegmentProofs);
-    CrossEventProof rootProof = rootBlockchain.getProofForTxReceipt(rootBcId, rootBcCbcContractAddr, rootTxReceipt);
+    CrossEventProof rootProof = rootBlockchain.getRootEventProof(rootTxReceipt);
     // Add tx receipt root so event will be trusted.
     otherBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
 //    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
@@ -227,6 +231,19 @@ public class Main {
 
 
     LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
+
+
+    LOG.info("Cross-Blockchain Transaction was successful: {}", rootBlockchain.rootEventSuccess);
+    if (rootBlockchain.rootEventSuccess) {
+      LOG.info(" Simulated expected values: Root val1: {}, val2: {}, Other val: {}",
+          simRootContract.getVal1(), simRootContract.getVal2(), simOtherContract.getVal());
+    }
+    else {
+      LOG.info(" Expect unchanged initial values: Root val1: {}, val2: {}, Other val: {}",
+          rootBcVal1InitialValue, rootBcVal2InitialValue, otherBcValInitialValue);
+    }
+    rootBlockchain.showValues();
+    otherBlockchain.showValues();
 
     rootBlockchain.shutdown();
     otherBlockchain.shutdown();

@@ -16,23 +16,17 @@ package tech.pegasys.ltacfc.examples.twochain;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.web3j.crypto.Credentials;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import tech.pegasys.ltacfc.cbc.CrossEventProof;
+import tech.pegasys.ltacfc.cbc.OtherBlockchainTxReceiptTransfer;
 import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
-import tech.pegasys.ltacfc.rlp.RlpDumper;
-import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.List;
 
-public class OtherBc extends AbstractBlockchain {
+public class OtherBc extends OtherBlockchainTxReceiptTransfer {
   static final Logger LOG = LogManager.getLogger(OtherBc.class);
 
   static final String OTHER_BLOCKCHAIN_ID = "1F";
@@ -83,46 +77,11 @@ public class OtherBc extends AbstractBlockchain {
   }
 
   public boolean storageIsLocked() throws Exception {
-    Boolean isLocked = this.lockableStorageContract.locked().send();
-    return  isLocked;
+    return  this.lockableStorageContract.locked().send();
   }
 
-  public TransactionReceipt segment(CrossEventProof startProof, List<BigInteger> callPath) throws Exception {
-
-    RlpDumper.dump(RLP.input(Bytes.wrap(startProof.getTransactionReceipt())));
-
-    TransactionReceipt txR = this.crossBlockchainControlContract.segment(
-        startProof.getBlockchainId(),
-        startProof.getCrossBlockchainControlContract(),
-        startProof.getTransactionReceiptRoot(),
-        startProof.getTransactionReceipt(),
-        startProof.getProofOffsets(),
-        startProof.getProofs(),
-        callPath).send();
-    if (!txR.isStatusOK()) {
-      throw new Exception("Segment transaction failed");
-    }
-
-    LOG.info("Cross Bc Id: {}", this.crossBlockchainControlContract.activeCallCrossBlockchainTransactionId().send().toString(16));
-    LOG.info("CallGraph: {}", new BigInteger(1, this.crossBlockchainControlContract.activeCallGraph().send()).toString(16));
-
-    List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
-    CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
-    LOG.info("Segment Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _callPath len: {}", segmentEventResponse._callPath.size());
-    LOG.info(" _hashOfCallGraph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
-    LOG.info(" _success: {}", segmentEventResponse._success);
-    LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
-    LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());
-//    for (String lockedContractAddress: segmentEventResponse._lockedContracts) {
-//      LOG.info(" locked contracts: {}", lockedContractAddress);
-//    }
-
-    return txR;
-  }
-
-  private void check(byte[] txReceipt) {
+  public void showValues() throws Exception {
+    LOG.info("Other Blockchain: KEY_FOR_VAL: {}", this.otherBlockchainContract.getVal().send());
   }
 
 }

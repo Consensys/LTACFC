@@ -69,6 +69,14 @@ abstract contract BytesUtil {
         return uint64(x);
     }
 
+    function bytesToUint8(bytes memory _b, uint256 _startOffset) internal pure returns (uint8) {
+        require(_b.length >= _startOffset + 1, "slicing out of range");
+        uint256 x;
+        assembly {
+            x := mload(add(_b, add(1, _startOffset)))
+        }
+        return uint8(x);
+    }
 
     // From https://github.com/GNSPS/solidity-bytes-utils/blob/master/contracts/BytesLib.sol
     function sliceAsm(bytes memory _bytes, uint256 _start, uint256 _length) internal pure returns (bytes memory) {

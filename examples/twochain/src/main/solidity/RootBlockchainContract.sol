@@ -23,8 +23,8 @@ contract RootBlockchainContract is LockableStorageWrapper {
     uint256 private otherBlockchainId;
     OtherBlockchainContractInterface private otherContract;
 
-    uint256 constant private KEY_LOCAL_UINT = 0;
-    uint256 constant private KEY_LOCAL_OTHER = 1;
+    uint256 constant private KEY_UINT256_VAL1 = 0;
+    uint256 constant private KEY_UINT256_VAL2 = 1;
 
     constructor (address _crossBlockchainControl, uint256 _otherBlockchainId, address _otherContract, address _storageContract)
         LockableStorageWrapper(_storageContract) {
@@ -35,42 +35,42 @@ contract RootBlockchainContract is LockableStorageWrapper {
 
     function someComplexBusinessLogic(uint256 _val) external {
         // Use the value on the other blockchain as a threshold
-        uint256 currentThreshold = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(
+        uint256 valueFromOtherBlockchain = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(
             otherBlockchainId, address(otherContract), abi.encodeWithSelector(otherContract.getVal.selector));
-        setUint256(KEY_LOCAL_OTHER, currentThreshold);
+        setVal2(valueFromOtherBlockchain);
 
-        if (_val > currentThreshold) {
+        if (_val > valueFromOtherBlockchain) {
             crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
-                abi.encodeWithSelector(otherContract.setValues.selector, _val, currentThreshold));
-            setLocalVal(currentThreshold);
+                abi.encodeWithSelector(otherContract.setValues.selector, _val, valueFromOtherBlockchain));
+            setVal1(valueFromOtherBlockchain);
         }
         else {
-            setValRemote(1);
-            setLocalVal(_val);
+            uint256 valueToSet = _val + 13;
+            crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
+                abi.encodeWithSelector(otherContract.setVal.selector, valueToSet));
+            setVal1(_val);
         }
-    }
-
-    function setValRemote(uint256 _val) public {
-        crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
-            abi.encodeWithSelector(otherContract.setVal.selector, _val));
     }
 
     function getRemoteVal() external {
         uint256 val = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(otherBlockchainId, address(otherContract),
             abi.encodeWithSelector(otherContract.getVal.selector));
-        setUint256(KEY_LOCAL_UINT, val);
     }
 
-    function setLocalVal(uint256 _val) public {
-        setUint256(KEY_LOCAL_UINT, _val);
+    function setVal1(uint256 _val) public {
+        setUint256(KEY_UINT256_VAL1, _val);
     }
 
-    function getLocalVal() external view returns (uint256) {
-        return getUint256(KEY_LOCAL_UINT);
+    function setVal2(uint256 _val) public {
+        setUint256(KEY_UINT256_VAL2, _val);
     }
 
-    function getLocalValOther() external view returns (uint256) {
-        return getUint256(KEY_LOCAL_OTHER);
+    function getVal1() external view returns (uint256) {
+        return getUint256(KEY_UINT256_VAL1);
+    }
+
+    function getVal2() external view returns (uint256) {
+        return getUint256(KEY_UINT256_VAL2);
     }
 
 }

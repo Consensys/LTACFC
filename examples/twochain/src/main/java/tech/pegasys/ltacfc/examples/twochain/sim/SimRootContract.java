@@ -1,11 +1,11 @@
 package tech.pegasys.ltacfc.examples.twochain.sim;
 
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
-
 import java.math.BigInteger;
 
+// Note: only need to simulate enough to know what the parameters for function calls should be.
 public class SimRootContract {
-  BigInteger val;
+  BigInteger val1;
+  BigInteger val2;
 
   SimOtherContract simOtherContract;
 
@@ -21,37 +21,37 @@ public class SimRootContract {
 
   public void someComplexBusinessLogic(BigInteger _val) {
     // Use the value on the other blockchain as a threshold
-    BigInteger currentThreshold = this.simOtherContract.getVal();
+    BigInteger valueFromOtherBlockchain = this.simOtherContract.getVal();
+    this.val2 = valueFromOtherBlockchain;
 
     // if (_val > currentThreshold)
-    if (_val.compareTo(currentThreshold) > 0) {
+    if (_val.compareTo(valueFromOtherBlockchain) > 0) {
       this.someComplexBusinessLogicIfTrue = true;
       this.someComplexBusinessLogicSetValuesParameter1 = _val;
-      this.someComplexBusinessLogicSetValuesParameter2 = currentThreshold;
+      this.someComplexBusinessLogicSetValuesParameter2 = valueFromOtherBlockchain;
       this.simOtherContract.setValues(this.someComplexBusinessLogicSetValuesParameter1, this.someComplexBusinessLogicSetValuesParameter2);
-      setLocalVal(currentThreshold);
+      this.val1 = valueFromOtherBlockchain;
     }
     else {
       this.someComplexBusinessLogicIfTrue = false;
-      this.someComplexBusinessLogicSetValParameter = BigInteger.ONE;
-      setValRemote(this.someComplexBusinessLogicSetValParameter);
-      setLocalVal(_val);
+      this.someComplexBusinessLogicSetValParameter = _val.add(BigInteger.valueOf(13));
+      this.simOtherContract.setVal(this.someComplexBusinessLogicSetValParameter);
+      this.val1 = _val;
     }
   }
 
-  public void setValRemote(BigInteger _val) {
-    this.simOtherContract.setVal(_val);
+  public void setVal1(BigInteger _val) {
+    this.val1 = _val;
   }
 
-  public void getRemoteVal() {
-    this.val = this.simOtherContract.getVal();
+  public void setVal2(BigInteger _val) {
+    this.val2 = _val;
   }
 
-  public void setLocalVal(BigInteger _val) {
-    this.val = _val;
+  public BigInteger getVal1() {
+    return this.val1;
   }
-
-  public BigInteger getLocalVal() {
-    return this.val;
+  public BigInteger getVal2() {
+    return this.val2;
   }
 }

@@ -31,6 +31,7 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.cbc.CrossEventProof;
+import tech.pegasys.ltacfc.cbc.RootBlockchainTxReceiptTransfer;
 import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.RootBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
@@ -45,7 +46,7 @@ import java.util.List;
 import java.util.Optional;
 
 
-public class RootBc extends AbstractBlockchain {
+public class RootBc extends RootBlockchainTxReceiptTransfer {
   static final Logger LOG = LogManager.getLogger(RootBc.class);
 
   static final String ROOT_BLOCKCHAIN_ID = "1F";
@@ -56,8 +57,6 @@ public class RootBc extends AbstractBlockchain {
 
   RootBlockchainContract rootBlockchainContract;
   LockableStorage lockableStorageContract;
-
-  long crossBlockchainTransactionTimeout = 0;
 
   public RootBc(Credentials credentials) throws IOException {
     this(credentials, ROOT_BLOCKCHAIN_ID, ROOT_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
@@ -87,290 +86,23 @@ public class RootBc extends AbstractBlockchain {
     return this.rootBlockchainContract.getRLP_someComplexBusinessLogic(val);
   }
 
-  public TransactionReceipt start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
-    LOG.info("TxId: {}", transactionId.toString(16));
-    BigInteger cG = new BigInteger(1, callGraph);
-    TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
-    List<CbcTxRootTransfer.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
-    CbcTxRootTransfer.StartEventResponse startEvent = startEvents.get(0);
-    LOG.info("Timeout: {} seconds from unix epoc, given request: {}", startEvent._timeout, timeout);
-    LOG.info(" Current time on this computer: {}", System.currentTimeMillis() / 1000);
-    this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
-    return txR;
+  public void setVal1(BigInteger val) throws Exception {
+    this.rootBlockchainContract.setVal1(val).send();
+  }
+  public void setVal2(BigInteger val) throws Exception {
+    this.rootBlockchainContract.setVal2(val).send();
+  }
+
+  public BigInteger getVal1() throws Exception {
+    return this.rootBlockchainContract.getVal1().send();
+  }
+  public BigInteger getVal2() throws Exception {
+    return this.rootBlockchainContract.getVal2().send();
   }
 
 
-  public TransactionReceipt root(CrossEventProof startProof, List<CrossEventProof> segProofs) throws Exception {
-    segProofs.add(0, startProof);
-
-
-
-
-//    List<CrossBlockchainControl.EventProof> proofs = new ArrayList<CrossBlockchainControl.EventProof>();
-////    int i = 0;
-//    for (CrossEventProof proofInfo: segProofs) {
-//      proofs.add(proofInfo.asEventProof());
-//
-////      LOG.info("ROOT PREP:");
-////      this.crossBlockchainControlContract.rootPrep(
-////          proofInfo.getBlockchainId(),
-////          proofInfo.getCrossBlockchainControlContract(),
-////          proofInfo.getTransactionReceiptRoot(),
-////          proofInfo.getTransactionReceipt(),
-////          proofInfo.getProofOffsets(),
-////          proofInfo.getProofs()).send();
-//
-//
-////      LOG.info("ROOT2:");
-////      TransactionReceipt txR5 = this.crossBlockchainControlContract.root2(proofInfo.asEventProof()).send();
-////      List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses2 = this.crossBlockchainControlContract.getDumpEvents(txR5);
-////      for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses2) {
-////        LOG.info("  Event:");
-////        LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
-////        LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
-////        LOG.info("   3: {}", dumpEventResponse._val3);
-////        LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
-////      }
-////
-//    }
-////    LOG.info("ROOT1:");
-////    TransactionReceipt txR4 = this.crossBlockchainControlContract.root1(proofs).send();
-////    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses1 = this.crossBlockchainControlContract.getDumpEvents(txR4);
-////    for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses1) {
-////      LOG.info("  Event:");
-////      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
-////      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
-////      LOG.info("   3: {}", dumpEventResponse._val3);
-////      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
-////    }
-//
-//
-//
-
-
-
-    for (CrossEventProof proofInfo: segProofs) {
-      TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
-          proofInfo.getBlockchainId(),
-          proofInfo.getCrossBlockchainControlContract(),
-          proofInfo.getTransactionReceiptRoot(),
-          proofInfo.getTransactionReceipt(),
-          proofInfo.getProofOffsets(),
-          proofInfo.getProofs()).send();
-      if (!txR.isStatusOK()) {
-        throw new Exception("Root transaction failed");
-      }
-    }
-
-    LOG.info(" Current time on this computer: {}; Transaction time-out: {}", System.currentTimeMillis() / 1000, this.crossBlockchainTransactionTimeout);
-    if (this.crossBlockchainTransactionTimeout > System.currentTimeMillis() / 1000) {
-      LOG.warn(" Cross-Blockchain transaction will fail as transaction has timed-out");
-    }
-    else if (this.crossBlockchainTransactionTimeout > (System.currentTimeMillis() / 1000 - 2)) {
-      LOG.warn(" Cross-Blockchain transaction might fail as transaction time-out is soon");
-    }
-
-    TransactionReceipt txR;
-    try {
-      txR = this.crossBlockchainControlContract.root().send();
-    }
-    catch (TransactionException ex) {
-      LOG.error(" Revert Reason: {}", decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
-      throw ex;
-    }
-
-    if (!txR.isStatusOK()) {
-      throw new Exception("Root transaction failed");
-    }
-    LOG.info("Dump Events");
-    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
-      LOG.info("  Event:");
-      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
-      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
-      LOG.info("   3: {}", dumpEventResponse._val3);
-      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
-    }
-
-
-    List<CbcTxRootTransfer.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-    CbcTxRootTransfer.RootEventResponse rootEventResponse = rootEventResponses.get(0);
-    LOG.info("Root Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _success: {}", rootEventResponse._success);
-
-
-
-    LOG.info("Call Events");
-    List<CbcTxRootTransfer.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
-    for (CbcTxRootTransfer.CallEventResponse callEventResponse : callEventResponses) {
-      LOG.info("  Event:");
-      LOG.info("   Expected Blockchain Id: {}", callEventResponse._expectedBlockchainId.toString(16));
-      LOG.info("   Actual Blockchain Id: {}", callEventResponse._actualBlockchainId.toString(16));
-      LOG.info("   Expected Contract: {}", callEventResponse._expectedContract);
-      LOG.info("   Actual Contract: {}", callEventResponse._actualContract);
-      LOG.info("   Expected Function Call: {}", new BigInteger(1, callEventResponse._expectedFunctionCall).toString(16));
-      LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
-      LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
-    }
-
-    BigInteger val = this.rootBlockchainContract.getLocalVal().send();
-    BigInteger other = this.rootBlockchainContract.getLocalValOther().send();
-    LOG.info("val: 0x{}", val.toString(16));
-    LOG.info("other: 0x{}", other.toString(16));
-
-    return txR;
-  }
-
-
-//  static String buildRoot1FunctionSignature(List<List<BigInteger>> _i) {
-//    final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-//        FUNC_ROOT1,
-//        Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.DynamicArray>(
-//            org.web3j.abi.datatypes.DynamicArray.class,
-//            org.web3j.abi.Utils.typeMap(_i, org.web3j.abi.datatypes.DynamicArray.class,
-//                org.web3j.abi.datatypes.generated.Uint256.class))),
-//        Collections.<TypeReference<?>>emptyList());
-//    final List<Type> parameters = function.getInputParameters();
-//    return buildMethodSignature(function.getName(), parameters);
-//  }
-
-
-//  static String buildRootFunctionSignature(CrossBlockchainControl.Info _start, CrossBlockchainControl.Info _seg0, CrossBlockchainControl.Info _seg1) {
-//      final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-//          FUNC_ROOT,
-//          Arrays.<Type>asList(_start,
-//              _seg0,
-//              _seg1),
-//          Collections.<TypeReference<?>>emptyList());
-//
-//    final List<Type> parameters = function.getInputParameters();
-//    return buildMethodSignature(function.getName(), parameters);
-//  }
-//
-//  static String buildMethodSignature(
-//      final String methodName, final List<Type> parameters) {
-//
-//    final StringBuilder result = new StringBuilder();
-//    result.append(methodName);
-//    result.append("(");
-////    final String params =
-////        parameters.stream().map(Type::getTypeAsString).collect(Collectors.joining(","));
-////    result.append(params);
-//
-//    for (int i=0; i<parameters.size(); i++) {
-//      if (i!=0) {
-//        result.append(",");
-//      }
-//      result.append(parameters.get(i).getTypeAsString());
-//    }
-//    result.append(")");
-//    return result.toString();
-//  }
-
-
-  public void OLD_getProofForTxReceipt(TransactionReceipt aReceipt) throws Exception {
-    // Calculate receipt root based on logs for all receipts of all transactions in the block.
-    String blockHash = aReceipt.getBlockHash();
-    EthGetBlockTransactionCountByHash transactionCountByHash = this.web3j.ethGetBlockTransactionCountByHash(blockHash).send();
-    BigInteger txCount = transactionCountByHash.getTransactionCount();
-
-    List<org.hyperledger.besu.ethereum.core.TransactionReceipt> besuReceipts = new ArrayList<>();
-
-    BigInteger transactionIndex = BigInteger.ZERO;
-    do {
-      EthTransaction ethTransaction = this.web3j.ethGetTransactionByBlockHashAndIndex(blockHash, transactionIndex).send();
-      Optional<Transaction> transaction = ethTransaction.getTransaction();
-      assert(transaction.isPresent());
-      String txHash = transaction.get().getHash();
-      EthGetTransactionReceipt ethGetTransactionReceipt = this.web3j.ethGetTransactionReceipt(txHash).send();
-      Optional<TransactionReceipt> mayBeReceipt = ethGetTransactionReceipt.getTransactionReceipt();
-      assert(mayBeReceipt.isPresent());
-      TransactionReceipt receipt = mayBeReceipt.get();
-
-      // Convert to Besu objects
-      List<org.hyperledger.besu.ethereum.core.Log> besuLogs = new ArrayList<>();
-
-      String stateRootFromReceipt = receipt.getRoot();
-      Hash root = (stateRootFromReceipt == null) ? null : Hash.fromHexString(receipt.getRoot());
-      String statusFromReceipt = receipt.getStatus();
-      int status = statusFromReceipt == null ? -1 : Integer.parseInt(statusFromReceipt.substring(2), 16);
-      for (Log web3jLog: receipt.getLogs()) {
-        org.hyperledger.besu.ethereum.core.Address addr = org.hyperledger.besu.ethereum.core.Address.fromHexString(web3jLog.getAddress());
-        Bytes data = Bytes.fromHexString(web3jLog.getData());
-        List<String> topics = web3jLog.getTopics();
-        List<LogTopic> logTopics = new ArrayList<>();
-        for (String topic: topics) {
-          LogTopic logTopic = LogTopic.create(Bytes.fromHexString(topic));
-          logTopics.add(logTopic);
-        }
-        besuLogs.add(new org.hyperledger.besu.ethereum.core.Log(addr, data, logTopics));
-      }
-      String revertReasonFromReceipt = receipt.getRevertReason();
-      Bytes revertReason = revertReasonFromReceipt == null ? null : Bytes.fromHexString(receipt.getRevertReason());
-      org.hyperledger.besu.ethereum.core.TransactionReceipt txReceipt =
-          root == null ?
-              new org.hyperledger.besu.ethereum.core.TransactionReceipt(status, receipt.getCumulativeGasUsed().longValue(),
-                  besuLogs, java.util.Optional.ofNullable(revertReason))
-              :
-              new org.hyperledger.besu.ethereum.core.TransactionReceipt(root, receipt.getCumulativeGasUsed().longValue(),
-                  besuLogs, java.util.Optional.ofNullable(revertReason));
-      besuReceipts.add(txReceipt);
-
-      // Increment for the next time through the loop.
-      transactionIndex = transactionIndex.add(BigInteger.ONE);
-    } while (transactionIndex.compareTo(txCount) != 0);
-
-    final MerklePatriciaTrie<Bytes, Bytes> trie = trie();
-    for (int i = 0; i < besuReceipts.size(); ++i) {
-      Bytes rlpEncoding = RLP.encode(besuReceipts.get(i)::writeTo);
-      trie.put(indexKey(i), rlpEncoding);
-    }
-    Bytes32 besuCalculatedReceiptsRoot = trie.getRootHash();
-    String besuCalculatedReceiptsRootStr = besuCalculatedReceiptsRoot.toHexString();
-
-    // TODO remove this check code that isn't needed
-    EthBlock block = this.web3j.ethGetBlockByHash(aReceipt.getBlockHash(), false).send();
-    EthBlock.Block b1 = block.getBlock();
-    String receiptsRoot = b1.getReceiptsRoot();
-    if (!besuCalculatedReceiptsRootStr.equalsIgnoreCase( receiptsRoot)) {
-      throw new Error("Calculated transaction receipt root does not match actual receipt root");
-    }
-
-
-    BigInteger txIndex = aReceipt.getTransactionIndex();
-    Bytes aKey = indexKey((int)txIndex.longValue());
-
-    Proof<Bytes> simpleProof = trie.getValueWithSimpleProof(aKey);
-    Bytes transactionReceipt = simpleProof.getValue().get();
-    Bytes rlpOfNode = transactionReceipt;
-    // Node references can be hashes or the node itself, if the node is less than 32 bytes.
-    // Leaf nodes in Ethereum, leaves of Merkle Patricia Tries could be less than 32 bytes,
-    // but no other nodes. For transaction receipts, it isn't possible even the leaf nodes
-    // to be 32 bytes.
-    Bytes32 nodeHash = org.hyperledger.besu.crypto.Hash.keccak256(transactionReceipt);
-
-    List<Bytes> proofList1 = simpleProof.getProofRelatedNodes();
-    List<BigInteger> proofOffsets = new ArrayList<>();
-    List<byte[]> proofs = new ArrayList<>();
-    for (int j = proofList1.size()-1; j >=0; j--) {
-      rlpOfNode = proofList1.get(j);
-      proofOffsets.add(BigInteger.valueOf(findOffset(rlpOfNode, nodeHash)));
-      proofs.add(rlpOfNode.toArray());
-      nodeHash = org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode);
-    }
-//    assertEquals(besuCalculatedReceiptsRoot.toHexString(), org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode).toHexString());
-
-    try {
-      this.txReceiptsRootStorageContract.verify(
-          this.blockchainId,
-          besuCalculatedReceiptsRoot.toArray(),
-          transactionReceipt.toArray(),
-          proofOffsets,
-          proofs
-      ).send();
-      throw new Exception("Unexpectedly, no error while verifying");
-    } catch (TransactionException ex) {
-    }
+  public void showValues() throws Exception {
+    LOG.info("Root Blockchain: Val1: {}", this.rootBlockchainContract.getVal1().send());
+    LOG.info("Root Blockchain: Val2: {}", this.rootBlockchainContract.getVal2().send());
   }
 }

@@ -26,39 +26,89 @@ contract CbcSignedEvent is CrossBlockchainControl {
         registrar = Registrar(_registrar);
     }
 
-//    function rootEventSigning(uint256[] calldata _blockchainId, address[] calldata _cbcContract, bytes32[] calldata _eventSignature, bytes[] calldata _eventParameters,
-//        uint256[] calldata _signatureIndex,
-//        address[] calldata _signers, bytes32[] calldata _sigR, bytes32[] calldata _sigS, uint8[] calldata _sigV) external {
-//
-//        {
-//        checkSameLength(_blockchainId, _cbcContract, _eventSignature, _eventParameters, _signatureIndex);
-//        }
-//        for (uint256 i = 0; i < _blockchainId.length; i++) {
-//            bytes memory signedPlainText = abi.encodePacked(_blockchainId[i], _cbcContract[i], _eventSignature[i], _eventParameters[i]);
-//            // TODO this implies all signers are for all blockchains
-//            // Use _signatureIndex to define sub-ranges within the arrays for each blockchain
-//            registrar.verify(_blockchainId[i], _signers, _sigR, _sigS, _sigV, signedPlainText);
-//        }
-//
-//        // TODO check that eventSignature[0] is START
-//        // TODO check that eventSignature[] is SEGMENT
-//
-//        bytes[] memory segmentEvents = new bytes[](_eventParameters.length - 1);
-//        for (uint256 i = 1; i < _eventParameters.length; i++) {
-//            segmentEvents[i-1] = _eventParameters[i];
-//        }
-//
-//        rootProcessing(_blockchainId[0], _cbcContract[0], _eventParameters[0], segmentEvents);
-//    }
+    function root(bytes[] calldata _signedEventInfo, bytes[] calldata _signature) external {
+        // The minimum number of events is 1: start and no segment, used ot end timed-out a
+        // cross-blockchain transactions.
+        uint256 numEvents = _signedEventInfo.length;
+        require(numEvents > 0, "Must be at least one event");
+        require(numEvents == _signature.length, "Number of events and signatures do not match");
+
+        bytes memory startEventData;
+        bytes[] memory segmentEvents = new bytes[](numEvents - 1);
+        uint256 rootBlockchainId;
+        address startCbcContract;
 
 
-    function checkSameLength(
-        uint256[] calldata _blockchainId, address[] calldata _cbcContract,
-        bytes32[] calldata _eventSignature, bytes[] calldata _eventParameters,
-        uint256[] calldata _signatureIndex) pure private {
-        require(_blockchainId.length == _cbcContract.length, "Length of blockchainId and cbcContract do not match");
-        require(_blockchainId.length == _eventSignature.length, "Length of blockchainId and eventSignature do not match");
-        require(_blockchainId.length == _eventParameters.length, "Length of blockchainId and eventParameters do not match");
-        require(_blockchainId.length == _signatureIndex.length, "Length of blockchainId and signatureIndex  do not match");
+        for (uint256 i = 0; i < numEvents; i++) {
+            bytes memory signedEventInfo = _signedEventInfo[i];
+            uint256 blockchainId;
+            bytes memory eventData;
+            address cbcContract;
+            bytes32 eventSignature;
+            (blockchainId, cbcContract, eventSignature, eventData) = extractEventInfo(signedEventInfo);
+
+            if (i == 0) {
+                require(eventSignature == START_EVENT_SIGNATURE, "First event was not START");
+                rootBlockchainId = blockchainId;
+                startCbcContract = cbcContract;
+                startEventData = eventData;
+            }
+            else {
+                require(eventSignature == SEGMENT_EVENT_SIGNATURE, "Subsequent events were not SEGMENT");
+                segmentEvents[i-1] = eventData;
+            }
+            verifyEventSignature(blockchainId, eventData, _signature[i]);
+        }
+
+
+        rootProcessing(rootBlockchainId, startCbcContract, startEventData, segmentEvents);
+    }
+
+
+    function extractEventInfo(bytes memory _signedEventInfo) private pure
+            returns(uint256 blockchainId, address cbcAddress, bytes32 eventSignature, bytes memory eventData){
+        RLP.RLPItem[] memory signedEventInfo = RLP.toList(RLP.toRLPItem(_signedEventInfo));
+        blockchainId = BytesUtil.bytesToUint256(RLP.toData(signedEventInfo[0]), 0);
+        cbcAddress = BytesUtil.bytesToAddress(RLP.toData(signedEventInfo[1]));
+        eventSignature = BytesUtil.bytesToBytes32(RLP.toData(signedEventInfo[2]), 0);
+        eventData = RLP.toData(signedEventInfo[3]);
+    }
+
+
+
+    function verifyEventSignature(uint256 _blockchainId, bytes memory _eventInfo, bytes memory _signature) private view {
+        // The code is arranged a little unusually to reduce the number of in-scope local variables so code will compile.
+        address[] memory signers;
+        bytes32[] memory sigRs;
+        bytes32[] memory sigSs;
+        uint8[] memory sigVs;
+
+        {
+            RLP.RLPItem[] memory signature = RLP.toList(RLP.toRLPItem(_signature));
+            RLP.RLPItem[] memory signersRlp;
+            signersRlp = RLP.toList(signature[0]);
+            uint256 length = signersRlp.length;
+
+            signers = new address[](length);
+            RLP.RLPItem[] memory sigRsRlp = RLP.toList(signature[1]);
+            sigRs = new bytes32[](length);
+            RLP.RLPItem[] memory sigSsRlp = RLP.toList(signature[2]);
+            sigSs = new bytes32[](length);
+            RLP.RLPItem[] memory sigVsRlp = RLP.toList(signature[3]);
+            sigVs = new uint8[](length);
+
+            require(length == sigRs.length, "Length of sigR and signers does not match");
+            require(length == sigSs.length, "Length of sigS and signers does not match");
+            require(length == sigVs.length, "Length of sigV and signers does not match");
+
+            for (uint256 i = 0; i < length; i++) {
+                signers[i] = BytesUtil.bytesToAddress(RLP.toData(signersRlp[i]));
+                sigRs[i] = BytesUtil.bytesToBytes32(RLP.toData(sigRsRlp[i]), 0);
+                sigSs[i] = BytesUtil.bytesToBytes32(RLP.toData(sigSsRlp[i]), 0);
+                sigVs[i] = BytesUtil.bytesToUint8(RLP.toData(sigVsRlp[i]), 0);
+            }
+        }
+
+        registrar.verify(_blockchainId, signers, sigRs, sigSs, sigVs, _eventInfo);
     }
 }
