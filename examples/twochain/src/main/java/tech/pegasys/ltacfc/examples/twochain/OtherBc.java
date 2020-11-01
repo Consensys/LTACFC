@@ -25,7 +25,8 @@ import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import tech.pegasys.ltacfc.rlp.RlpDumper;
-import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
+import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
+
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -105,8 +106,8 @@ public class OtherBc extends AbstractBlockchain {
     LOG.info("Cross Bc Id: {}", this.crossBlockchainControlContract.activeCallCrossBlockchainTransactionId().send().toString(16));
     LOG.info("CallGraph: {}", new BigInteger(1, this.crossBlockchainControlContract.activeCallGraph().send()).toString(16));
 
-    List<CrossBlockchainControl.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
-    CrossBlockchainControl.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
+    List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
+    CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
     LOG.info("Segment Event:");
     LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
     LOG.info(" _callPath len: {}", segmentEventResponse._callPath.size());

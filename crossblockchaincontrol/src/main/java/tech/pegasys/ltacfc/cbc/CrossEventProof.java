@@ -14,8 +14,6 @@
  */
 package tech.pegasys.ltacfc.cbc;
 
-import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
-
 import java.math.BigInteger;
 import java.util.List;
 

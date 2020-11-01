@@ -34,7 +34,7 @@ import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.RootBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
-import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
+import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTrie;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
 
@@ -91,8 +91,8 @@ public class RootBc extends AbstractBlockchain {
     LOG.info("TxId: {}", transactionId.toString(16));
     BigInteger cG = new BigInteger(1, callGraph);
     TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
-    List<CrossBlockchainControl.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
-    CrossBlockchainControl.StartEventResponse startEvent = startEvents.get(0);
+    List<CbcTxRootTransfer.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
+    CbcTxRootTransfer.StartEventResponse startEvent = startEvents.get(0);
     LOG.info("Timeout: {} seconds from unix epoc, given request: {}", startEvent._timeout, timeout);
     LOG.info(" Current time on this computer: {}", System.currentTimeMillis() / 1000);
     this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
@@ -183,8 +183,8 @@ public class RootBc extends AbstractBlockchain {
       throw new Exception("Root transaction failed");
     }
     LOG.info("Dump Events");
-    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses) {
+    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
+    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
       LOG.info("  Event:");
       LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
       LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
@@ -193,8 +193,8 @@ public class RootBc extends AbstractBlockchain {
     }
 
 
-    List<CrossBlockchainControl.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-    CrossBlockchainControl.RootEventResponse rootEventResponse = rootEventResponses.get(0);
+    List<CbcTxRootTransfer.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
+    CbcTxRootTransfer.RootEventResponse rootEventResponse = rootEventResponses.get(0);
     LOG.info("Root Event:");
     LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
     LOG.info(" _success: {}", rootEventResponse._success);
@@ -202,8 +202,8 @@ public class RootBc extends AbstractBlockchain {
 
 
     LOG.info("Call Events");
-    List<CrossBlockchainControl.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
-    for (CrossBlockchainControl.CallEventResponse callEventResponse : callEventResponses) {
+    List<CbcTxRootTransfer.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
+    for (CbcTxRootTransfer.CallEventResponse callEventResponse : callEventResponses) {
       LOG.info("  Event:");
       LOG.info("   Expected Blockchain Id: {}", callEventResponse._expectedBlockchainId.toString(16));
       LOG.info("   Actual Blockchain Id: {}", callEventResponse._actualBlockchainId.toString(16));

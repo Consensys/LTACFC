@@ -21,14 +21,7 @@ pragma experimental ABIEncoderV2;
  *
  */
 interface CrossBlockchainControlInterface {
-    struct EventProof {
-        uint256 blockchainId;
-        address cbcContract;
-        bytes32 txReceiptRoot;
-        bytes encodedTxReceipt;
-        uint256[] proofOffsets;
-        bytes[] proof;
-    }
+
 
     function start(uint256 _crossBlockchainTransactionId, uint256 _timeout, bytes calldata _callGraph) external;
 
@@ -47,7 +40,7 @@ interface CrossBlockchainControlInterface {
     function callPrep(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptRoot,
         bytes calldata _txReceipt, uint256[] calldata _proofOffsets, bytes[] calldata _proof) external;
 
-    function root() external;
+    function rootTxRootTransfer() external;
 
     function signalling() external;
 

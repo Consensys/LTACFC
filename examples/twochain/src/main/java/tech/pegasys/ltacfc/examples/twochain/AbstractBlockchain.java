@@ -45,7 +45,7 @@ import tech.pegasys.ltacfc.cbc.CrossEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.soliditywrappers.CrossBlockchainControl;
+import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTrie;
@@ -77,7 +77,7 @@ public abstract class AbstractBlockchain {
 
   Registrar registrarContract;
   TxReceiptsRootStorage txReceiptsRootStorageContract;
-  CrossBlockchainControl crossBlockchainControlContract;
+  CbcTxRootTransfer crossBlockchainControlContract;
   Web3j web3j;
   TransactionManager tm;
 
@@ -102,7 +102,7 @@ public abstract class AbstractBlockchain {
         TxReceiptsRootStorage.deploy(this.web3j, this.tm, this.gasProvider,
             this.registrarContract.getContractAddress()).send();
     this.crossBlockchainControlContract =
-        CrossBlockchainControl.deploy(this.web3j, this.tm, this.gasProvider,
+        CbcTxRootTransfer.deploy(this.web3j, this.tm, this.gasProvider,
             this.blockchainId, this.txReceiptsRootStorageContract.getContractAddress()).send();
     LOG.info(" Registrar Contract: {}", this.registrarContract.getContractAddress());
     LOG.info(" TxReceiptRoot Contract: {}", this.txReceiptsRootStorageContract.getContractAddress());
@@ -341,16 +341,16 @@ public abstract class AbstractBlockchain {
       throw new Exception("Signalling transaction failed");
     }
 
-    List<CrossBlockchainControl.SignallingEventResponse> sigEventResponses = this.crossBlockchainControlContract.getSignallingEvents(txR);
-    CrossBlockchainControl.SignallingEventResponse sigEventResponse = sigEventResponses.get(0);
+    List<CbcTxRootTransfer.SignallingEventResponse> sigEventResponses = this.crossBlockchainControlContract.getSignallingEvents(txR);
+    CbcTxRootTransfer.SignallingEventResponse sigEventResponse = sigEventResponses.get(0);
     LOG.info("Signalling Event:");
     LOG.info(" _rootBlockchainId: {}", sigEventResponse._rootBcId.toString(16));
     LOG.info(" _crossBlockchainTransactionId: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
 
 
     LOG.info("Dump Events");
-    List<CrossBlockchainControl.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    for (CrossBlockchainControl.DumpEventResponse dumpEventResponse : dumpEventResponses) {
+    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
+    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
       LOG.info("  Event:");
       LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
       LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
