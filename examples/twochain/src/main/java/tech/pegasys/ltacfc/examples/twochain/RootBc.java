@@ -16,64 +16,32 @@ package tech.pegasys.ltacfc.examples.twochain;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.ethereum.core.Hash;
-import org.hyperledger.besu.ethereum.core.LogTopic;
-import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.web3j.crypto.Credentials;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.EthGetBlockTransactionCountByHash;
-import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
-import org.web3j.protocol.core.methods.response.EthTransaction;
-import org.web3j.protocol.core.methods.response.Log;
-import org.web3j.protocol.core.methods.response.Transaction;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.exceptions.TransactionException;
-import tech.pegasys.ltacfc.cbc.CrossEventProof;
-import tech.pegasys.ltacfc.cbc.RootBlockchainTxReceiptTransfer;
+import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
 import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.RootBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
-import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
-import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTrie;
-import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.Proof;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 
-public class RootBc extends RootBlockchainTxReceiptTransfer {
+public class RootBc extends AbstractBlockchain {
   static final Logger LOG = LogManager.getLogger(RootBc.class);
-
-  static final String ROOT_BLOCKCHAIN_ID = "1F";
-  static final String ROOT_URI = "http://127.0.0.1:8310/";
-  // Have the polling interval equal to the block time.
-  private static final String POLLING_INTERVAL = "2000";
-
 
   RootBlockchainContract rootBlockchainContract;
   LockableStorage lockableStorageContract;
-
-  public RootBc(Credentials credentials) throws IOException {
-    this(credentials, ROOT_BLOCKCHAIN_ID, ROOT_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
-  }
 
   public RootBc(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
-  public void deployContracts(BigInteger otherBlockchainId, String otherContractAddress) throws Exception {
+  public void deployContracts(String cbcContractAddress, BigInteger otherBlockchainId, String otherContractAddress) throws Exception {
     LOG.info("Deploy Root Blockchain Contracts");
-    deployContracts();
-    this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider,
-        this.crossBlockchainControlContract.getContractAddress()).send();
+    this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
     this.rootBlockchainContract =
         RootBlockchainContract.deploy(this.web3j, this.tm, this.gasProvider,
-            this.crossBlockchainControlContract.getContractAddress(),
+            cbcContractAddress,
             otherBlockchainId,
             otherContractAddress,
             this.lockableStorageContract.getContractAddress()).send();

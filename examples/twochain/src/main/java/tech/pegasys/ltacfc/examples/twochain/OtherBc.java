@@ -17,7 +17,7 @@ package tech.pegasys.ltacfc.examples.twochain;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
-import tech.pegasys.ltacfc.cbc.OtherBlockchainTxReceiptTransfer;
+import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
 import tech.pegasys.ltacfc.common.DynamicGasProvider;
 import tech.pegasys.ltacfc.examples.twochain.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
@@ -26,32 +26,21 @@ import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import java.io.IOException;
 import java.math.BigInteger;
 
-public class OtherBc extends OtherBlockchainTxReceiptTransfer {
+public class OtherBc extends AbstractBlockchain {
   static final Logger LOG = LogManager.getLogger(OtherBc.class);
-
-  static final String OTHER_BLOCKCHAIN_ID = "1F";
-  static final String OTHER_URI = "http://127.0.0.1:8310/";
-  // Have the polling interval equal to the block time.
-  private static final String POLLING_INTERVAL = "2000";
 
   OtherBlockchainContract otherBlockchainContract;
   LockableStorage lockableStorageContract;
-
-
-  public OtherBc(Credentials credentials) throws IOException {
-    this(credentials, OTHER_BLOCKCHAIN_ID, OTHER_URI, DynamicGasProvider.Strategy.FREE.toString(), POLLING_INTERVAL);
-  }
 
   public OtherBc(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
 
-  public void deployContracts() throws Exception {
+  public void deployContracts(String cbcContractAddress) throws Exception {
     LOG.info("Deploy Other Blockchain Contracts");
-    super.deployContracts();
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider,
-        this.crossBlockchainControlContract.getContractAddress()).send();
+        cbcContractAddress).send();
     this.otherBlockchainContract =
         OtherBlockchainContract.deploy(this.web3j, this.tm, this.gasProvider,
           this.lockableStorageContract.getContractAddress()).send();
