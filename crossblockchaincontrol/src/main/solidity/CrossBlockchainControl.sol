@@ -44,7 +44,6 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
     event Dump(uint256 _val1, bytes32 _val2, address _val3, bytes _val4);
 
-//uint256 public override myBlockchainId;
     uint256 public myBlockchainId;
 
     // For Root Blockchain:
@@ -56,9 +55,11 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
     uint256 constant private NOT_USED = 0;
     uint256 constant private SUCCESS = 1;
     uint256 constant private FAILURE = 2;
-//mapping (uint256=> uint256) public override transactionInformation;
-    mapping (uint256=> uint256) public transactionInformation;
+    mapping (uint256=> uint256) public rootTransactionInformation;
 
+    // Used to prevent replay attacks in transaction segments.
+    // Mapping of keccak256(abi.encodePacked(root blockchain id, transaction id, callpath)
+    mapping (bytes32=> bool) public segmentTransactionExecuted;
 
 
     // Storage variables that are stored for the life of a transaction. They need to
@@ -109,9 +110,9 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         // EOA.
         require(tx.origin == msg.sender, "Start must be called from an EOA");
 
-        require(transactionInformation[_crossBlockchainTransactionId] == NOT_USED, "Transaction already registered");
+        require(rootTransactionInformation[_crossBlockchainTransactionId] == NOT_USED, "Transaction already registered");
         uint256 transactionTimeoutSeconds = _timeout + block.timestamp;
-        transactionInformation[_crossBlockchainTransactionId] = transactionTimeoutSeconds;
+        rootTransactionInformation[_crossBlockchainTransactionId] = transactionTimeoutSeconds;
 
         emit Start(_crossBlockchainTransactionId, msg.sender, transactionTimeoutSeconds, _callGraph);
     }
@@ -129,11 +130,15 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
 
 
-        // TODO use transaction id in conjunction with call path to prevent replay attacks.
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(_startEventData, 0);
         address startCaller = BytesUtil.bytesToAddress1(_startEventData, 0x20);
         require(startCaller == tx.origin, "EOA does not match start event");
         uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(_startEventData, 0x80);
+
+        // Stop replay of transaction segments.
+        bytes32 mapKey = keccak256(abi.encodePacked(_rootBlockchainId, activeCallCrossBlockchainTransactionId, _callPath));
+        require(segmentTransactionExecuted[mapKey] == false, "Segment transaction already executed");
+        segmentTransactionExecuted[mapKey] == true;
 
         bytes memory callGraph = BytesUtil.slice(_startEventData, 0xA0, lenOfActiveCallGraph);
         activeCallGraph = callGraph;
@@ -175,10 +180,10 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
         // Check that Cross-blockchain Transaction Id as shown in the Start Event is still active.
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(_startEventData, 0);
-        uint256 timeoutForCall = transactionInformation[activeCallCrossBlockchainTransactionId];
+        uint256 timeoutForCall = rootTransactionInformation[activeCallCrossBlockchainTransactionId];
         require(timeoutForCall != NOT_USED, "Call not active");
-        require(timeoutForCall != SUCCESS, "Call ended");
-        require(timeoutForCall != FAILURE, "Call ended");
+        require(timeoutForCall != SUCCESS, "Call ended (success)");
+        require(timeoutForCall != FAILURE, "Call ended (failure)");
 
         //Check if the cross-blockchain transaction has timed-out.
         if (block.timestamp > timeoutForCall) {
@@ -257,7 +262,7 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
         unlockContracts(isSuccess);
 
-        transactionInformation[activeCallCrossBlockchainTransactionId] = isSuccess ? SUCCESS : FAILURE;
+        rootTransactionInformation[activeCallCrossBlockchainTransactionId] = isSuccess ? SUCCESS : FAILURE;
 
         emit Root(activeCallCrossBlockchainTransactionId, isSuccess);
         cleanupAfterCall();
@@ -370,7 +375,7 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
 
     function failRootTransaction() private {
-        transactionInformation[activeCallCrossBlockchainTransactionId] = FAILURE;
+        rootTransactionInformation[activeCallCrossBlockchainTransactionId] = FAILURE;
         emit Root(activeCallCrossBlockchainTransactionId, false);
     }
 
