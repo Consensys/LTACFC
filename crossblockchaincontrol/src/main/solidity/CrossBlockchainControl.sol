@@ -227,6 +227,8 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             uint256 lenOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, locationOfReturnValue);
             bytes memory returnValue = BytesUtil.slice(segmentEvent, locationOfReturnValue + 0x20, lenOfReturnValue);
 
+            require(hashOfCallGraph == hashOfCallGraphFromSegment, "Call graph from segment and root do not match");
+
 //            emit Dump(crossBlockchainTxId, hashOfCallGraphFromSegment, address(0), segmentEvent);
 //            emit Dump(locationOfCallPath, hashOfCallGraphFromSegment, address(0), segmentEvent);
 //            emit Dump(locationOfLockedContracts, hashOfCallGraphFromSegment, address(0), segmentEvent);
