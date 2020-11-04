@@ -63,9 +63,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
     List<CbcSignedEvent.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
     CbcSignedEvent.StartEventResponse startEvent = startEvents.get(0);
     this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
-
-    LOG.info("Start Event: {}", new BigInteger(getEventData(txR, AbstractCbc.START_EVENT_SIGNATURE_BYTES)).toString(16));
-
+    // LOG.info("Start Event: {}", new BigInteger(getEventData(txR, AbstractCbc.START_EVENT_SIGNATURE_BYTES)).toString(16));
     return getEventData(txR, AbstractCbc.START_EVENT_SIGNATURE_BYTES);
   }
 
@@ -80,7 +78,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
     List<byte[]> encodedSignatures = new ArrayList<>();
     encodedSignatures.add(startEvent.getEncodedSignatures());
 
-    RlpDumper.dump(RLP.input(Bytes.wrap(encodedSignatures.get(0))));
+    //RlpDumper.dump(RLP.input(Bytes.wrap(encodedSignatures.get(0))));
     TransactionReceipt txR;
     try {
       txR = this.crossBlockchainControlContract.segment(encodedEvents, encodedSignatures, callPath).send();

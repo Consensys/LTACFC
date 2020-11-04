@@ -75,6 +75,7 @@ public class SignedEvent {
     );
   }
 
+
   private static RlpList encodeSignatures(List<String> theSigners, List<byte[]> sigR, List<byte[]> sigS, List<BigInteger> sigV) {
     List<RlpType> theSignersRlp = new ArrayList<>();
     List<RlpType> sigRRlp = new ArrayList<>();

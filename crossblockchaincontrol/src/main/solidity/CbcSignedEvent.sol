@@ -80,7 +80,7 @@ contract CbcSignedEvent is CrossBlockchainControl {
     }
 
     function common(bytes[] calldata _signedEventInfo, bytes[] calldata _signature, bytes32 _startOrRootEventSig)
-        internal returns(uint256, address, bytes memory, bytes[] memory) {
+        internal view returns(uint256, address, bytes memory, bytes[] memory) {
         // The minimum number of events is 1: start and no segment, used ot end timed-out a
         // cross-blockchain transactions.
         uint256 numEvents = _signedEventInfo.length;
@@ -88,11 +88,11 @@ contract CbcSignedEvent is CrossBlockchainControl {
         require(numEvents == _signature.length, "Number of events and signatures do not match");
 
         Holder2 memory holder2;
-        holder2.segmentEvents =  new bytes[](numEvents - 1);
+        holder2.segmentEvents = new bytes[](numEvents - 1);
 
         for (uint256 i = 0; i < numEvents; i++) {
             Holder memory holder = extractEventInfo(_signedEventInfo[i]);
-            verifyEventSignature(holder.blockchainId, holder.eventData, _signature[i]);
+            verifyEventSignature(holder.blockchainId, _signedEventInfo[i], _signature[i]);
 
             if (i == 0) {
                 require(holder.eventSignature == _startOrRootEventSig, "Incorrect first event");
@@ -121,7 +121,7 @@ contract CbcSignedEvent is CrossBlockchainControl {
 
 
 
-    function verifyEventSignature(uint256 _blockchainId, bytes memory _eventInfo, bytes memory _signature) private {
+    function verifyEventSignature(uint256 _blockchainId, bytes memory _eventInfo, bytes memory _signature) private view {
         // The code is arranged a little unusually to reduce the number of in-scope local variables so code will compile.
         address[] memory signers;
         bytes32[] memory sigRs;
