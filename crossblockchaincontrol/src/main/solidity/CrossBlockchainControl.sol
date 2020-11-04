@@ -220,25 +220,23 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             uint256 crossBlockchainTxId = BytesUtil.bytesToUint256(segmentEvent, 0);
             bytes32 hashOfCallGraphFromSegment = BytesUtil.bytesToBytes32(segmentEvent, 0x20);
             uint256 locationOfCallPath = BytesUtil.bytesToUint256(segmentEvent, 0x40);
-            uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(segmentEvent, 0x60);
+            // Not needed: uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(segmentEvent, 0x60);
             uint256 success = BytesUtil.bytesToUint256(segmentEvent, 0x80);
             uint256 locationOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, 0xA0);
-
             uint256 lenOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, locationOfReturnValue);
             bytes memory returnValue = BytesUtil.slice(segmentEvent, locationOfReturnValue + 0x20, lenOfReturnValue);
+            uint256 lenOfCallPath = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath);
 
+            require(crossBlockchainTxId == activeCallCrossBlockchainTransactionId, "Transaction id from segment and root do not match");
             require(hashOfCallGraph == hashOfCallGraphFromSegment, "Call graph from segment and root do not match");
+            require(lenOfCallPath == 1, "Call path length for segment for root transaction must be one");
 
-//            emit Dump(crossBlockchainTxId, hashOfCallGraphFromSegment, address(0), segmentEvent);
-//            emit Dump(locationOfCallPath, hashOfCallGraphFromSegment, address(0), segmentEvent);
-//            emit Dump(locationOfLockedContracts, hashOfCallGraphFromSegment, address(0), segmentEvent);
-//            emit Dump(success, hashOfCallGraph, address(0), segmentEvent);
-//            emit Dump(locationOfReturnValue, hashOfCallGraph, address(0), segmentEvent);
-//            emit Dump(lenOfReturnValue, hashOfCallGraph, address(0), returnValue);
-
-            // TODO check hash of start event: This ensures the same call graph was executed by all parts of the call graph.
-            // TODO check cross blockchain tx id
-            // TODO fail is success == false
+            // Fail the root transaction is one of the segments failed.
+            if (success == 0) {
+                failRootTransaction();
+                cleanupAfterCall();
+                return;
+            }
 
             // Store the extracted return results from segment events.
             activeCallReturnValues.push(returnValue);
@@ -401,9 +399,9 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
     }
 
     function unlockContracts(bool _commit) private {
-        emit Dump(activeCallLockedContracts.length, bytes32(0), address(0), "");
+//        emit Dump(activeCallLockedContracts.length, bytes32(0), address(0), "");
         for (uint256 i = 0; i < activeCallLockedContracts.length; i++) {
-            emit Dump(activeCallLockedContracts.length, bytes32(0), activeCallLockedContracts[i], "");
+  //          emit Dump(activeCallLockedContracts.length, bytes32(0), activeCallLockedContracts[i], "");
             LockableStorage lockableStorageContract = LockableStorage(activeCallLockedContracts[i]);
             lockableStorageContract.finalise(_commit);
         }
@@ -411,7 +409,7 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
 
     function commonCallProcessing(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) private returns(bytes memory) {
-        emit Dump(_blockchainId, bytes32(0), _contract, _functionCallData);
+//        emit Dump(_blockchainId, bytes32(0), _contract, _functionCallData);
 
         require(activeCallReturnValuesIndex < activeCallReturnValues.length, "Call to cross call without return value");
 
