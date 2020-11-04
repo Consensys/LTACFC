@@ -52,11 +52,6 @@ contract RootBlockchainContract is LockableStorageWrapper {
         }
     }
 
-    function getRemoteVal() external {
-        uint256 val = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(otherBlockchainId, address(otherContract),
-            abi.encodeWithSelector(otherContract.getVal.selector));
-    }
-
     function setVal1(uint256 _val) public {
         setUint256(KEY_UINT256_VAL1, _val);
     }
@@ -72,5 +67,4 @@ contract RootBlockchainContract is LockableStorageWrapper {
     function getVal2() external view returns (uint256) {
         return getUint256(KEY_UINT256_VAL2);
     }
-
 }

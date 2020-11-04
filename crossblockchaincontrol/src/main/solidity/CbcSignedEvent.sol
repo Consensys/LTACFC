@@ -26,57 +26,102 @@ contract CbcSignedEvent is CrossBlockchainControl {
         registrar = Registrar(_registrar);
     }
 
+
+    function segment(bytes[] calldata _signedEventInfo, bytes[] calldata _signature, uint256[] calldata _callPath) external {
+        // TODO for the moment ignore segmentEvents. Need to add the ability for segment events to
+        // consume other segment events.
+
+        uint256 rootBlockchainId;
+        bytes memory startEventData;
+//        bytes[] memory segmentEventsData;
+        (rootBlockchainId, , startEventData, /* segmentEventsData */ ) = common(_signedEventInfo, _signature, START_EVENT_SIGNATURE);
+
+        segmentProcessing(rootBlockchainId, startEventData, _callPath);
+    }
+
     function root(bytes[] calldata _signedEventInfo, bytes[] calldata _signature) external {
+        uint256 rootBlockchainId;
+        address startCbcContract;
+        bytes memory startEventData;
+        bytes[] memory segmentEventsData;
+        (rootBlockchainId, startCbcContract, startEventData, segmentEventsData) = common(_signedEventInfo, _signature, START_EVENT_SIGNATURE);
+
+        rootProcessing(rootBlockchainId, startCbcContract, startEventData, segmentEventsData);
+    }
+
+
+    /**
+     * Signalling call: Commit or ignore updates + unlock any locked contracts.
+     **/
+    function signalling(bytes[] calldata _signedEventInfo, bytes[] calldata _signature) external {
+        uint256 rootBlockchainId;
+        address rootCbcContract;
+        bytes memory rootEventData;
+        bytes[] memory segmentEventsData;
+        (rootBlockchainId, rootCbcContract, rootEventData, segmentEventsData) = common(_signedEventInfo, _signature, ROOT_EVENT_SIGNATURE);
+
+        signallingProcessing(rootBlockchainId, rootEventData, segmentEventsData);
+    }
+
+
+    // Create a struct to hold temporary variable to get around limitations of the Solidity compiler.
+    struct Holder {
+        uint256 blockchainId;
+        address cbcContract;
+        bytes32 eventSignature;
+        bytes eventData;
+    }
+
+    struct Holder2 {
+        uint256 rootBlockchainId;
+        address startCbcContract;
+        bytes startEventData;
+        bytes[] segmentEvents;
+    }
+
+    function common(bytes[] calldata _signedEventInfo, bytes[] calldata _signature, bytes32 _startOrRootEventSig)
+        internal returns(uint256, address, bytes memory, bytes[] memory) {
         // The minimum number of events is 1: start and no segment, used ot end timed-out a
         // cross-blockchain transactions.
         uint256 numEvents = _signedEventInfo.length;
         require(numEvents > 0, "Must be at least one event");
         require(numEvents == _signature.length, "Number of events and signatures do not match");
 
-        bytes memory startEventData;
-        bytes[] memory segmentEvents = new bytes[](numEvents - 1);
-        uint256 rootBlockchainId;
-        address startCbcContract;
-
+        Holder2 memory holder2;
+        holder2.segmentEvents =  new bytes[](numEvents - 1);
 
         for (uint256 i = 0; i < numEvents; i++) {
-            bytes memory signedEventInfo = _signedEventInfo[i];
-            uint256 blockchainId;
-            bytes memory eventData;
-            address cbcContract;
-            bytes32 eventSignature;
-            (blockchainId, cbcContract, eventSignature, eventData) = extractEventInfo(signedEventInfo);
+            Holder memory holder = extractEventInfo(_signedEventInfo[i]);
+            verifyEventSignature(holder.blockchainId, holder.eventData, _signature[i]);
 
             if (i == 0) {
-                require(eventSignature == START_EVENT_SIGNATURE, "First event was not START");
-                rootBlockchainId = blockchainId;
-                startCbcContract = cbcContract;
-                startEventData = eventData;
+                require(holder.eventSignature == _startOrRootEventSig, "Incorrect first event");
+                holder2.rootBlockchainId = holder.blockchainId;
+                holder2.startCbcContract = holder.cbcContract;
+                holder2.startEventData = holder.eventData;
             }
             else {
-                require(eventSignature == SEGMENT_EVENT_SIGNATURE, "Subsequent events were not SEGMENT");
-                segmentEvents[i-1] = eventData;
+                require(holder.eventSignature == SEGMENT_EVENT_SIGNATURE, "Subsequent events were not SEGMENT");
+                holder2.segmentEvents[i-1] = holder.eventData;
             }
-            verifyEventSignature(blockchainId, eventData, _signature[i]);
         }
-
-
-        rootProcessing(rootBlockchainId, startCbcContract, startEventData, segmentEvents);
+        return(holder2.rootBlockchainId, holder2.startCbcContract, holder2.startEventData, holder2.segmentEvents);
     }
+
 
 
     function extractEventInfo(bytes memory _signedEventInfo) private pure
-            returns(uint256 blockchainId, address cbcAddress, bytes32 eventSignature, bytes memory eventData){
+            returns(Holder memory holder){
         RLP.RLPItem[] memory signedEventInfo = RLP.toList(RLP.toRLPItem(_signedEventInfo));
-        blockchainId = BytesUtil.bytesToUint256(RLP.toData(signedEventInfo[0]), 0);
-        cbcAddress = BytesUtil.bytesToAddress(RLP.toData(signedEventInfo[1]));
-        eventSignature = BytesUtil.bytesToBytes32(RLP.toData(signedEventInfo[2]), 0);
-        eventData = RLP.toData(signedEventInfo[3]);
+        holder.blockchainId = BytesUtil.bytesToUint256(RLP.toData(signedEventInfo[0]), 0);
+        holder.cbcContract = BytesUtil.bytesToAddress(RLP.toData(signedEventInfo[1]));
+        holder.eventSignature = BytesUtil.bytesToBytes32(RLP.toData(signedEventInfo[2]), 0);
+        holder.eventData = RLP.toData(signedEventInfo[3]);
     }
 
 
 
-    function verifyEventSignature(uint256 _blockchainId, bytes memory _eventInfo, bytes memory _signature) private view {
+    function verifyEventSignature(uint256 _blockchainId, bytes memory _eventInfo, bytes memory _signature) private {
         // The code is arranged a little unusually to reduce the number of in-scope local variables so code will compile.
         address[] memory signers;
         bytes32[] memory sigRs;
@@ -85,8 +130,7 @@ contract CbcSignedEvent is CrossBlockchainControl {
 
         {
             RLP.RLPItem[] memory signature = RLP.toList(RLP.toRLPItem(_signature));
-            RLP.RLPItem[] memory signersRlp;
-            signersRlp = RLP.toList(signature[0]);
+            RLP.RLPItem[] memory signersRlp = RLP.toList(signature[0]);
             uint256 length = signersRlp.length;
 
             signers = new address[](length);

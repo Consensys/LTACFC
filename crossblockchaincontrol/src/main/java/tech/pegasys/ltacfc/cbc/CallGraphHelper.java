@@ -5,6 +5,7 @@ import java.util.List;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
+import tech.pegasys.ltacfc.common.FormatConversion;
 
 
 public class CallGraphHelper {
@@ -27,15 +28,8 @@ public class CallGraphHelper {
   private static RlpList createFunctionCall(BigInteger blockchainId, String contractAddress, String rlpBytesAsString) {
     return new RlpList(
         RlpString.create(blockchainId),
-        toRlpString(contractAddress),
-        toRlpString(rlpBytesAsString)
+        RlpString.create(FormatConversion.addressStringToBytes(contractAddress)),
+        RlpString.create(FormatConversion.hexStringToByteArray(rlpBytesAsString))
     );
   }
-
-
-
-  private static RlpString toRlpString(String rlpBytesAsString) {
-    return RlpString.create(new BigInteger(rlpBytesAsString.substring(2), 16));
-  }
-
 }

@@ -34,7 +34,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.RevertReason;
-import tech.pegasys.ltacfc.rlp.RlpDumper;
+import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
 import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
 import tech.pegasys.poc.witnesscodeanalysis.trie.ethereum.trie.MerklePatriciaTrie;
@@ -47,8 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class CbcTxReceiptTransfer extends AbstractCbc {
-  private static final Logger LOG = LogManager.getLogger(CbcTxReceiptTransfer.class);
+public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
+  private static final Logger LOG = LogManager.getLogger(CrossBlockchainControlTxReceiptRootTransfer.class);
 
   // TODO put this into a map for the current transaction id, so many transactions can be handled in parallel
   // The time-out for the current transaction.
@@ -58,7 +58,7 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
   private TxReceiptsRootStorage txReceiptsRootStorageContract;
   private CbcTxRootTransfer crossBlockchainControlContract;
 
-  public CbcTxReceiptTransfer(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+  public CrossBlockchainControlTxReceiptRootTransfer(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
@@ -78,22 +78,15 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
 
 
   public TransactionReceipt start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
-    LOG.info("TxId: {}", transactionId.toString(16));
-    BigInteger cG = new BigInteger(1, callGraph);
     TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
     List<CbcTxRootTransfer.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
     CbcTxRootTransfer.StartEventResponse startEvent = startEvents.get(0);
-    LOG.info("Timeout: {} seconds from unix epoc, given request: {}", startEvent._timeout, timeout);
-    LOG.info(" Current time on this computer: {}", System.currentTimeMillis() / 1000);
     this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
     return txR;
   }
 
   // TODO this should migrate to the abstract cbc class: the root blockchain could also end up having a segment
-  public TransactionReceipt segment(CrossEventProof startProof, List<BigInteger> callPath) throws Exception {
-
-    RlpDumper.dump(RLP.input(Bytes.wrap(startProof.getTransactionReceipt())));
-
+  public TransactionReceipt segment(TxReceiptRootTransferEventProof startProof, List<BigInteger> callPath) throws Exception {
     TransactionReceipt txR = this.crossBlockchainControlContract.segment(
         startProof.getBlockchainId(),
         startProof.getCrossBlockchainControlContract(),
@@ -106,9 +99,6 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
       throw new Exception("Segment transaction failed");
     }
 
-    LOG.info("Cross Bc Id: {}", this.crossBlockchainControlContract.activeCallCrossBlockchainTransactionId().send().toString(16));
-    LOG.info("CallGraph: {}", new BigInteger(1, this.crossBlockchainControlContract.activeCallGraph().send()).toString(16));
-
     List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
     CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
     LOG.info("Segment Event:");
@@ -118,19 +108,16 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
     LOG.info(" _success: {}", segmentEventResponse._success);
     LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
     LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());
-//    for (String lockedContractAddress: segmentEventResponse._lockedContracts) {
-//      LOG.info(" locked contracts: {}", lockedContractAddress);
-//    }
 
     return txR;
   }
 
 
-  public TransactionReceipt root(CrossEventProof startProof, List<CrossEventProof> segProofs) throws Exception {
+  public TransactionReceipt root(TxReceiptRootTransferEventProof startProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
     segProofs.add(0, startProof);
 
 
-    for (CrossEventProof proofInfo: segProofs) {
+    for (TxReceiptRootTransferEventProof proofInfo: segProofs) {
       TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
           proofInfo.getBlockchainId(),
           proofInfo.getCrossBlockchainControlContract(),
@@ -164,16 +151,6 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
     if (!txR.isStatusOK()) {
       throw new Exception("Root transaction failed");
     }
-    LOG.info("Dump Events");
-    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
-      LOG.info("  Event:");
-      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
-      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
-      LOG.info("   3: {}", dumpEventResponse._val3);
-      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
-    }
-
 
     List<CbcTxRootTransfer.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
     CbcTxRootTransfer.RootEventResponse rootEventResponse = rootEventResponses.get(0);
@@ -196,13 +173,16 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
       LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
       LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
     }
+
+    showAllDumpEvents(txR);
+
     return txR;
   }
 
-  public TransactionReceipt signalling(CrossEventProof rootProof, List<CrossEventProof> segProofs) throws Exception {
+  public TransactionReceipt signalling(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
     segProofs.add(0, rootProof);
 
-    for (CrossEventProof proofInfo: segProofs) {
+    for (TxReceiptRootTransferEventProof proofInfo: segProofs) {
       TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
           proofInfo.getBlockchainId(),
           proofInfo.getCrossBlockchainControlContract(),
@@ -232,16 +212,7 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
     LOG.info(" _rootBlockchainId: {}", sigEventResponse._rootBcId.toString(16));
     LOG.info(" _crossBlockchainTransactionId: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
 
-
-    LOG.info("Dump Events");
-    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
-      LOG.info("  Event:");
-      LOG.info("   1: {}", dumpEventResponse._val1.toString(16));
-      LOG.info("   2: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
-      LOG.info("   3: {}", dumpEventResponse._val3);
-      LOG.info("   4: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
-    }
+    showAllDumpEvents(txR);
 
     return txR;
   }
@@ -297,7 +268,7 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
   }
 
 
-  public CrossEventProof getProofForTxReceipt(BigInteger blockchainId, String cbcContractAddress, TransactionReceipt aReceipt) throws Exception {
+  public TxReceiptRootTransferEventProof getProofForTxReceipt(BigInteger blockchainId, String cbcContractAddress, TransactionReceipt aReceipt) throws Exception {
     // Calculate receipt root based on logs for all receipts of all transactions in the block.
     String blockHash = aReceipt.getBlockHash();
     EthGetBlockTransactionCountByHash transactionCountByHash = this.web3j.ethGetBlockTransactionCountByHash(blockHash).send();
@@ -436,7 +407,7 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
     if (!besuCalculatedReceiptsRoot.toHexString().equalsIgnoreCase(nodeHash.toHexString())) {
       throw new Error("Transaction receipt root calculated using proof did not match actual receipt root");
     }
-    return new CrossEventProof(
+    return new TxReceiptRootTransferEventProof(
         blockchainId,
         cbcContractAddress,
         getTransactionReceiptRoot(aReceipt),
@@ -477,14 +448,30 @@ public class CbcTxReceiptTransfer extends AbstractCbc {
     return RLP.encodeOne(UInt256.valueOf(i).toBytes().trimLeadingZeros());
   }
 
-  public CrossEventProof getStartEventProof(TransactionReceipt startTxReceipt) throws Exception {
+  public TxReceiptRootTransferEventProof getStartEventProof(TransactionReceipt startTxReceipt) throws Exception {
     return getProofForTxReceipt(this.blockchainId, this.crossBlockchainControlContract.getContractAddress(), startTxReceipt);
   }
-  public CrossEventProof getRootEventProof(TransactionReceipt rootTxReceipt) throws Exception {
+  public TxReceiptRootTransferEventProof getRootEventProof(TransactionReceipt rootTxReceipt) throws Exception {
     return getProofForTxReceipt(this.blockchainId, this.crossBlockchainControlContract.getContractAddress(), rootTxReceipt);
   }
-  public CrossEventProof getSegmentEventProof(TransactionReceipt segmentTxReceipt) throws Exception {
+  public TxReceiptRootTransferEventProof getSegmentEventProof(TransactionReceipt segmentTxReceipt) throws Exception {
     return getProofForTxReceipt(this.blockchainId, this.crossBlockchainControlContract.getContractAddress(), segmentTxReceipt);
+  }
+
+
+  protected void showAllDumpEvents(TransactionReceipt txR) {
+    LOG.info("Dump Events");
+    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
+    if (dumpEventResponses.isEmpty()) {
+      LOG.info(" None");
+    }
+    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
+      LOG.info(" Event:");
+      LOG.info("  Uint256: {}", dumpEventResponse._val1.toString(16));
+      LOG.info("  Bytes32: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
+      LOG.info("  Address: {}", dumpEventResponse._val3);
+      LOG.info("  Bytes: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
+    }
   }
 
 }

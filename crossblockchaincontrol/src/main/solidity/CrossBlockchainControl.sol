@@ -134,7 +134,6 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         address startCaller = BytesUtil.bytesToAddress1(_startEventData, 0x20);
         require(startCaller == tx.origin, "EOA does not match start event");
         uint256 lenOfActiveCallGraph = BytesUtil.bytesToUint256(_startEventData, 0x80);
-        emit Dump(lenOfActiveCallGraph, bytes32(0), address(0), bytes(""));
 
         bytes memory callGraph = BytesUtil.slice(_startEventData, 0xA0, lenOfActiveCallGraph);
         activeCallGraph = callGraph;

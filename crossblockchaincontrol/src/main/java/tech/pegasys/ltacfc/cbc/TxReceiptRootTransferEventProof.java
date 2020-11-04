@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * Information to allow a transaction receipt to be verified within a Solidity contract.
  */
-public class CrossEventProof {
+public class TxReceiptRootTransferEventProof {
   BigInteger blockchainId;
   String crossBlockchainControlContract;
   byte[] transactionReceiptRoot;
@@ -39,7 +39,7 @@ public class CrossEventProof {
    * @param proofOffsets Offsets within the proofs byte arrays of the RLP encoded hashes.
    * @param proofs RLP encoded hashes from the transaction receipt trie.
    */
-  public CrossEventProof(
+  public TxReceiptRootTransferEventProof(
       BigInteger blockchainId,
       String crossBlockchainControlContract,
       byte[] transactionReceiptRoot,

@@ -20,17 +20,17 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
-import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import tech.pegasys.ltacfc.cbc.AbstractCbc;
-import tech.pegasys.ltacfc.cbc.CbcTxReceiptTransfer;
-import tech.pegasys.ltacfc.cbc.CrossEventProof;
+import tech.pegasys.ltacfc.cbc.CrossBlockchainControlSignedEvents;
+import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
+import tech.pegasys.ltacfc.cbc.SignedEvent;
+import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
-import tech.pegasys.ltacfc.utils.crypto.KeyPairGen;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -44,12 +44,6 @@ public class Main {
 
   public static void main(String[] args) throws Exception {
     LOG.info("Started");
-    Credentials creds;
-    OtherBc otherBlockchain;
-    CbcTxReceiptTransfer otherBlockchainCbc;
-    RootBc rootBlockchain;
-    CbcTxReceiptTransfer rootBlockchainCbc;
-    CrossBlockchainConsensus consensusMethodology;
 
     if (args.length != 1) {
       LOG.info("Usage: [properties file name]");
@@ -57,45 +51,73 @@ public class Main {
     }
 
     PropertiesLoader propsLoader = new PropertiesLoader(args[0]);
-    creds = propsLoader.getCredentials();
-    String bcId = propsLoader.getProperty("OTHER_BC_ID");
-    LOG.info(" OTHER_BC_ID: {}", bcId);
-    String uri = propsLoader.getProperty("OTHER_URI");
-    LOG.info(" OTHER_URI: {}", uri);
-    String gasPriceStrategy = propsLoader.getProperty("OTHER_GAS");
-    LOG.info(" OTHER_GAS: {}", gasPriceStrategy);
-    String blockPeriod = propsLoader.getProperty("OTHER_PERIOD");
-    LOG.info(" OTHER_PERIOD: {}", blockPeriod);
-    otherBlockchain = new OtherBc(creds, bcId, uri, gasPriceStrategy, blockPeriod);
-    otherBlockchainCbc = new CbcTxReceiptTransfer(creds, bcId, uri, gasPriceStrategy, blockPeriod);
+    Credentials creds = propsLoader.getCredentials();
+    String otherBcIdStr = propsLoader.getProperty("OTHER_BC_ID");
+    LOG.info(" OTHER_BC_ID: 0x{}", otherBcIdStr);
+    String otherUriStr = propsLoader.getProperty("OTHER_URI");
+    LOG.info(" OTHER_URI: {}", otherUriStr);
+    String otherGasPriceStrategyStr = propsLoader.getProperty("OTHER_GAS");
+    LOG.info(" OTHER_GAS: {}", otherGasPriceStrategyStr);
+    String otherBlockPeriodStr = propsLoader.getProperty("OTHER_PERIOD");
+    LOG.info(" OTHER_PERIOD: {}", otherBlockPeriodStr);
+    OtherBc otherBlockchain = new OtherBc(creds, otherBcIdStr, otherUriStr, otherGasPriceStrategyStr, otherBlockPeriodStr);
 
-    bcId = propsLoader.getProperty("ROOT_BC_ID");
-    LOG.info(" ROOT_BC_ID: {}", bcId);
-    uri = propsLoader.getProperty("ROOT_URI");
-    LOG.info(" ROOT_URI: {}", uri);
-    gasPriceStrategy = propsLoader.getProperty("ROOT_GAS");
-    LOG.info(" ROOT_GAS: {}", gasPriceStrategy);
-    blockPeriod = propsLoader.getProperty("ROOT_PERIOD");
-    LOG.info(" ROOT_PERIOD: {}", blockPeriod);
-    rootBlockchain = new RootBc(creds, bcId, uri, gasPriceStrategy, blockPeriod);
-    rootBlockchainCbc = new CbcTxReceiptTransfer(creds, bcId, uri, gasPriceStrategy, blockPeriod);
+    String rootBcIdStr = propsLoader.getProperty("ROOT_BC_ID");
+    LOG.info(" ROOT_BC_ID: 0x{}", rootBcIdStr);
+    String rootUriStr = propsLoader.getProperty("ROOT_URI");
+    LOG.info(" ROOT_URI: {}", rootUriStr);
+    String rooGasPriceStrategyStr = propsLoader.getProperty("ROOT_GAS");
+    LOG.info(" ROOT_GAS: {}", rooGasPriceStrategyStr);
+    String rootBlockPeriodStr = propsLoader.getProperty("ROOT_PERIOD");
+    LOG.info(" ROOT_PERIOD: {}", rootBlockPeriodStr);
+    RootBc rootBlockchain = new RootBc(creds, rootBcIdStr, rootUriStr, rooGasPriceStrategyStr, rootBlockPeriodStr);
+
 
     String consensus = propsLoader.getProperty("CONSENSUS_METHODOLOGY");
-    consensusMethodology = CrossBlockchainConsensus.valueOf(consensus);
+    LOG.info("CONSENSUS_METHODOLOGY: {}", consensus);
+    CrossBlockchainConsensus consensusMethodology = CrossBlockchainConsensus.valueOf(consensus);
 
-    otherBlockchainCbc.deployContracts();
-    rootBlockchainCbc.deployContracts();
+    CrossBlockchainControlTxReceiptRootTransfer otherBlockchainCbcTxRootTransfer = null;
+    CrossBlockchainControlTxReceiptRootTransfer rootBlockchainCbcTxRootTransfer = null;
+    CrossBlockchainControlSignedEvents otherBlockchainCbcSignedEvents = null;
+    CrossBlockchainControlSignedEvents rootBlockchainCbcSignedEvents = null;
+    AbstractCbc otherBlockchainCbc = null;
+    AbstractCbc rootBlockchainCbc = null;
+    String otherBlockchainCbcContractAddress;
+    String rootBlockchainCbcContractAddress;
+
+    switch (consensusMethodology) {
+      case TRANSACTION_RECEIPT_SIGNING:
+        otherBlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, otherBcIdStr, otherUriStr, otherGasPriceStrategyStr, otherBlockPeriodStr);
+        rootBlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, rootBcIdStr, rootUriStr, rooGasPriceStrategyStr, rootBlockPeriodStr);
+        otherBlockchainCbcTxRootTransfer.deployContracts();
+        rootBlockchainCbcTxRootTransfer.deployContracts();
+        otherBlockchainCbcContractAddress = otherBlockchainCbcTxRootTransfer.getCbcContractAddress();
+        rootBlockchainCbcContractAddress = rootBlockchainCbcTxRootTransfer.getCbcContractAddress();
+        otherBlockchainCbc = otherBlockchainCbcTxRootTransfer;
+        rootBlockchainCbc = rootBlockchainCbcTxRootTransfer;
+        break;
+      case EVENT_SIGNING:
+        otherBlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, otherBcIdStr, otherUriStr, otherGasPriceStrategyStr, otherBlockPeriodStr);
+        rootBlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, rootBcIdStr, rootUriStr, rooGasPriceStrategyStr, rootBlockPeriodStr);
+        otherBlockchainCbcSignedEvents.deployContracts();
+        rootBlockchainCbcSignedEvents.deployContracts();
+        otherBlockchainCbcContractAddress = otherBlockchainCbcSignedEvents.getCbcContractAddress();
+        rootBlockchainCbcContractAddress = rootBlockchainCbcSignedEvents.getCbcContractAddress();
+        otherBlockchainCbc = otherBlockchainCbcSignedEvents;
+        rootBlockchainCbc = rootBlockchainCbcSignedEvents;
+        break;
+      default:
+        throw new RuntimeException("Unknown consensus methodology");
+    }
+
 
     // Set-up client side and deploy contracts on the blockchains.
-    otherBlockchain.deployContracts(otherBlockchainCbc.getCbcContractAddress());
-
+    otherBlockchain.deployContracts(otherBlockchainCbcContractAddress);
     BigInteger otherBcId = otherBlockchain.getBlockchainId();
     String otherBlockchainContractAddress = otherBlockchain.otherBlockchainContract.getContractAddress();
 
-    rootBlockchain.deployContracts(rootBlockchainCbc.getCbcContractAddress(),
-        otherBcId, otherBlockchainContractAddress);
-
-
+    rootBlockchain.deployContracts(rootBlockchainCbcContractAddress, otherBcId, otherBlockchainContractAddress);
     BigInteger rootBcId = rootBlockchain.getBlockchainId();
 
     // To make the example simple, just have one signer, and have the same signer for all blockchains.
@@ -167,69 +189,136 @@ public class Main {
     BigInteger timeout = BigInteger.valueOf(300);
 
     LOG.info("start");
-    TransactionReceipt startTxReceipt = rootBlockchainCbc.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
-    CrossEventProof startProof = rootBlockchainCbc.getStartEventProof(startTxReceipt);
+    boolean success;
+    switch (consensusMethodology) {
+      case TRANSACTION_RECEIPT_SIGNING:
+        TransactionReceipt startTxReceipt = rootBlockchainCbcTxRootTransfer.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
+        TxReceiptRootTransferEventProof startProof = rootBlockchainCbcTxRootTransfer.getStartEventProof(startTxReceipt);
 
-    // Add tx receipt root so event will be trusted.
-    otherBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
-    rootBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
-
-
-    // Set of all segment proofs needed for the root call.
-    List<CrossEventProof> allSegmentProofs = new ArrayList<>();
-    // Set of all segments need for the signal call on Other Blockchain.
-    List<CrossEventProof> signalSegProofs = new ArrayList<>();
+        // Add tx receipt root so event will be trusted.
+        otherBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
+        rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
 
 
-    LOG.info("segment: getVal");
-    List<BigInteger> getValCallPath = new ArrayList<>();
-    getValCallPath.add(BigInteger.ONE);
-    TransactionReceipt segGetValTxReceipt = otherBlockchainCbc.segment(startProof, getValCallPath);
-    CrossEventProof segGetValProof = otherBlockchainCbc.getSegmentEventProof(segGetValTxReceipt);
-    allSegmentProofs.add(segGetValProof);
-    // Add tx receipt root so event will be trusted.
-    otherBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
-    rootBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
+        // Set of all segment proofs needed for the root call.
+        List<TxReceiptRootTransferEventProof> allSegmentProofs = new ArrayList<>();
+        // Set of all segments need for the signal call on Other Blockchain.
+        List<TxReceiptRootTransferEventProof> signalSegProofs = new ArrayList<>();
 
-    if (simRootContract.someComplexBusinessLogicIfTrue) {
-      LOG.info("segment: setValues");
-      List<BigInteger> setValuesCallPath = new ArrayList<>();
-      setValuesCallPath.add(BigInteger.TWO);
-      TransactionReceipt segSetValuesTxReceipt = otherBlockchainCbc.segment(startProof, setValuesCallPath);
-      CrossEventProof segSetValuesProof = otherBlockchainCbc.getSegmentEventProof(segSetValuesTxReceipt);
-      allSegmentProofs.add(segSetValuesProof);
-      signalSegProofs.add(segSetValuesProof);
-      // Add tx receipt root so event will be trusted.
-      otherBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
-      rootBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
-    } else {
 
-      LOG.info("segment: setVal");
-      List<BigInteger> setValCallPath = new ArrayList<>();
-      setValCallPath.add(BigInteger.TWO);
-      TransactionReceipt segSetValTxReceipt = otherBlockchainCbc.segment(startProof, setValCallPath);
-      CrossEventProof segSetValProof = otherBlockchainCbc.getSegmentEventProof(segSetValTxReceipt);
-      allSegmentProofs.add(segSetValProof);
-      signalSegProofs.add(segSetValProof);
-      // Add tx receipt root so event will be trusted.
-      otherBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
-      rootBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
-    }
+        LOG.info("segment: getVal");
+        List<BigInteger> getValCallPath = new ArrayList<>();
+        getValCallPath.add(BigInteger.ONE);
+        TransactionReceipt segGetValTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, getValCallPath);
+        TxReceiptRootTransferEventProof segGetValProof = otherBlockchainCbcTxRootTransfer.getSegmentEventProof(segGetValTxReceipt);
+        allSegmentProofs.add(segGetValProof);
+        // Add tx receipt root so event will be trusted.
+        otherBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
+        rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
 
-    LOG.info("root");
-    TransactionReceipt rootTxReceipt = rootBlockchainCbc.root(startProof, allSegmentProofs);
-    CrossEventProof rootProof = rootBlockchainCbc.getRootEventProof(rootTxReceipt);
-    // Add tx receipt root so event will be trusted.
-    otherBlockchainCbc.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
+        if (simRootContract.someComplexBusinessLogicIfTrue) {
+          LOG.info("segment: setValues");
+          List<BigInteger> setValuesCallPath = new ArrayList<>();
+          setValuesCallPath.add(BigInteger.TWO);
+          TransactionReceipt segSetValuesTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, setValuesCallPath);
+          TxReceiptRootTransferEventProof segSetValuesProof = otherBlockchainCbcTxRootTransfer.getSegmentEventProof(segSetValuesTxReceipt);
+          allSegmentProofs.add(segSetValuesProof);
+          signalSegProofs.add(segSetValuesProof);
+          // Add tx receipt root so event will be trusted.
+          otherBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
+          rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
+        } else {
+
+          LOG.info("segment: setVal");
+          List<BigInteger> setValCallPath = new ArrayList<>();
+          setValCallPath.add(BigInteger.TWO);
+          TransactionReceipt segSetValTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, setValCallPath);
+          TxReceiptRootTransferEventProof segSetValProof = otherBlockchainCbcTxRootTransfer.getSegmentEventProof(segSetValTxReceipt);
+          allSegmentProofs.add(segSetValProof);
+          signalSegProofs.add(segSetValProof);
+          // Add tx receipt root so event will be trusted.
+          otherBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
+          rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
+        }
+
+        LOG.info("root");
+        TransactionReceipt rootTxReceipt = rootBlockchainCbcTxRootTransfer.root(startProof, allSegmentProofs);
+        TxReceiptRootTransferEventProof rootProof = rootBlockchainCbcTxRootTransfer.getRootEventProof(rootTxReceipt);
+        // Add tx receipt root so event will be trusted.
+        otherBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
 //    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
 
-    LOG.info("signalling");
-    // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
-    otherBlockchainCbc.signalling(rootProof, signalSegProofs);
+        LOG.info("signalling");
+        // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
+        otherBlockchainCbcTxRootTransfer.signalling(rootProof, signalSegProofs);
+
+        success = rootBlockchainCbcTxRootTransfer.getRootEventSuccess();
+
+        rootBlockchainCbcTxRootTransfer.shutdown();
+        otherBlockchainCbcTxRootTransfer.shutdown();
+        break;
 
 
+      case EVENT_SIGNING:
+        byte[] startEventData = rootBlockchainCbcSignedEvents.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
+        SignedEvent signedStartEvent = new SignedEvent(new AnIdentity[]{signer},
+            rootBcId, rootBlockchainCbcContractAddress, AbstractCbc.START_EVENT_SIGNATURE, startEventData);
 
-    boolean success = rootBlockchainCbc.getRootEventSuccess();
+        // Set of all segment event information needed for the root call.
+        List<SignedEvent> allSegmentEvents = new ArrayList<>();
+        // Set of all segments need for the signal call on Other Blockchain.
+        List<SignedEvent> signalSegEvents = new ArrayList<>();
+
+
+        LOG.info("segment: getVal");
+        getValCallPath = new ArrayList<>();
+        getValCallPath.add(BigInteger.ONE);
+        byte[] segEventData = otherBlockchainCbcSignedEvents.segment(signedStartEvent, getValCallPath);
+        SignedEvent segGetValEvent = new SignedEvent(new AnIdentity[]{signer},
+            otherBcId, otherBlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
+        allSegmentEvents.add(segGetValEvent);
+
+        if (simRootContract.someComplexBusinessLogicIfTrue) {
+          LOG.info("segment: setValues");
+          List<BigInteger> setValuesCallPath = new ArrayList<>();
+          setValuesCallPath.add(BigInteger.TWO);
+          segEventData = otherBlockchainCbcSignedEvents.segment(signedStartEvent, setValuesCallPath);
+          SignedEvent segSetValuesEvent = new SignedEvent(new AnIdentity[]{signer},
+              otherBcId, otherBlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
+          allSegmentEvents.add(segSetValuesEvent);
+          signalSegEvents.add(segSetValuesEvent);
+        } else {
+
+          LOG.info("segment: setVal");
+          List<BigInteger> setValCallPath = new ArrayList<>();
+          setValCallPath.add(BigInteger.TWO);
+          segEventData = otherBlockchainCbcSignedEvents.segment(signedStartEvent, setValCallPath);
+          SignedEvent segSetValEvent = new SignedEvent(new AnIdentity[]{signer},
+              otherBcId, otherBlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
+          allSegmentEvents.add(segSetValEvent);
+          signalSegEvents.add(segSetValEvent);
+        }
+
+        LOG.info("root");
+        byte[] rootEventData = rootBlockchainCbcSignedEvents.root(signedStartEvent, allSegmentEvents);
+        SignedEvent rootEvent = new SignedEvent(new AnIdentity[]{signer},
+            rootBcId, rootBlockchainCbcContractAddress, AbstractCbc.ROOT_EVENT_SIGNATURE, rootEventData);
+
+        LOG.info("signalling");
+        // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
+        otherBlockchainCbcSignedEvents.signalling(rootEvent, signalSegEvents);
+
+        success = rootBlockchainCbcSignedEvents.getRootEventSuccess();
+
+        rootBlockchainCbcSignedEvents.shutdown();
+        otherBlockchainCbcSignedEvents.shutdown();
+        break;
+
+      default:
+        throw new RuntimeException("Unknown consensus type");
+    }
+
+
     LOG.info("Cross-Blockchain Transaction was successful: {}", success);
     if (success) {
       LOG.info(" Simulated expected values: Root val1: {}, val2: {}, Other val: {}",
@@ -244,9 +333,7 @@ public class Main {
     LOG.info(" Other contract's storage is locked: {}", otherBlockchain.storageIsLocked());
 
     rootBlockchain.shutdown();
-    rootBlockchainCbc.shutdown();
     otherBlockchain.shutdown();
-    otherBlockchainCbc.shutdown();
   }
 
 
