@@ -17,16 +17,12 @@ package tech.pegasys.ltacfc.cbc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
-import org.web3j.rlp.RlpEncoder;
-import org.web3j.rlp.RlpList;
-import org.web3j.rlp.RlpString;
 import tech.pegasys.ltacfc.common.RevertReason;
-import tech.pegasys.ltacfc.rlp.RlpDumper;
+import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
 
 import java.io.IOException;
@@ -60,6 +56,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
   public byte[] start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
     TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
+    StatsHolder.logGas("Start Transaction", txR.getGasUsed());
     List<CbcSignedEvent.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
     CbcSignedEvent.StartEventResponse startEvent = startEvents.get(0);
     this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
@@ -82,6 +79,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
     TransactionReceipt txR;
     try {
       txR = this.crossBlockchainControlContract.segment(encodedEvents, encodedSignatures, callPath).send();
+      StatsHolder.logGas("Segment Transaction", txR.getGasUsed());
     } catch (TransactionException ex) {
       LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       throw ex;
@@ -135,6 +133,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
     TransactionReceipt txR;
     try {
       txR = this.crossBlockchainControlContract.root(encodedEvents, encodedSignatures).send();
+      StatsHolder.logGas("Root Transaction", txR.getGasUsed());
     }
     catch (TransactionException ex) {
       LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
@@ -184,6 +183,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
 
     TransactionReceipt txR = this.crossBlockchainControlContract.signalling(encodedEvents, encodedSignatures).send();
+    StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
     if (!txR.isStatusOK()) {
       throw new Exception("Signalling transaction failed");
     }

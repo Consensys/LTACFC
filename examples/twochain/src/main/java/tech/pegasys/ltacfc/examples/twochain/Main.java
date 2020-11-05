@@ -29,6 +29,7 @@ import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
+import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
 
@@ -43,6 +44,7 @@ public class Main {
   static final Logger LOG = LogManager.getLogger(Main.class);
 
   public static void main(String[] args) throws Exception {
+    StatsHolder.log("Start");
     LOG.info("Started");
 
     if (args.length != 1) {
@@ -207,6 +209,7 @@ public class Main {
 
 
         LOG.info("segment: getVal");
+        StatsHolder.log("segment: getVal");
         List<BigInteger> getValCallPath = new ArrayList<>();
         getValCallPath.add(BigInteger.ONE);
         TransactionReceipt segGetValTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, getValCallPath);
@@ -218,6 +221,7 @@ public class Main {
 
         if (simRootContract.someComplexBusinessLogicIfTrue) {
           LOG.info("segment: setValues");
+          StatsHolder.log("segment: setValues");
           List<BigInteger> setValuesCallPath = new ArrayList<>();
           setValuesCallPath.add(BigInteger.TWO);
           TransactionReceipt segSetValuesTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, setValuesCallPath);
@@ -227,9 +231,10 @@ public class Main {
           // Add tx receipt root so event will be trusted.
           otherBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
           rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
-        } else {
 
+        } else {
           LOG.info("segment: setVal");
+          StatsHolder.log("segment: setVal");
           List<BigInteger> setValCallPath = new ArrayList<>();
           setValCallPath.add(BigInteger.TWO);
           TransactionReceipt segSetValTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, setValCallPath);
@@ -271,6 +276,7 @@ public class Main {
 
 
         LOG.info("segment: getVal");
+        StatsHolder.log("segment: getVal");
         getValCallPath = new ArrayList<>();
         getValCallPath.add(BigInteger.ONE);
         byte[] segEventData = otherBlockchainCbcSignedEvents.segment(signedStartEvent, getValCallPath);
@@ -280,6 +286,7 @@ public class Main {
 
         if (simRootContract.someComplexBusinessLogicIfTrue) {
           LOG.info("segment: setValues");
+          StatsHolder.log("segment: setValues");
           List<BigInteger> setValuesCallPath = new ArrayList<>();
           setValuesCallPath.add(BigInteger.TWO);
           segEventData = otherBlockchainCbcSignedEvents.segment(signedStartEvent, setValuesCallPath);
@@ -290,6 +297,7 @@ public class Main {
         } else {
 
           LOG.info("segment: setVal");
+          StatsHolder.log("segment: setVal");
           List<BigInteger> setValCallPath = new ArrayList<>();
           setValCallPath.add(BigInteger.TWO);
           segEventData = otherBlockchainCbcSignedEvents.segment(signedStartEvent, setValCallPath);
@@ -334,9 +342,8 @@ public class Main {
 
     rootBlockchain.shutdown();
     otherBlockchain.shutdown();
+
+    StatsHolder.log("End");
+    StatsHolder.print();
   }
-
-
-
-
 }
