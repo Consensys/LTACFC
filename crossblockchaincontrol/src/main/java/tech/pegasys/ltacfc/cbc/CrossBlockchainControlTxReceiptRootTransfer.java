@@ -34,6 +34,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.RevertReason;
+import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
 import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
@@ -87,17 +88,26 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
   // TODO this should migrate to the abstract cbc class: the root blockchain could also end up having a segment
   public TransactionReceipt segment(TxReceiptRootTransferEventProof startProof, List<BigInteger> callPath) throws Exception {
-    TransactionReceipt txR = this.crossBlockchainControlContract.segment(
-        startProof.getBlockchainId(),
-        startProof.getCrossBlockchainControlContract(),
-        startProof.getTransactionReceiptRoot(),
-        startProof.getTransactionReceipt(),
-        startProof.getProofOffsets(),
-        startProof.getProofs(),
-        callPath).send();
+    TransactionReceipt txR;
+    try {
+      txR = this.crossBlockchainControlContract.segment(
+          startProof.getBlockchainId(),
+          startProof.getCrossBlockchainControlContract(),
+          startProof.getTransactionReceiptRoot(),
+          startProof.getTransactionReceipt(),
+          startProof.getProofOffsets(),
+          startProof.getProofs(),
+          callPath).send();
+      StatsHolder.logGas("Segment Transaction", txR.getGasUsed());
+    }
+    catch (TransactionException ex) {
+      LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
+      throw ex;
+    }
     if (!txR.isStatusOK()) {
       throw new Exception("Segment transaction failed");
     }
+
 
     List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
     CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
@@ -114,20 +124,11 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
 
   public TransactionReceipt root(TxReceiptRootTransferEventProof startProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
-    segProofs.add(0, startProof);
-
+    List<byte[]> allProofs = new ArrayList<>();
+    allProofs.add(startProof.getEncodedProof());
 
     for (TxReceiptRootTransferEventProof proofInfo: segProofs) {
-      TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
-          proofInfo.getBlockchainId(),
-          proofInfo.getCrossBlockchainControlContract(),
-          proofInfo.getTransactionReceiptRoot(),
-          proofInfo.getTransactionReceipt(),
-          proofInfo.getProofOffsets(),
-          proofInfo.getProofs()).send();
-      if (!txR.isStatusOK()) {
-        throw new Exception("Root transaction failed");
-      }
+      allProofs.add(proofInfo.getEncodedProof());
     }
 
     long now = System.currentTimeMillis() / 1000;
@@ -141,13 +142,13 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
     TransactionReceipt txR;
     try {
-      txR = this.crossBlockchainControlContract.root().send();
+      txR = this.crossBlockchainControlContract.root(allProofs).send();
+      StatsHolder.logGas("Root Transaction", txR.getGasUsed());
     }
     catch (TransactionException ex) {
       LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       throw ex;
     }
-
     if (!txR.isStatusOK()) {
       throw new Exception("Root transaction failed");
     }
@@ -179,29 +180,26 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     return txR;
   }
 
+
+
+
   public TransactionReceipt signalling(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
-    segProofs.add(0, rootProof);
+    List<byte[]> allProofs = new ArrayList<>();
+    allProofs.add(rootProof.getEncodedProof());
 
     for (TxReceiptRootTransferEventProof proofInfo: segProofs) {
-      TransactionReceipt txR = this.crossBlockchainControlContract.callPrep(
-          proofInfo.getBlockchainId(),
-          proofInfo.getCrossBlockchainControlContract(),
-          proofInfo.getTransactionReceiptRoot(),
-          proofInfo.getTransactionReceipt(),
-          proofInfo.getProofOffsets(),
-          proofInfo.getProofs()).send();
-      if (!txR.isStatusOK()) {
-        throw new Exception("Root transaction failed");
-      }
+      allProofs.add(proofInfo.getEncodedProof());
     }
 
-    TransactionReceipt txR = this.crossBlockchainControlContract.signalling().send();
-//    TransactionReceipt txR = this.crossBlockchainControlContract.root(
-//        segmentBlockchainIds, segmentBlockchainCBCs,
-//        segmentTxReceiptRoots, segmentTxReceipts,
-//        //segmentProofOffsets,
-//        segmentProofs
-//    ).send();
+    TransactionReceipt txR;
+    try {
+      txR = this.crossBlockchainControlContract.signalling(allProofs).send();
+      StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
+    }
+    catch (TransactionException ex) {
+      LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
+      throw ex;
+    }
     if (!txR.isStatusOK()) {
       throw new Exception("Signalling transaction failed");
     }
@@ -256,8 +254,9 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
     // This will revert if the signature does not verify
     try {
-      TransactionReceipt receipt5 = this.txReceiptsRootStorageContract.addTxReceiptRoot(sourceBlockchainId, theSigners, sigR, sigS, sigV, transactionReceiptRoot).send();
-      if (!receipt5.isStatusOK()) {
+      TransactionReceipt txR = this.txReceiptsRootStorageContract.addTxReceiptRoot(sourceBlockchainId, theSigners, sigR, sigS, sigV, transactionReceiptRoot).send();
+      StatsHolder.logGas("AddTxReceiptRoot Transaction", txR.getGasUsed());
+      if (!txR.isStatusOK()) {
         throw new Exception("Transaction to add transaction receipt root failed");
       }
     } catch (TransactionException txe) {

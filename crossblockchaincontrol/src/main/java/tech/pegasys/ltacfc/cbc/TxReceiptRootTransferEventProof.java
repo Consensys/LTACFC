@@ -14,8 +14,17 @@
  */
 package tech.pegasys.ltacfc.cbc;
 
+import org.apache.tuweni.units.bigints.UInt256;
+import org.web3j.rlp.RlpEncoder;
+import org.web3j.rlp.RlpList;
+import org.web3j.rlp.RlpString;
+import org.web3j.rlp.RlpType;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
+
+import static tech.pegasys.ltacfc.common.FormatConversion.addressStringToBytes;
 
 /**
  * Information to allow a transaction receipt to be verified within a Solidity contract.
@@ -84,4 +93,30 @@ public class TxReceiptRootTransferEventProof {
 //        this.blockchainId, this.crossBlockchainControlContract,
 //        this.transactionReceiptRoot, this.transactionReceipt, this.proofOffsets, this.proofs);
 //  }
+
+
+  public byte[] getEncodedProof() {
+    UInt256 blockchainIdUint256 = UInt256.valueOf(this.blockchainId);
+    byte[] blockchainIdBytes = blockchainIdUint256.toBytes().toArray();
+
+    List<RlpType> proofOffsetsRlp = new ArrayList<>();
+    List<RlpType> proofRlp = new ArrayList<>();
+
+    for (int i = 0; i < this.proofOffsets.size(); i++) {
+      UInt256 proofOffsetUint256 = UInt256.valueOf(this.proofOffsets.get(i));
+      byte[] proofOffsetBytes = proofOffsetUint256.toBytes().toArray();
+      proofOffsetsRlp.add(RlpString.create(proofOffsetBytes));
+      proofRlp.add(RlpString.create(this.proofs.get(i)));
+    }
+
+    RlpList overallProofRlp = new RlpList(
+      RlpString.create(blockchainIdBytes),
+      RlpString.create(addressStringToBytes(this.crossBlockchainControlContract)),
+      RlpString.create(this.transactionReceiptRoot),
+      RlpString.create(this.transactionReceipt),
+        new RlpList(proofOffsetsRlp),
+        new RlpList(proofRlp));
+
+    return RlpEncoder.encode(overallProofRlp);
+  }
 }

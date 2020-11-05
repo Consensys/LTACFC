@@ -30,6 +30,10 @@ public class RevertReason {
     String errorMethodId = "0x08c379a0"; // Numeric.toHexString(Hash.sha3("Error(string)".getBytes())).substring(0, 10)
     List<TypeReference<Type>> revertReasonTypes = Collections.singletonList(TypeReference.create((Class<Type>) AbiTypes.getType("string")));
 
+    if (revertReasonEncoded == null) {
+      return "Revert Reason is null";
+    }
+
     if (revertReasonEncoded.startsWith(errorMethodId)) {
       String encodedRevertReason = revertReasonEncoded.substring(errorMethodId.length());
       List<Type> decoded = FunctionReturnDecoder.decode(encodedRevertReason, revertReasonTypes);
