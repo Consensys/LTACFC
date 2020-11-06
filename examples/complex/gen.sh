@@ -2,7 +2,7 @@
 set -e
 rm -rf build
 
-HERE=examples/twochain
+HERE=examples/complex
 BUILDDIR=$HERE/build
 CONTRACTSDIR=$HERE/src/main/solidity
 TESTCONTRACTSDIR=$HERE/src/test/solidity
@@ -14,11 +14,17 @@ WEB3J=../web3j-rlp/codegen/build/distributions/codegen-4.7.0-SNAPSHOT/bin/codege
 
 
 # compiling one file also compiles its dependendencies. We use overwrite to avoid the related warnings.
-solc $CONTRACTSDIR/OtherBlockchainContract.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 solc $CONTRACTSDIR/RootBlockchainContract.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
+solc $CONTRACTSDIR/Balances.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
+solc $CONTRACTSDIR/BusLogic.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
+solc $CONTRACTSDIR/PriceOracle.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
+solc $CONTRACTSDIR/Stock.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 # ls -al $BUILDDIR
 
-$WEB3J solidity generate -a=$BUILDDIR/OtherBlockchainContract.abi -b=$BUILDDIR/OtherBlockchainContract.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/RootBlockchainContract.abi -b=$BUILDDIR/RootBlockchainContract.bin -o=$OUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/Balances.abi -b=$BUILDDIR/Balances.bin -o=$OUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/BusLogic.abi -b=$BUILDDIR/BusLogic.bin -o=$OUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/PriceOracle.abi -b=$BUILDDIR/PriceOracle.bin -o=$OUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/Stock.abi -b=$BUILDDIR/Stock.bin -o=$OUTPUTDIR -p=$PACKAGE
 
 

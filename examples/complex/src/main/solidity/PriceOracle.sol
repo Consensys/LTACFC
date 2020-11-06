@@ -14,30 +14,23 @@
  */
 pragma solidity >=0.7.1;
 
-import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
+import "../../../../../crossblockchaincontrol/src/main/solidity/CbcLockableStorageInterface.sol";
 
-contract Balances is LockableStorageWrapper {
-    uint256 constant private KEY_MAP1 = 0;
+contract PriceOracle {
+    CbcLockableStorageInterface crossBlockchainControl;
+    uint256 price;
 
-    constructor (address _storageContract) LockableStorageWrapper(_storageContract) {
+    constructor (address _cbcContract) {
+        crossBlockchainControl = CbcLockableStorageInterface(_cbcContract);
     }
 
-    function setBalance(address _account, uint256 _newBalance) external {
-        setMapValue(KEY_MAP1, uint256(_account), _newBalance);
+    function setPrice(uint256 _newPrice) external {
+        require(crossBlockchainControl.isSingleBlockchainCall(), "Price is non-lockable. Set using single blockchain call");
+        price = _newPrice;
     }
 
-    function transfer(address _from, address _to, uint256 _amount) external {
-        uint256 fromBalance = getBalance(_from);
-        uint256 toBalance = getBalance(_to);
-        require(fromBalance >= _amount, "Transfer from insufficient balance");
-
-        setMapValue(KEY_MAP1, uint256(_from), fromBalance - _amount);
-        setMapValue(KEY_MAP1, uint256(_to), toBalance + _amount);
-    }
-
-
-    function getBalance(address _account) external view returns (uint256) {
-        return getMapValue(KEY_MAP1, uint256(_account));
+    function getPrice() external view returns (uint256) {
+        return price;
     }
 
 }

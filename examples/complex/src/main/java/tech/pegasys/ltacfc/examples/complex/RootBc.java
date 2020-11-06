@@ -35,41 +35,40 @@ public class RootBc extends AbstractBlockchain {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
-  public void deployContracts(String cbcContractAddress, BigInteger otherBlockchainId, String otherContractAddress) throws Exception {
+  public void deployContracts(String cbcContractAddress, BigInteger busLogicBlockchainId, String busLogicContractAddress) throws Exception {
     LOG.info("Deploy Root Blockchain Contracts");
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
     this.rootBlockchainContract =
         RootBlockchainContract.deploy(this.web3j, this.tm, this.gasProvider,
             cbcContractAddress,
-            otherBlockchainId,
-            otherContractAddress,
+            busLogicBlockchainId,
+            busLogicContractAddress,
             this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.rootBlockchainContract.getContractAddress()).send();
     LOG.info(" Root Blockchain Contract: {}", this.rootBlockchainContract.getContractAddress());
     LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
   }
 
-  public String getRlpFunctionSignature_SomeComplexBusinessLogic(BigInteger val) {
-    return this.rootBlockchainContract.getRLP_someComplexBusinessLogic(val);
+  public String getRlpFunctionSignature_ExecuteTrade(String buyFrom, BigInteger quantity) {
+    return this.rootBlockchainContract.getRLP_executeTrade(buyFrom, quantity);
   }
 
-  public void setVal1(BigInteger val) throws Exception {
-    this.rootBlockchainContract.setVal1(val).send();
-  }
-  public void setVal2(BigInteger val) throws Exception {
-    this.rootBlockchainContract.setVal2(val).send();
-  }
+  public void showAllTrades() throws Exception {
+    boolean storageIsLocked = this.lockableStorageContract.locked().send();
+    if (storageIsLocked) {
+      throw new Exception("Root contract lockable storage is locked");
+    }
 
-  public BigInteger getVal1() throws Exception {
-    return this.rootBlockchainContract.getVal1().send();
-  }
-  public BigInteger getVal2() throws Exception {
-    return this.rootBlockchainContract.getVal2().send();
-  }
+    LOG.info("Trades:");
+    BigInteger numTradesBig = this.rootBlockchainContract.getNumTrades().send();
+    int numTrades = (int) numTradesBig.longValue();
+    if (numTrades == 0) {
+      LOG.info(" None");
+    }
 
-
-  public void showValues() throws Exception {
-    LOG.info("Root Blockchain: Val1: {}", this.rootBlockchainContract.getVal1().send());
-    LOG.info("Root Blockchain: Val2: {}", this.rootBlockchainContract.getVal2().send());
+    for (int i = 0; i < numTrades; i++) {
+      BigInteger trade = this.rootBlockchainContract.getTrade(BigInteger.valueOf(i)).send();
+      LOG.info(" 0x{}", trade.toString(16));
+    }
   }
 }

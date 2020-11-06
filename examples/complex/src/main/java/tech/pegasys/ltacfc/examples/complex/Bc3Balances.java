@@ -18,57 +18,49 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
+import tech.pegasys.ltacfc.examples.complex.soliditywrappers.Balances;
 import tech.pegasys.ltacfc.examples.complex.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
-public class Bc3 extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc3.class);
+public class Bc3Balances extends AbstractBlockchain {
+  static final Logger LOG = LogManager.getLogger(Bc3Balances.class);
 
-  OtherBlockchainContract otherBlockchainContract;
+  Balances balancesContract;
   LockableStorage lockableStorageContract;
 
-  public Bc3(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+  public Bc3Balances(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
 
   public void deployContracts(String cbcContractAddress) throws Exception {
-    LOG.info("Deploy Other Blockchain Contracts");
+    LOG.info("Deploy Balances Contracts to blockchain 0x{}", this.blockchainId.toString(16));
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider,
         cbcContractAddress).send();
-    this.otherBlockchainContract =
-        OtherBlockchainContract.deploy(this.web3j, this.tm, this.gasProvider,
+    this.balancesContract =
+        Balances.deploy(this.web3j, this.tm, this.gasProvider,
           this.lockableStorageContract.getContractAddress()).send();
-    this.lockableStorageContract.setBusinessLogicContract(this.otherBlockchainContract.getContractAddress()).send();
-    LOG.info(" Other Blockchain Contract: {}", this.otherBlockchainContract.getContractAddress());
+    this.lockableStorageContract.setBusinessLogicContract(this.balancesContract.getContractAddress()).send();
+    LOG.info(" Balances Contract: {}", this.balancesContract.getContractAddress());
     LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
   }
 
-  public void setVal(BigInteger val) throws Exception {
-    this.otherBlockchainContract.setVal(val).send();
+  public void setBalance(String account, BigInteger newBalance) throws Exception {
+    this.balancesContract.setBalance(account, newBalance).send();
   }
 
-  public String getRlpFunctionSignature_GetVal() {
-    return this.otherBlockchainContract.getRLP_getVal();
+  public BigInteger getBalance(String account) throws Exception {
+    return this.balancesContract.getBalance(account).send();
   }
 
-  public String getRlpFunctionSignature_SetVal(BigInteger val) {
-    return this.otherBlockchainContract.getRLP_setVal(val);
-  }
-
-  public String getRlpFunctionSignature_SetValues(BigInteger val1, BigInteger val2) {
-    return this.otherBlockchainContract.getRLP_setValues(val1, val2);
+  public String getRlpFunctionSignature_Transfer(String from, String to, BigInteger amount) {
+    return this.balancesContract.getRLP_transfer(from, to, amount);
   }
 
   public boolean storageIsLocked() throws Exception {
     return  this.lockableStorageContract.locked().send();
   }
-
-  public void showValues() throws Exception {
-    LOG.info("Other Blockchain: KEY_FOR_VAL: {}", this.otherBlockchainContract.getVal().send());
-  }
-
 }

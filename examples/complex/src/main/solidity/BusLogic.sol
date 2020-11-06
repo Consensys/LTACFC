@@ -18,7 +18,7 @@ import "./Balances.sol";
 import "./PriceOracle.sol";
 import "./Stock.sol";
 
-contract Coordination {
+contract BusLogic {
     uint256 balancesBcId;
     Balances balancesContract;
     uint256 priceBcId;
@@ -30,15 +30,15 @@ contract Coordination {
 
     constructor (address _cbc, uint256 _balancesBcId, address _balances, uint256 _oracleBcId, address _oracle, uint256 _stockBcId, address _stock) {
         balancesBcId = _balancesBcId;
-        balancesContract = _balances;
+        balancesContract = Balances(_balances);
         priceBcId = _oracleBcId;
-        priceOracleContract = _oracle;
+        priceOracleContract = PriceOracle(_oracle);
         stockBcId = _stockBcId;
-        stockContract = _stock;
+        stockContract = Stock(_stock);
         crossBlockchainControl = CbcLockableStorageInterface(_cbc);
     }
 
-    function stockShipment(address _from, address _to, uint256 _quantity) public override {
+    function stockShipment(address _from, address _to, uint256 _quantity) public {
         uint256 currentPrice = crossBlockchainControl.crossBlockchainCallReturnsUint256(
             priceBcId, address(priceOracleContract), abi.encodeWithSelector(priceOracleContract.getPrice.selector));
 

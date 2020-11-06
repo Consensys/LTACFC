@@ -24,13 +24,13 @@ import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 import java.io.IOException;
 import java.math.BigInteger;
 
-public class Bc4Oracle extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc4Oracle.class);
+public class Bc5Stock extends AbstractBlockchain {
+  static final Logger LOG = LogManager.getLogger(Bc5Stock.class);
 
   OtherBlockchainContract otherBlockchainContract;
   LockableStorage lockableStorageContract;
 
-  public Bc4Oracle(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+  public Bc5Stock(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 

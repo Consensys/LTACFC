@@ -14,57 +14,44 @@
  */
 pragma solidity >=0.7.1;
 
-import "../../../../../crossblockchaincontrol/src/main/solidity/CrossBlockchainControl.sol";
-import "./OtherBlockchainContractInterface.sol";
+import "../../../../../crossblockchaincontrol/src/main/solidity/CbcLockableStorageInterface.sol";
 import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
+import "./BusLogic.sol";
 
 contract RootBlockchainContract is LockableStorageWrapper {
-    CrossBlockchainControl private crossBlockchainControlContract;
-    uint256 private otherBlockchainId;
-    OtherBlockchainContractInterface private otherContract;
+    CbcLockableStorageInterface private crossBlockchainControl;
 
-    uint256 constant private KEY_UINT256_VAL1 = 0;
-    uint256 constant private KEY_UINT256_VAL2 = 1;
+    uint256 busLoicBcId;
+    BusLogic busLogicContract;
 
-    constructor (address _crossBlockchainControl, uint256 _otherBlockchainId, address _otherContract, address _storageContract)
+
+    uint256 constant private KEY_TRADES_ARRAY = 0;
+
+    event Trade(bytes32 _tradeId);
+
+    constructor (address _cbc, uint256 _busLogicBcId, address _busLogicContract, address _storageContract)
         LockableStorageWrapper(_storageContract) {
-        crossBlockchainControlContract = CrossBlockchainControl(_crossBlockchainControl);
-        otherBlockchainId = _otherBlockchainId;
-        otherContract = OtherBlockchainContractInterface(_otherContract);
+        crossBlockchainControl = CbcLockableStorageInterface(_cbc);
+        busLoicBcId = _busLogicBcId;
+        busLogicContract = BusLogic(_busLogicContract);
     }
 
-    function someComplexBusinessLogic(uint256 _val) external {
-        // Use the value on the other blockchain as a threshold
-        uint256 valueFromOtherBlockchain = crossBlockchainControlContract.crossBlockchainCallReturnsUint256(
-            otherBlockchainId, address(otherContract), abi.encodeWithSelector(otherContract.getVal.selector));
-        setVal2(valueFromOtherBlockchain);
+    function executeTrade(address _buyFrom, uint256 _quantity) public {
+        crossBlockchainControl.crossBlockchainCall(busLoicBcId, address(busLogicContract),
+            abi.encodeWithSelector(busLogicContract.stockShipment.selector, _buyFrom, msg.sender, _quantity));
 
-        if (_val > valueFromOtherBlockchain) {
-            crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
-                abi.encodeWithSelector(otherContract.setValues.selector, _val, valueFromOtherBlockchain));
-            setVal1(valueFromOtherBlockchain);
-        }
-        else {
-            uint256 valueToSet = _val + 13;
-            crossBlockchainControlContract.crossBlockchainCall(otherBlockchainId, address(otherContract),
-                abi.encodeWithSelector(otherContract.setVal.selector, valueToSet));
-            setVal1(_val);
-        }
+        bytes32 tradeId = keccak256(abi.encodePacked(_buyFrom, msg.sender, _quantity));
+
+        pushArrayValue(KEY_TRADES_ARRAY, uint256(tradeId));
+
+        emit Trade(tradeId);
     }
 
-    function setVal1(uint256 _val) public {
-        setUint256(KEY_UINT256_VAL1, _val);
+    function getNumTrades() external view returns (uint256) {
+        return getArrayLength(KEY_TRADES_ARRAY);
     }
 
-    function setVal2(uint256 _val) public {
-        setUint256(KEY_UINT256_VAL2, _val);
-    }
-
-    function getVal1() external view returns (uint256) {
-        return getUint256(KEY_UINT256_VAL1);
-    }
-
-    function getVal2() external view returns (uint256) {
-        return getUint256(KEY_UINT256_VAL2);
+    function getTrade(uint256 _index) external view returns (uint256) {
+        return getArrayValue(KEY_TRADES_ARRAY, _index);
     }
 }
