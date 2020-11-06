@@ -27,6 +27,20 @@ import java.util.Properties;
 public class PropertiesLoader {
   static final Logger LOG = LogManager.getLogger(PropertiesLoader.class);
 
+  public class BlockchainInfo {
+    public String bcId;
+    public String uri;
+    public String gasPriceStrategy;
+    public String period;
+
+    public BlockchainInfo(String bcId, String uri, String gasPriceStrategy, String period) {
+      this.bcId = bcId;
+      this.uri = uri;
+      this.gasPriceStrategy = gasPriceStrategy;
+      this.period = period;
+    }
+  }
+
   public Properties properties = new Properties();
 
 
@@ -52,6 +66,24 @@ public class PropertiesLoader {
   }
   public Credentials getCredentials(String keyName) {
     return Credentials.create(this.properties.getProperty(keyName));
+  }
+
+  public BlockchainInfo getBlockchainInfo(String tag) {
+    String bcIdStr = this.properties.getProperty(tag + "_BC_ID");
+    LOG.info(" {}_BC_ID: 0x{}", tag, bcIdStr);
+    String uriStr = this.properties.getProperty(tag + "_URI");
+    LOG.info(" {}_URI: {}", tag, uriStr);
+    String gasPriceStrategyStr = this.properties.getProperty(tag + "_GAS");
+    LOG.info(" {}_GAS: {}", tag, gasPriceStrategyStr);
+    String blockPeriodStr = this.properties.getProperty(tag + "_PERIOD");
+    LOG.info(" {}_PERIOD: {}", tag, blockPeriodStr);
+    return new BlockchainInfo(bcIdStr, uriStr, gasPriceStrategyStr, blockPeriodStr);
+  }
+
+  public CrossBlockchainConsensus getConsensusMethodology() {
+    String consensus = this.properties.getProperty("CONSENSUS_METHODOLOGY");
+    LOG.info(" CONSENSUS_METHODOLOGY: {}", consensus);
+    return CrossBlockchainConsensus.valueOf(consensus);
   }
 
 }

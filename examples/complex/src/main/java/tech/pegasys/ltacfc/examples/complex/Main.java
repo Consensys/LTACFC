@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.examples.twochain;
+package tech.pegasys.ltacfc.examples.complex;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,8 +30,8 @@ import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.common.StatsHolder;
-import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
-import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
+import tech.pegasys.ltacfc.examples.complex.sim.SimOtherContract;
+import tech.pegasys.ltacfc.examples.complex.sim.SimRootContract;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -95,6 +95,7 @@ public class Main {
       default:
         throw new RuntimeException("Unknown consensus methodology");
     }
+
 
     // Set-up client side and deploy contracts on the blockchains.
     otherBlockchain.deployContracts(otherBlockchainCbcContractAddress);
