@@ -21,17 +21,16 @@ import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
 import tech.pegasys.ltacfc.examples.complex.soliditywrappers.OtherBlockchainContract;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 
-
 import java.io.IOException;
 import java.math.BigInteger;
 
-public class OtherBc extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(OtherBc.class);
+public class Bc3 extends AbstractBlockchain {
+  static final Logger LOG = LogManager.getLogger(Bc3.class);
 
   OtherBlockchainContract otherBlockchainContract;
   LockableStorage lockableStorageContract;
 
-  public OtherBc(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+  public Bc3(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 

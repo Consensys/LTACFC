@@ -13,32 +13,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 pragma solidity >=0.7.1;
-import "./OtherBlockchainContractInterface.sol";
+
 import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
 
-contract OtherBlockchainContract is OtherBlockchainContractInterface, LockableStorageWrapper {
-    uint256 constant private KEY_FOR_VAL = 1;
+contract Balances is LockableStorageWrapper {
+    uint256 constant private KEY_MAP1 = 0;
 
     constructor (address _storageContract) LockableStorageWrapper(_storageContract) {
     }
 
-
-    function setVal(uint256 _val) public override {
-        setUint256(KEY_FOR_VAL, _val);
+    function setBalance(address _account, uint256 _newBalance) external {
+        setMapValue(KEY_MAP1, uint256(_account), _newBalance);
     }
 
-    function incrementVal() external override {
-        uint256 aVal = getUint256(KEY_FOR_VAL);
-        aVal++;
-        setUint256(KEY_FOR_VAL, aVal);
+    function transfer(address _from, address _to, uint256 _amount) external {
+        uint256 fromBalance = getBalance(_from);
+        uint256 toBalance = getBalance(_to);
+        require(fromBalance >= _amount, "Transfer from insufficient balance");
+
+        setMapValue(KEY_MAP1, uint256(_from), fromBalance - _amount);
+        setMapValue(KEY_MAP1, uint256(_to), toBalance + _amount);
     }
 
-    function setValues(uint256 _val1, uint256 _val2) external override {
-        setVal(_val1 + _val2);
+
+    function getBalance(address _account) external view returns (uint256) {
+        return getMapValue(KEY_MAP1, uint256(_account));
     }
 
-
-    function getVal() external override view returns(uint256) {
-        return getUint256(KEY_FOR_VAL);
-    }
 }

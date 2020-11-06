@@ -17,10 +17,12 @@ WEB3J=../web3j-rlp/codegen/build/distributions/codegen-4.7.0-SNAPSHOT/bin/codege
 solc $CONTRACTSDIR/LockableStorageWrapper.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 solc $CONTRACTSDIR/LockableStorage.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 solc $TESTCONTRACTSDIR/MockCbcForLockableStorageTest.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
+solc $TESTCONTRACTSDIR/TestLockableStorageWrapper.sol --allow-paths . --bin --abi --optimize -o $BUILDDIR --overwrite
 # ls -al $BUILDDIR
 
 $WEB3J solidity generate -a=$BUILDDIR/LockableStorageWrapper.abi -b=$BUILDDIR/LockableStorageWrapper.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/LockableStorage.abi -b=$BUILDDIR/LockableStorage.bin -o=$OUTPUTDIR -p=$PACKAGE
 $WEB3J solidity generate -a=$BUILDDIR/MockCbcForLockableStorageTest.abi -b=$BUILDDIR/MockCbcForLockableStorageTest.bin -o=$TESTOUTPUTDIR -p=$PACKAGE
+$WEB3J solidity generate -a=$BUILDDIR/TestLockableStorageWrapper.abi -b=$BUILDDIR/TestLockableStorageWrapper.bin -o=$TESTOUTPUTDIR -p=$PACKAGE
 
 

@@ -17,7 +17,7 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
 
     BigInteger theUint = BigInteger.ZERO;
 
-    this.storageWrapper.setUint256(theUint, BigInteger.ONE).send();
+    this.storageWrapper.test_setUint256(theUint, BigInteger.ONE).send();
   }
 
   // By default, locking is off. As such, setting a uint256 as part of a cross-blockchain
@@ -35,13 +35,13 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
     // The mock CrossBlockchainControlContract should now indicate a cross-blockchain call.
     assert(!this.mockCrossBlockchainControlContract.isSingleBlockchainCall().send());
 
-    this.storageWrapper.setUint256(theUint, val).send();
+    this.storageWrapper.test_setUint256(theUint, val).send();
 
     // The contract should now be locked.
     assert(this.lockableStorageContract.locked().send());
 
     // Even when the value is in provisional storage, should be able to return the value.
-    assert(this.storageWrapper.getUint256(theUint).send().compareTo(val) == 0);
+    assert(this.storageWrapper.test_getUint256(theUint).send().compareTo(val) == 0);
 
   }
 
@@ -56,14 +56,14 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
     // Any non-zero Root Blockchain Id is deemed to indicate an active Cross-Blockchain call.
     this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ONE).send();
 
-    this.storageWrapper.setUint256(theUint, BigInteger.ONE).send();
+    this.storageWrapper.test_setUint256(theUint, BigInteger.ONE).send();
 
     // Zero Root Blockchain Id is deemed to indicate an no active Cross-Blockchain call.
     this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ZERO).send();
 
     // This will fail as the contract is locked.
     try {
-      this.storageWrapper.setUint256(theUint, BigInteger.ONE).send();
+      this.storageWrapper.test_setUint256(theUint, BigInteger.ONE).send();
       throw new Exception("Unexpectedly, no revert thrown");
     } catch (TransactionException ex) {
       System.out.println("Exception thrown as expected: " + ex.getTransactionReceipt().get().getRevertReason());
@@ -81,14 +81,14 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
     // Any non-zero Root Blockchain Id is deemed to indicate an active Cross-Blockchain call.
     this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ONE).send();
 
-    this.storageWrapper.setUint256(theUint, BigInteger.ONE).send();
+    this.storageWrapper.test_setUint256(theUint, BigInteger.ONE).send();
 
     // Simulate another cross-blockchain call by using a different Root Blockchain Id.
     this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.TWO).send();
 
     // This will fail as the contract is locked.
     try {
-      this.storageWrapper.setUint256(theUint, BigInteger.ONE).send();
+      this.storageWrapper.test_setUint256(theUint, BigInteger.ONE).send();
       throw new Exception("Unexpectedly, no revert thrown");
     } catch (TransactionException ex) {
       System.out.println("Exception thrown as expected: " + ex.getTransactionReceipt().get().getRevertReason());
@@ -96,7 +96,7 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
 
     // This will fail as the contract is locked.
     try {
-      this.storageWrapper.getUint256(theUint).send();
+      this.storageWrapper.test_getUint256(theUint).send();
       throw new Exception("Unexpectedly, no revert thrown");
     } catch (ContractCallException ex) {
       // thrown as expected
@@ -108,7 +108,7 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
 
     // This will fail as the contract is locked.
     try {
-      this.storageWrapper.setUint256(theUint, BigInteger.ONE).send();
+      this.storageWrapper.test_setUint256(theUint, BigInteger.ONE).send();
       throw new Exception("Unexpectedly, no revert thrown");
     } catch (TransactionException ex) {
       System.out.println("Exception thrown as expected: " + ex.getTransactionReceipt().get().getRevertReason());
@@ -116,7 +116,7 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
 
     // This will fail as the contract is locked.
     try {
-      this.storageWrapper.getUint256(theUint).send();
+      this.storageWrapper.test_getUint256(theUint).send();
       throw new Exception("Unexpectedly, no revert thrown");
     } catch (ContractCallException ex) {
       // Revert thrown as expected
@@ -126,8 +126,8 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
     this.mockCrossBlockchainControlContract.setCrossBlockchainTransactionId(BigInteger.ZERO).send();
 
     // Writing and reading should now work.
-    this.storageWrapper.setUint256(theUint, BigInteger.TWO).send();
-    assert(this.storageWrapper.getUint256(theUint).send().compareTo(BigInteger.TWO) == 0);
+    this.storageWrapper.test_setUint256(theUint, BigInteger.TWO).send();
+    assert(this.storageWrapper.test_getUint256(theUint).send().compareTo(BigInteger.TWO) == 0);
   }
 
   // Check that finalising with a commit = true works.
@@ -147,16 +147,16 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
     this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ONE).send();
 
     // Set some values.
-    this.storageWrapper.setUint256(theUint, val1).send();
-    this.storageWrapper.setMapValue(theMap, theMapKey, val2).send();
+    this.storageWrapper.test_setUint256(theUint, val1).send();
+    this.storageWrapper.test_setMapValue(theMap, theMapKey, val2).send();
 
     // Commit changes.
     this.lockableStorageContract.finalise(true).send();
 
     assert(!this.lockableStorageContract.locked().send());
 
-    assert(this.storageWrapper.getUint256(theUint).send().compareTo(val1) == 0);
-    assert(this.storageWrapper.getMapValue(theMap, theMapKey).send().compareTo(val2) == 0);
+    assert(this.storageWrapper.test_getUint256(theUint).send().compareTo(val1) == 0);
+    assert(this.storageWrapper.test_getMapValue(theMap, theMapKey).send().compareTo(val2) == 0);
   }
 
 
@@ -177,16 +177,16 @@ public class LockableStorageLockingUint256Test extends AbstractLockableStorageTe
     this.mockCrossBlockchainControlContract.setRootBlockchainId(BigInteger.ONE).send();
 
     // Set some values.
-    this.storageWrapper.setUint256(theUint, val1).send();
-    this.storageWrapper.setMapValue(theMap, theMapKey, val2).send();
+    this.storageWrapper.test_setUint256(theUint, val1).send();
+    this.storageWrapper.test_setMapValue(theMap, theMapKey, val2).send();
 
     // Commit changes.
     this.lockableStorageContract.finalise(false).send();
 
     assert(!this.lockableStorageContract.locked().send());
 
-    assert(this.storageWrapper.getUint256(theUint).send().compareTo(BigInteger.ZERO) == 0);
-    assert(this.storageWrapper.getMapValue(theMap, theMapKey).send().compareTo(BigInteger.ZERO) == 0);
+    assert(this.storageWrapper.test_getUint256(theUint).send().compareTo(BigInteger.ZERO) == 0);
+    assert(this.storageWrapper.test_getMapValue(theMap, theMapKey).send().compareTo(BigInteger.ZERO) == 0);
   }
 
 }

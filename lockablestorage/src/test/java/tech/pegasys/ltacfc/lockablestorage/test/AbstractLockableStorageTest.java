@@ -15,15 +15,11 @@
 package tech.pegasys.ltacfc.lockablestorage.test;
 
 import org.junit.Test;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.exceptions.TransactionException;
-import org.web3j.tx.exceptions.ContractCallException;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorageWrapper;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.MockCbcForLockableStorageTest;
+import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.TestLockableStorageWrapper;
 import tech.pegasys.ltacfc.test.AbstractWeb3Test;
 
-import java.math.BigInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -32,7 +28,7 @@ import static org.junit.Assert.assertEquals;
  * cross-blockchain) call.
  */
 public class AbstractLockableStorageTest extends AbstractWeb3Test {
-  LockableStorageWrapper storageWrapper;
+  TestLockableStorageWrapper storageWrapper;
   LockableStorage lockableStorageContract;
   MockCbcForLockableStorageTest mockCrossBlockchainControlContract;
 
@@ -43,7 +39,7 @@ public class AbstractLockableStorageTest extends AbstractWeb3Test {
     this.mockCrossBlockchainControlContract = MockCbcForLockableStorageTest.deploy(this.web3j, this.tm, this.freeGasProvider).send();
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.freeGasProvider,
         this.mockCrossBlockchainControlContract.getContractAddress()).send();
-    this.storageWrapper = LockableStorageWrapper.deploy(this.web3j, this.tm, this.freeGasProvider,
+    this.storageWrapper = TestLockableStorageWrapper.deploy(this.web3j, this.tm, this.freeGasProvider,
         this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.storageWrapper.getContractAddress()).send();
   }
