@@ -18,7 +18,7 @@ import "../../../../../crossblockchaincontrol/src/main/solidity/CbcLockableStora
 import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
 import "./BusLogic.sol";
 
-contract RootBlockchainContract is LockableStorageWrapper {
+contract TradeWallet is LockableStorageWrapper {
     CbcLockableStorageInterface private crossBlockchainControl;
 
     uint256 busLoicBcId;
@@ -36,11 +36,11 @@ contract RootBlockchainContract is LockableStorageWrapper {
         busLogicContract = BusLogic(_busLogicContract);
     }
 
-    function executeTrade(address _buyFrom, uint256 _quantity) public {
+    function executeTrade(address _seller, uint256 _quantity) public {
         crossBlockchainControl.crossBlockchainCall(busLoicBcId, address(busLogicContract),
-            abi.encodeWithSelector(busLogicContract.stockShipment.selector, _buyFrom, msg.sender, _quantity));
+            abi.encodeWithSelector(busLogicContract.stockShipment.selector, _seller, msg.sender, _quantity));
 
-        bytes32 tradeId = keccak256(abi.encodePacked(_buyFrom, msg.sender, _quantity));
+        bytes32 tradeId = keccak256(abi.encodePacked(_seller, msg.sender, _quantity));
 
         pushArrayValue(KEY_TRADES_ARRAY, uint256(tradeId));
 

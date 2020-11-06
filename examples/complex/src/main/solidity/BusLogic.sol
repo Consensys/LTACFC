@@ -38,7 +38,7 @@ contract BusLogic {
         crossBlockchainControl = CbcLockableStorageInterface(_cbc);
     }
 
-    function stockShipment(address _from, address _to, uint256 _quantity) public {
+    function stockShipment(address _seller, address _buyer, uint256 _quantity) public {
         uint256 currentPrice = crossBlockchainControl.crossBlockchainCallReturnsUint256(
             priceBcId, address(priceOracleContract), abi.encodeWithSelector(priceOracleContract.getPrice.selector));
 
@@ -46,10 +46,10 @@ contract BusLogic {
 
         // To address pays for goods.
         crossBlockchainControl.crossBlockchainCall(balancesBcId, address(balancesContract),
-              abi.encodeWithSelector(balancesContract.transfer.selector, _to, _from, cost));
+              abi.encodeWithSelector(balancesContract.transfer.selector, _buyer, _seller, cost));
 
         // Goods are shipped from From to To.
         crossBlockchainControl.crossBlockchainCall(stockBcId, address(stockContract),
-            abi.encodeWithSelector(stockContract.transfer.selector, _from, _to, _quantity));
+            abi.encodeWithSelector(stockContract.transfer.selector, _seller, _buyer, _quantity));
     }
 }

@@ -18,39 +18,39 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
-import tech.pegasys.ltacfc.examples.complex.soliditywrappers.RootBlockchainContract;
+import tech.pegasys.ltacfc.examples.complex.soliditywrappers.TradeWallet;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
 
-public class RootBc extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(RootBc.class);
+public class Bc1TradeWallet extends AbstractBlockchain {
+  static final Logger LOG = LogManager.getLogger(Bc1TradeWallet.class);
 
-  RootBlockchainContract rootBlockchainContract;
+  TradeWallet tradeWalletContract;
   LockableStorage lockableStorageContract;
 
-  public RootBc(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
+  public Bc1TradeWallet(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
   public void deployContracts(String cbcContractAddress, BigInteger busLogicBlockchainId, String busLogicContractAddress) throws Exception {
     LOG.info("Deploy Root Blockchain Contracts");
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
-    this.rootBlockchainContract =
-        RootBlockchainContract.deploy(this.web3j, this.tm, this.gasProvider,
+    this.tradeWalletContract =
+        TradeWallet.deploy(this.web3j, this.tm, this.gasProvider,
             cbcContractAddress,
             busLogicBlockchainId,
             busLogicContractAddress,
             this.lockableStorageContract.getContractAddress()).send();
-    this.lockableStorageContract.setBusinessLogicContract(this.rootBlockchainContract.getContractAddress()).send();
-    LOG.info(" Root Blockchain Contract: {}", this.rootBlockchainContract.getContractAddress());
+    this.lockableStorageContract.setBusinessLogicContract(this.tradeWalletContract.getContractAddress()).send();
+    LOG.info(" Root Blockchain Contract: {}", this.tradeWalletContract.getContractAddress());
     LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
   }
 
   public String getRlpFunctionSignature_ExecuteTrade(String buyFrom, BigInteger quantity) {
-    return this.rootBlockchainContract.getRLP_executeTrade(buyFrom, quantity);
+    return this.tradeWalletContract.getRLP_executeTrade(buyFrom, quantity);
   }
 
   public void showAllTrades() throws Exception {
@@ -60,14 +60,14 @@ public class RootBc extends AbstractBlockchain {
     }
 
     LOG.info("Trades:");
-    BigInteger numTradesBig = this.rootBlockchainContract.getNumTrades().send();
+    BigInteger numTradesBig = this.tradeWalletContract.getNumTrades().send();
     int numTrades = (int) numTradesBig.longValue();
     if (numTrades == 0) {
       LOG.info(" None");
     }
 
     for (int i = 0; i < numTrades; i++) {
-      BigInteger trade = this.rootBlockchainContract.getTrade(BigInteger.valueOf(i)).send();
+      BigInteger trade = this.tradeWalletContract.getTrade(BigInteger.valueOf(i)).send();
       LOG.info(" 0x{}", trade.toString(16));
     }
   }

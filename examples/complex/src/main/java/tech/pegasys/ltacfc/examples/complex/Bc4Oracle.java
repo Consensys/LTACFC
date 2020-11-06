@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
 import tech.pegasys.ltacfc.examples.complex.soliditywrappers.OtherBlockchainContract;
+import tech.pegasys.ltacfc.examples.complex.soliditywrappers.PriceOracle;
 import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
 
 import java.io.IOException;
@@ -27,8 +28,7 @@ import java.math.BigInteger;
 public class Bc4Oracle extends AbstractBlockchain {
   static final Logger LOG = LogManager.getLogger(Bc4Oracle.class);
 
-  OtherBlockchainContract otherBlockchainContract;
-  LockableStorage lockableStorageContract;
+  PriceOracle priceOracleContract;
 
   public Bc4Oracle(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
@@ -36,39 +36,22 @@ public class Bc4Oracle extends AbstractBlockchain {
 
 
   public void deployContracts(String cbcContractAddress) throws Exception {
-    LOG.info("Deploy Other Blockchain Contracts");
-    this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider,
-        cbcContractAddress).send();
-    this.otherBlockchainContract =
-        OtherBlockchainContract.deploy(this.web3j, this.tm, this.gasProvider,
-          this.lockableStorageContract.getContractAddress()).send();
-    this.lockableStorageContract.setBusinessLogicContract(this.otherBlockchainContract.getContractAddress()).send();
-    LOG.info(" Other Blockchain Contract: {}", this.otherBlockchainContract.getContractAddress());
-    LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
+    LOG.info("Deploy Price Oracle Contract");
+    this.priceOracleContract =
+        PriceOracle.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
+    LOG.info(" Price Oracle Contract: {}", this.priceOracleContract.getContractAddress());
   }
 
-  public void setVal(BigInteger val) throws Exception {
-    this.otherBlockchainContract.setVal(val).send();
+  public void setPrice(BigInteger newPrice) throws Exception {
+    this.priceOracleContract.setPrice(newPrice).send();
   }
 
-  public String getRlpFunctionSignature_GetVal() {
-    return this.otherBlockchainContract.getRLP_getVal();
-  }
-
-  public String getRlpFunctionSignature_SetVal(BigInteger val) {
-    return this.otherBlockchainContract.getRLP_setVal(val);
-  }
-
-  public String getRlpFunctionSignature_SetValues(BigInteger val1, BigInteger val2) {
-    return this.otherBlockchainContract.getRLP_setValues(val1, val2);
-  }
-
-  public boolean storageIsLocked() throws Exception {
-    return  this.lockableStorageContract.locked().send();
+  public String getRlpFunctionSignature_GetPrice() {
+    return this.priceOracleContract.getRLP_getPrice();
   }
 
   public void showValues() throws Exception {
-    LOG.info("Other Blockchain: KEY_FOR_VAL: {}", this.otherBlockchainContract.getVal().send());
+    LOG.info("Price Oracle: Price: {}", this.priceOracleContract.getPrice().send());
   }
 
 }
