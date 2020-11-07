@@ -30,8 +30,8 @@ public class SimBalancesContract {
 
     BigInteger fromBalance = getBalance(from);
     BigInteger toBalance = getBalance(to);
-    if (fromBalance.longValue() >= amount.longValue()) {
-      throw new Exception("Value transfer: insufficient balance");
+    if (fromBalance.longValue() < amount.longValue()) {
+      throw new Exception("Value transfer: insufficient balance. From balance: " + fromBalance + " Transfer Amount: " + amount);
     }
 
     setBalance(from, fromBalance.subtract(amount));
