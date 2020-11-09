@@ -22,6 +22,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.ethereum.core.Hash;
 import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Sign;
@@ -89,7 +90,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     return txR;
   }
 
-  public Tuple<TransactionReceipt, List<String>, Integer> segment(TxReceiptRootTransferEventProof startProof, List<TxReceiptRootTransferEventProof> segProofs, List<BigInteger> callPath) throws Exception {
+  public TransactionReceipt segment(TxReceiptRootTransferEventProof startProof, List<TxReceiptRootTransferEventProof> segProofs, List<BigInteger> callPath) throws Exception {
     TransactionReceipt txR;
     try {
       txR = this.crossBlockchainControlContract.segment(
@@ -114,7 +115,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
     CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
     LOG.info("Segment Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
+    LOG.info(" Cross-Blockchain Transaction Id: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
     StringBuilder calls = new StringBuilder();
     // TODO The code below is a hack to handle the fact that currently Web3J returns a Uint256 object, but the type is BigInteger.
     // TODO this code will break when Web3J fixes their bug.
@@ -124,18 +125,26 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
       calls.append(hack.getValue());
       calls.append("] ");
     }
-    LOG.info(" _callPath: {}", calls);
-    LOG.info(" _hashOfCallGraph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
-    LOG.info(" _success: {}", segmentEventResponse._success);
-    LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
-    LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());
+    LOG.info(" Call Path: {}", calls);
+    LOG.info(" Hash Of Call Graph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
+    LOG.info(" Success: {}", segmentEventResponse._success);
+    LOG.info(" Return Value: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
+    StringBuilder lockedContracts = new StringBuilder();
+    // TODO The code below is a hack to handle the fact that currently Web3J returns an Address object, but the type is BigInteger.
+    // TODO this code will break when Web3J fixes their bug.
+    for (Object lockedContract: segmentEventResponse._lockedContracts) {
+      Address hack = (Address) lockedContract;
+      calls.append("[");
+      calls.append(hack.getValue());
+      calls.append("] ");
+    }
+    LOG.info(" Locked Contracts: [{}]", lockedContracts);
 
     showAllCallEvents(txR);
     showAllNotEnoughCallsEvents(txR);
     showAllDumpEvents(txR);
 
-    Tuple<TransactionReceipt, List<String>, Integer> result = new Tuple<>(txR, segmentEventResponse._lockedContracts);
-    return result;
+    return txR;
   }
 
 
@@ -186,7 +195,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
 
 
-  public TransactionReceipt signalling(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
+  public void signalling(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
     List<byte[]> allProofs = new ArrayList<>();
     allProofs.add(rootProof.getEncodedProof());
 
@@ -210,12 +219,10 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     List<CbcTxRootTransfer.SignallingEventResponse> sigEventResponses = this.crossBlockchainControlContract.getSignallingEvents(txR);
     CbcTxRootTransfer.SignallingEventResponse sigEventResponse = sigEventResponses.get(0);
     LOG.info("Signalling Event:");
-    LOG.info(" _rootBlockchainId: {}", sigEventResponse._rootBcId.toString(16));
-    LOG.info(" _crossBlockchainTransactionId: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
+    LOG.info(" Root Blockchain Id: 0x{}", sigEventResponse._rootBcId.toString(16));
+    LOG.info(" Cross-Blockchain Transaction Id: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
 
     showAllDumpEvents(txR);
-
-    return txR;
   }
 
 

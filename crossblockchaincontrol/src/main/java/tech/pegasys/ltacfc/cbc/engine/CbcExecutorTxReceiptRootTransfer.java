@@ -52,8 +52,11 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
   TxReceiptRootTransferEventProof rootProof;
 
 
+  // Key for this map is the call path of the caller.
   Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofs = new HashMap<>();
-  Map<BigInteger, Set<String>> lockedContracts = new HashMap<>();
+
+  // Key for this map is the blockchain id that the segment occurred on.
+  Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofsWithLockedContracts = new HashMap<>();
 
   public CbcExecutorTxReceiptRootTransfer(CbcManager cbcManager) throws Exception {
     super(CrossBlockchainConsensus.TRANSACTION_RECEIPT_SIGNING, cbcManager);
@@ -78,9 +81,7 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     CrossBlockchainControlTxReceiptRootTransfer segmentCbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
 
     List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.get(mapKey);
-    Tuple<TransactionReceipt, List<String>, Integer> result = segmentCbcContract.segment(this.startProof, proofs, callPath);
-    TransactionReceipt segTxReceipt = result.getFirst();
-    List<String> lockedContracts = result.getSecond();
+    TransactionReceipt segTxReceipt = segmentCbcContract.segment(this.startProof, proofs, callPath);
 
     TxReceiptRootTransferEventProof segProof = segmentCbcContract.getSegmentEventProof(segTxReceipt);
 
@@ -90,8 +91,9 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     proofs.add(segProof);
 
     // Add the locked contracts as a result of the segment to the list of locked contracts.
-    Set<String> lockedContractsForBlockchain = this.lockedContracts.computeIfAbsent(blockchainId, k -> new HashSet<>());
-    lockedContractsForBlockchain.addAll(lockedContracts);
+    List<TxReceiptRootTransferEventProof> proofsOfSegmnentsWithLockedContracts =
+        this.segmentProofsWithLockedContracts.computeIfAbsent(blockchainId, k -> new ArrayList<>());
+    proofsOfSegmnentsWithLockedContracts.add(segProof);
 
 
     // Segments proofs need to be available on the blockchain they executed on (for the
@@ -109,9 +111,21 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.get(ROOT_CALL_MAP_KEY);
     TransactionReceipt rootTxReceipt = rootCbcContract.root(this.startProof, proofs);
     this.rootProof = rootCbcContract.getRootEventProof(rootTxReceipt);
+
+    this.success = rootCbcContract.getRootEventSuccess();
+    publishReceiptRootToAll(this.rootBcId, this.rootProof.getTransactionReceiptRoot());
   }
 
+  protected void doSignallingCalls() throws Exception {
+    for (BigInteger blockchainId: this.segmentProofsWithLockedContracts.keySet()) {
+      List<TxReceiptRootTransferEventProof> segProofsLockedContractsCurrentBlockchain =
+          this.segmentProofsWithLockedContracts.get(blockchainId);
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
+      cbcContract.signalling(this.rootProof, segProofsLockedContractsCurrentBlockchain);
+    }
 
+
+  }
 
 
   private void publishReceiptRootToAll(BigInteger publishingFrom,  byte[] transactionReceiptRoot) throws Exception {

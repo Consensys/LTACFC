@@ -17,5 +17,5 @@ package tech.pegasys.ltacfc.cbc.engine;
 import org.web3j.rlp.RlpList;
 
 public interface ExecutionEngine {
-  void execute(RlpList callGraph, long timeout) throws Exception;
+  boolean execute(RlpList callGraph, long timeout) throws Exception;
 }

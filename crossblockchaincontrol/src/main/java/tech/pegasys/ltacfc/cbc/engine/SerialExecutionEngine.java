@@ -35,7 +35,7 @@ public class SerialExecutionEngine implements ExecutionEngine {
     this.executor = executor;
   }
 
-  public void execute(RlpList callGraph, long timeout) throws Exception {
+  public boolean execute(RlpList callGraph, long timeout) throws Exception {
     LOG.info("start");
     BigInteger crossBlockchainTransactionId = AbstractCbc.generateRandomCrossBlockchainTransactionId();
     BigInteger timeoutBig = BigInteger.valueOf(timeout);
@@ -44,13 +44,11 @@ public class SerialExecutionEngine implements ExecutionEngine {
     BigInteger rootBlockchainId = callRootBlockchainId(callGraph);
     this.executor.init(RlpEncoder.encode(callGraph), timeoutBig, crossBlockchainTransactionId, rootBlockchainId);
     this.executor.startCall();
-
-
-
     callSegments(callGraph, new ArrayList<>(), rootBlockchainId);
-//    int maxCallDepth = maximumCallDepth(callGraph);
-//    LOG.info("Max Call Depth: {}", maxCallDepth);
 
+    this.executor.doSignallingCalls();
+
+    return this.executor.getRootEventSuccess();
   }
 
   private int maximumCallDepth(RlpList callGraph) {

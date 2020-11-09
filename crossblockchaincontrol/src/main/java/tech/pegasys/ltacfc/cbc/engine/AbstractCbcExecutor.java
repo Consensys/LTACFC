@@ -39,7 +39,7 @@ public abstract class AbstractCbcExecutor {
   protected BigInteger crossBlockchainTransactionId;
   protected BigInteger rootBcId;
 
-  boolean success;
+  boolean success = false;
 
 
   public AbstractCbcExecutor(CrossBlockchainConsensus consensusMethodology, CbcManager cbcManager) {
@@ -60,4 +60,10 @@ public abstract class AbstractCbcExecutor {
   protected abstract void segment(BigInteger blockchainId, BigInteger callerBlockchainId, List<BigInteger> callPath) throws Exception;
 
   protected abstract void root() throws Exception;
+
+  protected abstract void doSignallingCalls() throws Exception;
+
+  public boolean getRootEventSuccess() {
+    return this.success;
+  }
 }
