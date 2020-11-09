@@ -12,68 +12,52 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.cbc;
+package tech.pegasys.ltacfc.cbc.engine;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpType;
+import tech.pegasys.ltacfc.cbc.AbstractCbc;
+import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 
 import java.math.BigInteger;
 import java.util.List;
 
-public abstract class AbstractCbcExecutionEngine {
-  static final Logger LOG = LogManager.getLogger(AbstractCbcExecutionEngine.class);
+public abstract class AbstractCbcExecutor {
+  static final Logger LOG = LogManager.getLogger(AbstractCbcExecutor.class);
 
   private CrossBlockchainConsensus consensusMethodology;
 
-  protected RlpList callGraph;
+  CbcManager cbcManager;
+
+
+  protected byte[] callGraph;
+
   protected BigInteger timeout;
   protected BigInteger crossBlockchainTransactionId;
+  protected BigInteger rootBcId;
 
   boolean success;
 
 
-  public AbstractCbcExecutionEngine(CrossBlockchainConsensus consensusMethodology) {
+  public AbstractCbcExecutor(CrossBlockchainConsensus consensusMethodology, CbcManager cbcManager) {
     this.consensusMethodology = consensusMethodology;
+    this.cbcManager = cbcManager;
   }
 
 
-
-
-  public void execute(RlpList callGraph, long timeout) throws Exception {
-    LOG.info("start");
+  public void init(byte[] callGraph, BigInteger timeout, BigInteger transactionId, BigInteger rootBcId) {
     this.callGraph = callGraph;
-    this.timeout = BigInteger.valueOf(timeout);
-
-    this.crossBlockchainTransactionId = AbstractCbc.generateRandomCrossBlockchainTransactionId();
-
-    startCall();
-
-    int maxCallDepth = maximumCallDepth(callGraph);
-    LOG.info("Max Call Depth: {}", maxCallDepth);
-
+    this.timeout = timeout;
+    this.crossBlockchainTransactionId = transactionId;
+    this.rootBcId = rootBcId;
   }
 
   protected abstract void startCall()throws Exception;
 
+  protected abstract void segment(BigInteger blockchainId, BigInteger callerBlockchainId, List<BigInteger> callPath) throws Exception;
 
-  private int maximumCallDepth(RlpList callGraph) {
-    return callDepth(callGraph, 0);
-  }
-
-  private int callDepth(RlpList callGraph, int depth) {
-    List<RlpType> calls = callGraph.getValues();
-    int maxDepth = depth;
-    for (RlpType call: calls) {
-      if (call instanceof  RlpList) {
-        int depthFound = callDepth((RlpList) call, depth+1);
-        if (depthFound > maxDepth) {
-          maxDepth = depthFound;
-        }
-      }
-    }
-    return maxDepth;
-  }
+  protected abstract void root() throws Exception;
 }

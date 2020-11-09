@@ -12,81 +12,175 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.cbc;
+package tech.pegasys.ltacfc.cbc.engine;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.rlp.RlpEncoder;
-import org.web3j.rlp.RlpList;
+import tech.pegasys.ltacfc.cbc.CbcManager;
+import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
+import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
-import tech.pegasys.ltacfc.common.StatsHolder;
+import tech.pegasys.ltacfc.common.Tuple;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CbcExecutionEngineTxReceiptRootTransfer extends AbstractCbcExecutionEngine {
-  static final Logger LOG = LogManager.getLogger(CbcExecutionEngineTxReceiptRootTransfer.class);
+public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
+  static final Logger LOG = LogManager.getLogger(CbcExecutorTxReceiptRootTransfer.class);
 
-  Map<BigInteger, CrossBlockchainControlTxReceiptRootTransfer> cbcContracts = new HashMap<>();
-  Map<BigInteger, AnIdentity[]> allSigners = new HashMap<>();
+  // The maximum number of calls that can be done from any one function. The value
+  // has been set to an aritrarily largish number. If people write complicated
+  // functions that have a 1000 calls, or write functions that have loops and
+  // do many cross-blockchain function calls, then this number might need to be made larger.
+  private static final BigInteger MAX_CALLS_FROM_ONE_FUNCTION = BigInteger.valueOf(1000);
 
-  CrossBlockchainControlTxReceiptRootTransfer rootCbcContract;
-  BigInteger rootBcId;
+  protected static final BigInteger ROOT_CALL_MAP_KEY = calculateRootCallMapKey();
+  private static BigInteger calculateRootCallMapKey() {
+    List<BigInteger> rootCallPath = new ArrayList<BigInteger>();
+    rootCallPath.add(BigInteger.ZERO);
+    return callPathToMapKey(rootCallPath);
+  }
 
   TxReceiptRootTransferEventProof startProof;
+  TxReceiptRootTransferEventProof rootProof;
 
 
-  public CbcExecutionEngineTxReceiptRootTransfer(
-      List<CrossBlockchainControlTxReceiptRootTransfer> cbcContracts, List<AnIdentity[]> signers) throws Exception {
-    super(CrossBlockchainConsensus.TRANSACTION_RECEIPT_SIGNING);
+  Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofs = new HashMap<>();
+  Map<BigInteger, Set<String>> lockedContracts = new HashMap<>();
 
-    if (cbcContracts.size() == 0) {
-      throw new Exception("Must have at least one blockchain (cbc contracts)");
-    }
-    if (signers.size() != cbcContracts.size()) {
-      throw new Exception("Signers and contracts length must match");
-    }
-
-    this.rootCbcContract = cbcContracts.get(0);
-    this.rootBcId = this.rootCbcContract.blockchainId;
-
-    for (int i = 0; i < cbcContracts.size(); i++) {
-      CrossBlockchainControlTxReceiptRootTransfer contract = cbcContracts.get(i);
-      this.cbcContracts.put(contract.blockchainId, contract);
-      this.allSigners.put(contract.blockchainId, signers.get(i));
-    }
+  public CbcExecutorTxReceiptRootTransfer(CbcManager cbcManager) throws Exception {
+    super(CrossBlockchainConsensus.TRANSACTION_RECEIPT_SIGNING, cbcManager);
   }
 
 
   protected void startCall() throws Exception {
-    TransactionReceipt startTxReceipt = this.rootCbcContract.start(this.crossBlockchainTransactionId, this.timeout, RlpEncoder.encode(this.callGraph));
-    this.startProof = this.rootCbcContract.getStartEventProof(startTxReceipt);
-    publishReceiptRootToAll(this.rootBcId, startProof.getTransactionReceiptRoot());
+    CrossBlockchainControlTxReceiptRootTransfer rootCbcContract = this.cbcManager.getCbcContractTxRootTransfer(this.rootBcId);
+
+    TransactionReceipt startTxReceipt = rootCbcContract.start(this.crossBlockchainTransactionId, this.timeout, this.callGraph);
+    this.startProof = rootCbcContract.getStartEventProof(startTxReceipt);
+    publishReceiptRootToAll(this.rootBcId, this.startProof.getTransactionReceiptRoot());
+  }
+
+  protected void segment(BigInteger blockchainId, BigInteger callerBlockchainId, List<BigInteger> callPath) throws Exception {
+    if (callPath.size() == 0) {
+      throw new Exception("Invalid call path length for segment: " + callPath.size());
+    }
+
+    BigInteger mapKey = callPathToMapKey(callPath);
+
+    CrossBlockchainControlTxReceiptRootTransfer segmentCbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
+
+    List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.get(mapKey);
+    Tuple<TransactionReceipt, List<String>, Integer> result = segmentCbcContract.segment(this.startProof, proofs, callPath);
+    TransactionReceipt segTxReceipt = result.getFirst();
+    List<String> lockedContracts = result.getSecond();
+
+    TxReceiptRootTransferEventProof segProof = segmentCbcContract.getSegmentEventProof(segTxReceipt);
+
+    // Add the proof for the call that has just occurred to the map so it can be accessed when the next
+    BigInteger parentMapKey = determineMapKeyOfCaller(callPath);
+    proofs = this.segmentProofs.computeIfAbsent(parentMapKey, k -> new ArrayList<>());
+    proofs.add(segProof);
+
+    // Add the locked contracts as a result of the segment to the list of locked contracts.
+    Set<String> lockedContractsForBlockchain = this.lockedContracts.computeIfAbsent(blockchainId, k -> new HashSet<>());
+    lockedContractsForBlockchain.addAll(lockedContracts);
+
+
+    // Segments proofs need to be available on the blockchain they executed on (for the
+    // Signalling call), and on the blockchain that the contract that called this contract
+    // resides on (for the Root or Segment call).
+    Set<BigInteger> blockchainsToPublishTo = new HashSet<>();
+    blockchainsToPublishTo.add(blockchainId);
+    blockchainsToPublishTo.add(callerBlockchainId);
+    publishReceiptRoot(blockchainId, segProof.getTransactionReceiptRoot(), blockchainsToPublishTo);
+  }
+
+
+  protected void root() throws Exception {
+    CrossBlockchainControlTxReceiptRootTransfer rootCbcContract = this.cbcManager.getCbcContractTxRootTransfer(this.rootBcId);
+    List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.get(ROOT_CALL_MAP_KEY);
+    TransactionReceipt rootTxReceipt = rootCbcContract.root(this.startProof, proofs);
+    this.rootProof = rootCbcContract.getRootEventProof(rootTxReceipt);
   }
 
 
 
 
   private void publishReceiptRootToAll(BigInteger publishingFrom,  byte[] transactionReceiptRoot) throws Exception {
-    Set<BigInteger> blockchainIdsToPublishTo = this.cbcContracts.keySet();
+    Set<BigInteger> blockchainIdsToPublishTo = this.cbcManager.getAllBlockchainIds();
     publishReceiptRoot(publishingFrom, transactionReceiptRoot, blockchainIdsToPublishTo);
   }
 
   // Add tx receipt root so event will be trusted.
   private void publishReceiptRoot(BigInteger publishingFrom,  byte[] transactionReceiptRoot, Set<BigInteger> blockchainsToPublishTo) throws Exception {
     for (BigInteger bcId: blockchainsToPublishTo) {
-      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcContracts.get(bcId);
-      AnIdentity[] signers = this.allSigners.get(bcId);
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(bcId);
+      AnIdentity[] signers = this.cbcManager.getSigners(bcId);
       cbcContract.addTransactionReceiptRootToBlockchain(signers, publishingFrom, transactionReceiptRoot);
     }
   }
 
+
+
+  /**
+   * Determine a key that can be used for a map that uniquely identifies the call path's
+   * caller.
+   *
+   * @param callPath The call path to determine a map key for.
+   * @return The map key representing the call path.
+   */
+  private BigInteger determineMapKeyOfCaller(List<BigInteger> callPath) {
+    if (callPath.size() == 0) {
+      return BigInteger.ZERO;
+    }
+    else {
+      List<BigInteger> parentCallPath = new ArrayList<>(callPath);
+
+      BigInteger bottomOfCallPath = callPath.get(callPath.size() - 1);
+      if (bottomOfCallPath.compareTo(BigInteger.ZERO) == 0) {
+        parentCallPath.remove(parentCallPath.size() - 1);
+      }
+      parentCallPath.set(parentCallPath.size() - 1, BigInteger.ZERO);
+
+      return callPathToMapKey(parentCallPath);
+    }
+  }
+
+
+
+  /**
+   * Determine a key that can be used for a map that uniquely identifies the call path.
+   * A message digest of the call path could be used, but a simpler multiplication method
+   * will work just as well.
+   *
+   * @param callPath The call path to determine a map key for.
+   * @return The map key representing the call path.
+   */
+  private static BigInteger callPathToMapKey(List<BigInteger> callPath) {
+    if (callPath.size() == 0) {
+      throw new RuntimeException("Invalid call path length: " + callPath.size());
+    }
+    else {
+      BigInteger key = BigInteger.ONE;
+      for (BigInteger call: callPath) {
+        if (call.compareTo(MAX_CALLS_FROM_ONE_FUNCTION) >= 0) {
+          throw new RuntimeException("Maximum calls from one function is: " + MAX_CALLS_FROM_ONE_FUNCTION);
+        }
+
+        key = key.multiply(MAX_CALLS_FROM_ONE_FUNCTION);
+        key = key.add(call.add(BigInteger.ONE));
+      }
+      return key;
+    }
+  }
 
 
 //      LOG.info("segment: getVal");

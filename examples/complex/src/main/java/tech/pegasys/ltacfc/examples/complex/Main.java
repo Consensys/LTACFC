@@ -17,17 +17,13 @@ package tech.pegasys.ltacfc.examples.complex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.ltacfc.cbc.AbstractCbc;
-import tech.pegasys.ltacfc.cbc.AbstractCbcExecutionEngine;
-import tech.pegasys.ltacfc.cbc.CbcExecutionEngineTxReceiptRootTransfer;
-import tech.pegasys.ltacfc.cbc.CrossBlockchainControlSignedEvents;
-import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
-import tech.pegasys.ltacfc.cbc.SignedEvent;
-import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
+import tech.pegasys.ltacfc.cbc.CbcManager;
+import tech.pegasys.ltacfc.cbc.engine.AbstractCbcExecutor;
+import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
+import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
+import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CredentialsCreator;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
@@ -73,124 +69,41 @@ public class Main {
     Bc4Oracle bc4OracleBlockchain = new Bc4Oracle(creds, bc4.bcId, bc4.uri, bc4.gasPriceStrategy, bc4.period);
     Bc5Stock bc5StockBlockchain = new Bc5Stock(creds, bc5.bcId, bc5.uri, bc5.gasPriceStrategy, bc5.period);
 
-    CrossBlockchainControlTxReceiptRootTransfer rootBlockchainCbcTxRootTransfer = null;
-    CrossBlockchainControlTxReceiptRootTransfer bc2BlockchainCbcTxRootTransfer = null;
-    CrossBlockchainControlTxReceiptRootTransfer bc3BlockchainCbcTxRootTransfer = null;
-    CrossBlockchainControlTxReceiptRootTransfer bc4BlockchainCbcTxRootTransfer = null;
-    CrossBlockchainControlTxReceiptRootTransfer bc5BlockchainCbcTxRootTransfer = null;
-    CrossBlockchainControlSignedEvents rootBlockchainCbcSignedEvents = null;
-    CrossBlockchainControlSignedEvents bc2BlockchainCbcSignedEvents = null;
-    CrossBlockchainControlSignedEvents bc3BlockchainCbcSignedEvents = null;
-    CrossBlockchainControlSignedEvents bc4BlockchainCbcSignedEvents = null;
-    CrossBlockchainControlSignedEvents bc5BlockchainCbcSignedEvents = null;
-    AbstractCbc rootBlockchainCbc = null;
-    AbstractCbc bc2BlockchainCbc = null;
-    AbstractCbc bc3BlockchainCbc = null;
-    AbstractCbc bc4BlockchainCbc = null;
-    AbstractCbc bc5BlockchainCbc = null;
-    String rootBlockchainCbcContractAddress;
-    String bc2CbcContractAddress;
-    String bc3CbcContractAddress;
-    String bc4CbcContractAddress;
-    String bc5CbcContractAddress;
-
-    switch (consensusMethodology) {
-      case TRANSACTION_RECEIPT_SIGNING:
-        rootBlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);
-        bc2BlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, bc2.bcId, bc2.uri, bc2.gasPriceStrategy, bc2.period);
-        bc3BlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, bc3.bcId, bc3.uri, bc3.gasPriceStrategy, bc3.period);
-        bc4BlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, bc4.bcId, bc4.uri, bc4.gasPriceStrategy, bc4.period);
-        bc5BlockchainCbcTxRootTransfer = new CrossBlockchainControlTxReceiptRootTransfer(creds, bc5.bcId, bc5.uri, bc5.gasPriceStrategy, bc5.period);
-        rootBlockchainCbcTxRootTransfer.deployContracts();
-        bc2BlockchainCbcTxRootTransfer.deployContracts();
-        bc3BlockchainCbcTxRootTransfer.deployContracts();
-        bc4BlockchainCbcTxRootTransfer.deployContracts();
-        bc5BlockchainCbcTxRootTransfer.deployContracts();
-        rootBlockchainCbcContractAddress = rootBlockchainCbcTxRootTransfer.getCbcContractAddress();
-        bc2CbcContractAddress = bc2BlockchainCbcTxRootTransfer.getCbcContractAddress();
-        bc3CbcContractAddress = bc3BlockchainCbcTxRootTransfer.getCbcContractAddress();
-        bc4CbcContractAddress = bc4BlockchainCbcTxRootTransfer.getCbcContractAddress();
-        bc5CbcContractAddress = bc5BlockchainCbcTxRootTransfer.getCbcContractAddress();
-        rootBlockchainCbc = rootBlockchainCbcTxRootTransfer;
-        bc2BlockchainCbc = bc2BlockchainCbcTxRootTransfer;
-        bc3BlockchainCbc = bc3BlockchainCbcTxRootTransfer;
-        bc4BlockchainCbc = bc4BlockchainCbcTxRootTransfer;
-        bc5BlockchainCbc = bc5BlockchainCbcTxRootTransfer;
-        break;
-      case EVENT_SIGNING:
-        rootBlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);
-        bc2BlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, bc2.bcId, bc2.uri, bc2.gasPriceStrategy, bc2.period);
-        bc3BlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, bc3.bcId, bc3.uri, bc3.gasPriceStrategy, bc3.period);
-        bc4BlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, bc4.bcId, bc4.uri, bc4.gasPriceStrategy, bc4.period);
-        bc5BlockchainCbcSignedEvents = new CrossBlockchainControlSignedEvents(creds, bc5.bcId, bc5.uri, bc5.gasPriceStrategy, bc5.period);
-        rootBlockchainCbcSignedEvents.deployContracts();
-        bc2BlockchainCbcSignedEvents.deployContracts();
-        bc3BlockchainCbcSignedEvents.deployContracts();
-        bc4BlockchainCbcSignedEvents.deployContracts();
-        bc5BlockchainCbcSignedEvents.deployContracts();
-        rootBlockchainCbcContractAddress = rootBlockchainCbcSignedEvents.getCbcContractAddress();
-        bc2CbcContractAddress = bc2BlockchainCbcSignedEvents.getCbcContractAddress();
-        bc3CbcContractAddress = bc3BlockchainCbcSignedEvents.getCbcContractAddress();
-        bc4CbcContractAddress = bc4BlockchainCbcSignedEvents.getCbcContractAddress();
-        bc5CbcContractAddress = bc5BlockchainCbcSignedEvents.getCbcContractAddress();
-        rootBlockchainCbc = rootBlockchainCbcSignedEvents;
-        bc2BlockchainCbc = bc2BlockchainCbcSignedEvents;
-        bc3BlockchainCbc = bc3BlockchainCbcSignedEvents;
-        bc4BlockchainCbc = bc4BlockchainCbcSignedEvents;
-        bc5BlockchainCbc = bc5BlockchainCbcSignedEvents;
-        break;
-      default:
-        throw new RuntimeException("Unknown consensus methodology");
-    }
+    CbcManager cbcManager = new CbcManager(consensusMethodology);
+    cbcManager.addBlockchainAndDeployContracts(creds, root);
+    cbcManager.addBlockchainAndDeployContracts(creds, bc2);
+    cbcManager.addBlockchainAndDeployContracts(creds, bc3);
+    cbcManager.addBlockchainAndDeployContracts(creds, bc4);
+    cbcManager.addBlockchainAndDeployContracts(creds, bc5);
 
 
     // Set-up client side and deploy contracts on the blockchains.
-    bc3BalancesBlockchain.deployContracts(bc3CbcContractAddress);
     BigInteger bc3BcId = bc3BalancesBlockchain.getBlockchainId();
+    bc3BalancesBlockchain.deployContracts(cbcManager.getCbcAddress(bc3BcId));
     String balancesContractAddress = bc3BalancesBlockchain.balancesContract.getContractAddress();
 
-    bc4OracleBlockchain.deployContracts(bc4CbcContractAddress);
     BigInteger bc4BcId = bc4OracleBlockchain.getBlockchainId();
+    bc4OracleBlockchain.deployContracts(cbcManager.getCbcAddress(bc4BcId));
     String priceOracleContractAddress = bc4OracleBlockchain.priceOracleContract.getContractAddress();
 
-    bc5StockBlockchain.deployContracts(bc5CbcContractAddress);
     BigInteger bc5BcId = bc5StockBlockchain.getBlockchainId();
+    bc5StockBlockchain.deployContracts(cbcManager.getCbcAddress(bc5BcId));
     String stockContractAddress = bc5StockBlockchain.stockContract.getContractAddress();
 
-    bc2BusLogicBlockchain.deployContracts(bc2CbcContractAddress,
-        bc3BcId, balancesContractAddress, bc4BcId, priceOracleContractAddress, bc5BcId, stockContractAddress);
     BigInteger bc2BcId = bc2BusLogicBlockchain.getBlockchainId();
+    bc2BusLogicBlockchain.deployContracts(cbcManager.getCbcAddress(bc2BcId),
+        bc3BcId, balancesContractAddress, bc4BcId, priceOracleContractAddress, bc5BcId, stockContractAddress);
     String businessLogicContractAddress = bc2BusLogicBlockchain.busLogicContract.getContractAddress();
 
-    bc1TradeWalletBlockchain.deployContracts(rootBlockchainCbcContractAddress, bc2BcId, businessLogicContractAddress);
     BigInteger rootBcId = bc1TradeWalletBlockchain.getBlockchainId();
+    bc1TradeWalletBlockchain.deployContracts(cbcManager.getCbcAddress(rootBcId), bc2BcId, businessLogicContractAddress);
     String tradeWalletContractAddress = bc1TradeWalletBlockchain.tradeWalletContract.getContractAddress();
 
     // To make the example simple, just have one signer, and have the same signer for all blockchains.
     // Note that signers only need to be registered against blockchains that they will consume
     // events from.
     AnIdentity signer = new AnIdentity();
-    rootBlockchainCbc.registerSignerThisBlockchain(signer);
-//    rootBlockchainCbc.registerSigner(signer, bc2BcId);
-    bc2BlockchainCbc.registerSignerThisBlockchain(signer);
-//    bc2BlockchainCbc.registerSigner(signer, rootBcId);
-//    bc2BlockchainCbc.registerSigner(signer, bc2BcId);
-//    bc2BlockchainCbc.registerSigner(signer, bc3BcId);
-//    bc2BlockchainCbc.registerSigner(signer, bc4BcId);
-//    bc2BlockchainCbc.registerSigner(signer, bc5BcId);
-    bc3BlockchainCbc.registerSignerThisBlockchain(signer);
-//    bc3BlockchainCbc.registerSigner(signer, rootBcId);
-//    bc4BlockchainCbc.registerSigner(signer, rootBcId);
-    bc4BlockchainCbc.registerSignerThisBlockchain(signer);
-//    bc5BlockchainCbc.registerSigner(signer, rootBcId);
-    bc5BlockchainCbc.registerSignerThisBlockchain(signer);
-
-    AnIdentity[] signers = new AnIdentity[] {signer};
-    List<AnIdentity[]> signersForEachBlockchain = new ArrayList<>();
-    for (int i = 0; i < 5; i++) {
-      signersForEachBlockchain.add(signers);
-    }
-
+    cbcManager.registerSignerOnAllBlockchains(signer);
 
     // Create simulators
     SimStockContract simStockContract = new SimStockContract(bc5StockBlockchain);
@@ -233,7 +146,6 @@ public class Main {
     String rlpBalancesTransfer = simBalancesContract.getRlpFunctionSignature_transfer();
     String rlpStockTransfer = simStockContract.getRlpFunctionSignature_transfer();
 
-    RlpList callGraph;
     RlpList getPrice = createLeafFunctionCall(bc4BcId, priceOracleContractAddress, rlpPriceOracleGetPrice);
     RlpList balanceTransfer = createLeafFunctionCall(bc3BcId, balancesContractAddress, rlpBalancesTransfer);
     RlpList stockTransfer = createLeafFunctionCall(bc5BcId, stockContractAddress, rlpStockTransfer);
@@ -244,25 +156,18 @@ public class Main {
     RlpList businessLogic = createIntermediateFunctionCall(bc2BcId, businessLogicContractAddress, rlpBusLogicStockShipment, busLogicCalls);
     List<RlpType> rootCalls = new ArrayList<>();
     rootCalls.add(businessLogic);
-    callGraph = createRootFunctionCall(rootBcId, tradeWalletContractAddress, rlpRootExecuteTrade, rootCalls);
+    RlpList callGraph = createRootFunctionCall(rootBcId, tradeWalletContractAddress, rlpRootExecuteTrade, rootCalls);
 
-
-    AbstractCbcExecutionEngine executionEngine;
+    AbstractCbcExecutor executor;
     switch (consensusMethodology) {
       case TRANSACTION_RECEIPT_SIGNING:
-        List<CrossBlockchainControlTxReceiptRootTransfer> cbcContracts = new ArrayList<>();
-        cbcContracts.add(rootBlockchainCbcTxRootTransfer);
-        cbcContracts.add(bc2BlockchainCbcTxRootTransfer);
-        cbcContracts.add(bc3BlockchainCbcTxRootTransfer);
-        cbcContracts.add(bc4BlockchainCbcTxRootTransfer);
-        cbcContracts.add(bc5BlockchainCbcTxRootTransfer);
-
-        executionEngine = new CbcExecutionEngineTxReceiptRootTransfer(cbcContracts, signersForEachBlockchain);
+        executor = new CbcExecutorTxReceiptRootTransfer(cbcManager);
         break;
       default:
         throw new RuntimeException("Not implemented yet");
     }
 
+    ExecutionEngine executionEngine = new SerialExecutionEngine(executor);
     executionEngine.execute(callGraph, 300);
     boolean success = false;
 

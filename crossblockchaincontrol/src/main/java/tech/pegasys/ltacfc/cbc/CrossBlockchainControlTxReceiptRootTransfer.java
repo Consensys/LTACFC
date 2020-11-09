@@ -22,6 +22,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.ethereum.core.Hash;
 import org.hyperledger.besu.ethereum.core.LogTopic;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -35,6 +36,7 @@ import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.RevertReason;
 import tech.pegasys.ltacfc.common.StatsHolder;
+import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
 import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
@@ -80,14 +82,14 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
   public TransactionReceipt start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
     TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
+    StatsHolder.logGas("Start Transaction", txR.getGasUsed());
     List<CbcTxRootTransfer.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);
     CbcTxRootTransfer.StartEventResponse startEvent = startEvents.get(0);
     this.crossBlockchainTransactionTimeout = startEvent._timeout.longValue();
     return txR;
   }
 
-  // TODO this should migrate to the abstract cbc class: the root blockchain could also end up having a segment
-  public TransactionReceipt segment(TxReceiptRootTransferEventProof startProof, List<BigInteger> callPath) throws Exception {
+  public Tuple<TransactionReceipt, List<String>, Integer> segment(TxReceiptRootTransferEventProof startProof, List<TxReceiptRootTransferEventProof> segProofs, List<BigInteger> callPath) throws Exception {
     TransactionReceipt txR;
     try {
       txR = this.crossBlockchainControlContract.segment(
@@ -113,13 +115,27 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
     LOG.info("Segment Event:");
     LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _callPath len: {}", segmentEventResponse._callPath.size());
+    StringBuilder calls = new StringBuilder();
+    // TODO The code below is a hack to handle the fact that currently Web3J returns a Uint256 object, but the type is BigInteger.
+    // TODO this code will break when Web3J fixes their bug.
+    for (Object partOfCallPath: segmentEventResponse._callPath) {
+      Uint256 hack = (Uint256) partOfCallPath;
+      calls.append("[");
+      calls.append(hack.getValue());
+      calls.append("] ");
+    }
+    LOG.info(" _callPath: {}", calls);
     LOG.info(" _hashOfCallGraph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
     LOG.info(" _success: {}", segmentEventResponse._success);
     LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
     LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());
 
-    return txR;
+    showAllCallEvents(txR);
+    showAllNotEnoughCallsEvents(txR);
+    showAllDumpEvents(txR);
+
+    Tuple<TransactionReceipt, List<String>, Integer> result = new Tuple<>(txR, segmentEventResponse._lockedContracts);
+    return result;
   }
 
 
@@ -158,23 +174,10 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     LOG.info("Root Event:");
     LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
     LOG.info(" _success: {}", rootEventResponse._success);
-
     this.rootEventSuccess = rootEventResponse._success;
 
-
-    LOG.info("Call Events");
-    List<CbcTxRootTransfer.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
-    for (CbcTxRootTransfer.CallEventResponse callEventResponse : callEventResponses) {
-      LOG.info("  Event:");
-      LOG.info("   Expected Blockchain Id: {}", callEventResponse._expectedBlockchainId.toString(16));
-      LOG.info("   Actual Blockchain Id: {}", callEventResponse._actualBlockchainId.toString(16));
-      LOG.info("   Expected Contract: {}", callEventResponse._expectedContract);
-      LOG.info("   Actual Contract: {}", callEventResponse._actualContract);
-      LOG.info("   Expected Function Call: {}", new BigInteger(1, callEventResponse._expectedFunctionCall).toString(16));
-      LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
-      LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
-    }
-
+    showAllCallEvents(txR);
+    showAllNotEnoughCallsEvents(txR);
     showAllDumpEvents(txR);
 
     return txR;
@@ -336,48 +339,48 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
       throw new Error("Calculated transaction receipt root does not match actual receipt root");
     }
 
-    // TODO remove
-    Bytes32 parentHash = Bytes32.fromHexString(b1.getParentHash());
-    Bytes32 ommersHash = Bytes32.fromHexString(b1.getSha3Uncles());
-    Bytes coinbase = Bytes.fromHexString(b1.getMiner());
-    Bytes32 stateRoot = Bytes32.fromHexString(b1.getStateRoot());
-    Bytes32 transactionsRoot = Bytes32.fromHexString(b1.getTransactionsRoot());
-    Bytes32 receiptsRoot1 = Bytes32.fromHexString(b1.getReceiptsRoot());
-    Bytes logsBloom = Bytes.fromHexString(b1.getLogsBloom());
-    BigInteger difficulty = b1.getDifficulty();
-    BigInteger number = b1.getNumber();
-    BigInteger gasLimit = b1.getGasLimit();
-    BigInteger gasUsed = b1.getGasUsed();
-    BigInteger timestamp = b1.getTimestamp();
-    Bytes extraData = Bytes.fromHexString(b1.getExtraData());
-    Bytes32 mixHash = Bytes32.fromHexString(b1.getMixHash());
-    BigInteger nonce = b1.getNonce();
-
-    Bytes blockHash1 = Hash.hash(
-        RLP.encode(
-            out -> {
-              out.startList();
-              out.writeBytes(parentHash);
-              out.writeBytes(ommersHash);
-              out.writeBytes(coinbase);
-              out.writeBytes(stateRoot);
-              out.writeBytes(transactionsRoot);
-              out.writeBytes(receiptsRoot1);
-              out.writeBytes(logsBloom);
-              out.writeBytes(UInt256.valueOf(difficulty).toMinimalBytes());
-              out.writeLongScalar(number.longValue());
-              out.writeLongScalar(gasLimit.longValue());
-              out.writeLongScalar(gasUsed.longValue());
-              out.writeLongScalar(timestamp.longValue());
-              out.writeBytes(extraData);
-              out.writeBytes(mixHash);
-              out.writeLong(nonce.longValue());
-//    if (ExperimentalEIPs.eip1559Enabled && baseFee != null) {
-//      out.writeLongScalar(baseFee);
-//    }
-              out.endList();
-            }));
-    LOG.info("Block Hash Calculated***: {} should be: {}", blockHash1.toHexString(), blockHash);
+//    // TODO remove
+//    Bytes32 parentHash = Bytes32.fromHexString(b1.getParentHash());
+//    Bytes32 ommersHash = Bytes32.fromHexString(b1.getSha3Uncles());
+//    Bytes coinbase = Bytes.fromHexString(b1.getMiner());
+//    Bytes32 stateRoot = Bytes32.fromHexString(b1.getStateRoot());
+//    Bytes32 transactionsRoot = Bytes32.fromHexString(b1.getTransactionsRoot());
+//    Bytes32 receiptsRoot1 = Bytes32.fromHexString(b1.getReceiptsRoot());
+//    Bytes logsBloom = Bytes.fromHexString(b1.getLogsBloom());
+//    BigInteger difficulty = b1.getDifficulty();
+//    BigInteger number = b1.getNumber();
+//    BigInteger gasLimit = b1.getGasLimit();
+//    BigInteger gasUsed = b1.getGasUsed();
+//    BigInteger timestamp = b1.getTimestamp();
+//    Bytes extraData = Bytes.fromHexString(b1.getExtraData());
+//    Bytes32 mixHash = Bytes32.fromHexString(b1.getMixHash());
+//    BigInteger nonce = b1.getNonce();
+//
+//    Bytes blockHash1 = Hash.hash(
+//        RLP.encode(
+//            out -> {
+//              out.startList();
+//              out.writeBytes(parentHash);
+//              out.writeBytes(ommersHash);
+//              out.writeBytes(coinbase);
+//              out.writeBytes(stateRoot);
+//              out.writeBytes(transactionsRoot);
+//              out.writeBytes(receiptsRoot1);
+//              out.writeBytes(logsBloom);
+//              out.writeBytes(UInt256.valueOf(difficulty).toMinimalBytes());
+//              out.writeLongScalar(number.longValue());
+//              out.writeLongScalar(gasLimit.longValue());
+//              out.writeLongScalar(gasUsed.longValue());
+//              out.writeLongScalar(timestamp.longValue());
+//              out.writeBytes(extraData);
+//              out.writeBytes(mixHash);
+//              out.writeLong(nonce.longValue());
+////    if (ExperimentalEIPs.eip1559Enabled && baseFee != null) {
+////      out.writeLongScalar(baseFee);
+////    }
+//              out.endList();
+//            }));
+//    LOG.info("Block Hash Calculated***: {} should be: {}", blockHash1.toHexString(), blockHash);
 
 
     // TODO end remove
@@ -457,6 +460,37 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     return getProofForTxReceipt(this.blockchainId, this.crossBlockchainControlContract.getContractAddress(), segmentTxReceipt);
   }
 
+  protected void showAllCallEvents(TransactionReceipt txR) {
+    LOG.info("Call Events");
+    List<CbcTxRootTransfer.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
+    if (callEventResponses.isEmpty()) {
+      LOG.info(" None");
+    }
+    for (CbcTxRootTransfer.CallEventResponse callEventResponse : callEventResponses) {
+      LOG.info(" Event:");
+      LOG.info("   Expected Blockchain Id: 0x{}", callEventResponse._expectedBlockchainId.toString(16));
+      LOG.info("   Actual Blockchain Id: 0x{}", callEventResponse._actualBlockchainId.toString(16));
+      LOG.info("   Expected Contract: {}", callEventResponse._expectedContract);
+      LOG.info("   Actual Contract: {}", callEventResponse._actualContract);
+      LOG.info("   Expected Function Call: {}", new BigInteger(1, callEventResponse._expectedFunctionCall).toString(16));
+      LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
+      LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
+    }
+  }
+
+
+  protected void showAllNotEnoughCallsEvents(TransactionReceipt txR) {
+    LOG.info("Not Enough Call Events");
+    List<CbcTxRootTransfer.NotEnoughCallsEventResponse> notEnoughCallsEventResponses = this.crossBlockchainControlContract.getNotEnoughCallsEvents(txR);
+    if (notEnoughCallsEventResponses.isEmpty()) {
+      LOG.info(" None");
+    }
+    for (CbcTxRootTransfer.NotEnoughCallsEventResponse notEnoughCallsEventResponse: notEnoughCallsEventResponses) {
+      LOG.info("  Event:");
+      LOG.info("   Actual Number of Calls: {}", notEnoughCallsEventResponse._actualNumberOfCalls);
+      LOG.info("   Expected Number of Calls: {}", notEnoughCallsEventResponse._expectedNumberOfCalls);
+    }
+  }
 
   protected void showAllDumpEvents(TransactionReceipt txR) {
     LOG.info("Dump Events");

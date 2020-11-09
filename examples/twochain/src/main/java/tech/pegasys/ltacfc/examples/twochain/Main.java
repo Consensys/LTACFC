@@ -30,6 +30,7 @@ import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.common.StatsHolder;
+import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
 
@@ -194,7 +195,8 @@ public class Main {
         StatsHolder.log("segment: getVal");
         List<BigInteger> getValCallPath = new ArrayList<>();
         getValCallPath.add(BigInteger.ONE);
-        TransactionReceipt segGetValTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, getValCallPath);
+        Tuple<TransactionReceipt, List<String>, Integer> result = otherBlockchainCbcTxRootTransfer.segment(startProof, new ArrayList<>(), getValCallPath);
+        TransactionReceipt segGetValTxReceipt = result.getFirst();
         TxReceiptRootTransferEventProof segGetValProof = otherBlockchainCbcTxRootTransfer.getSegmentEventProof(segGetValTxReceipt);
         allSegmentProofs.add(segGetValProof);
         // Add tx receipt root so event will be trusted.
@@ -206,7 +208,8 @@ public class Main {
           StatsHolder.log("segment: setValues");
           List<BigInteger> setValuesCallPath = new ArrayList<>();
           setValuesCallPath.add(BigInteger.TWO);
-          TransactionReceipt segSetValuesTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, setValuesCallPath);
+          result = otherBlockchainCbcTxRootTransfer.segment(startProof, new ArrayList<>(), setValuesCallPath);
+          TransactionReceipt segSetValuesTxReceipt = result.getFirst();
           TxReceiptRootTransferEventProof segSetValuesProof = otherBlockchainCbcTxRootTransfer.getSegmentEventProof(segSetValuesTxReceipt);
           allSegmentProofs.add(segSetValuesProof);
           signalSegProofs.add(segSetValuesProof);
@@ -219,7 +222,8 @@ public class Main {
           StatsHolder.log("segment: setVal");
           List<BigInteger> setValCallPath = new ArrayList<>();
           setValCallPath.add(BigInteger.TWO);
-          TransactionReceipt segSetValTxReceipt = otherBlockchainCbcTxRootTransfer.segment(startProof, setValCallPath);
+          result = otherBlockchainCbcTxRootTransfer.segment(startProof, new ArrayList<>(), setValCallPath);
+          TransactionReceipt segSetValTxReceipt = result.getFirst();
           TxReceiptRootTransferEventProof segSetValProof = otherBlockchainCbcTxRootTransfer.getSegmentEventProof(segSetValTxReceipt);
           allSegmentProofs.add(segSetValProof);
           signalSegProofs.add(segSetValProof);

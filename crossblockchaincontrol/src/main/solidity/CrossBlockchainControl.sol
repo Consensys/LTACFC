@@ -229,7 +229,11 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
             require(crossBlockchainTxId == activeCallCrossBlockchainTransactionId, "Transaction id from segment and root do not match");
             require(hashOfCallGraph == hashOfCallGraphFromSegment, "Call graph from segment and root do not match");
-            require(lenOfCallPath == 1, "Call path length for segment for root transaction must be one");
+            require(lenOfCallPath == 1 || lenOfCallPath == 2, "Call path length for segment for root transaction must be one or 2");
+            if (lenOfCallPath == 2) {
+                uint256 callPathSecondValue = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath + 0x40);
+                require(callPathSecondValue == 0, "Call path optional second element not zero");
+            }
 
             // Fail the root transaction is one of the segments failed.
             if (success == 0) {
