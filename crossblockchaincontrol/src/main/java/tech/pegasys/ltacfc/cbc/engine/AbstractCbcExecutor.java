@@ -23,10 +23,25 @@ import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractCbcExecutor {
   static final Logger LOG = LogManager.getLogger(AbstractCbcExecutor.class);
+
+  // The maximum number of calls that can be done from any one function. The value
+  // has been set to an aritrarily largish number. If people write complicated
+  // functions that have a 1000 calls, or write functions that have loops and
+  // do many cross-blockchain function calls, then this number might need to be made larger.
+  protected static final BigInteger MAX_CALLS_FROM_ONE_FUNCTION = BigInteger.valueOf(1000);
+
+  protected static final BigInteger ROOT_CALL_MAP_KEY = calculateRootCallMapKey();
+  private static BigInteger calculateRootCallMapKey() {
+    List<BigInteger> rootCallPath = new ArrayList<BigInteger>();
+    rootCallPath.add(BigInteger.ZERO);
+    return callPathToMapKey(rootCallPath);
+  }
+
 
   private CrossBlockchainConsensus consensusMethodology;
 
@@ -65,5 +80,59 @@ public abstract class AbstractCbcExecutor {
 
   public boolean getRootEventSuccess() {
     return this.success;
+  }
+
+
+
+  /**
+   * Determine a key that can be used for a map that uniquely identifies the call path's
+   * caller.
+   *
+   * @param callPath The call path to determine a map key for.
+   * @return The map key representing the call path.
+   */
+  protected BigInteger determineMapKeyOfCaller(List<BigInteger> callPath) {
+    if (callPath.size() == 0) {
+      return BigInteger.ZERO;
+    }
+    else {
+      List<BigInteger> parentCallPath = new ArrayList<>(callPath);
+
+      BigInteger bottomOfCallPath = callPath.get(callPath.size() - 1);
+      if (bottomOfCallPath.compareTo(BigInteger.ZERO) == 0) {
+        parentCallPath.remove(parentCallPath.size() - 1);
+      }
+      parentCallPath.set(parentCallPath.size() - 1, BigInteger.ZERO);
+
+      return callPathToMapKey(parentCallPath);
+    }
+  }
+
+
+
+  /**
+   * Determine a key that can be used for a map that uniquely identifies the call path.
+   * A message digest of the call path could be used, but a simpler multiplication method
+   * will work just as well.
+   *
+   * @param callPath The call path to determine a map key for.
+   * @return The map key representing the call path.
+   */
+  protected static BigInteger callPathToMapKey(List<BigInteger> callPath) {
+    if (callPath.size() == 0) {
+      throw new RuntimeException("Invalid call path length: " + callPath.size());
+    }
+    else {
+      BigInteger key = BigInteger.ONE;
+      for (BigInteger call: callPath) {
+        if (call.compareTo(MAX_CALLS_FROM_ONE_FUNCTION) >= 0) {
+          throw new RuntimeException("Maximum calls from one function is: " + MAX_CALLS_FROM_ONE_FUNCTION);
+        }
+
+        key = key.multiply(MAX_CALLS_FROM_ONE_FUNCTION);
+        key = key.add(call.add(BigInteger.ONE));
+      }
+      return key;
+    }
   }
 }

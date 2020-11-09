@@ -90,7 +90,11 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     return txR;
   }
 
-  public TransactionReceipt segment(TxReceiptRootTransferEventProof startProof, List<TxReceiptRootTransferEventProof> segProofs, List<BigInteger> callPath) throws Exception {
+  public Tuple<TransactionReceipt, Boolean, Boolean> segment(
+      TxReceiptRootTransferEventProof startProof,
+      List<TxReceiptRootTransferEventProof> segProofs,
+      List<BigInteger> callPath) throws Exception {
+
     TransactionReceipt txR;
     try {
       txR = this.crossBlockchainControlContract.segment(
@@ -144,7 +148,8 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     showAllNotEnoughCallsEvents(txR);
     showAllDumpEvents(txR);
 
-    return txR;
+    return new Tuple<TransactionReceipt, Boolean, Boolean>
+        (txR, segmentEventResponse._lockedContracts.isEmpty(), segmentEventResponse._success);
   }
 
 

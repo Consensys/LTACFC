@@ -17,12 +17,15 @@ package tech.pegasys.ltacfc.cbc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.common.RevertReason;
 import tech.pegasys.ltacfc.common.StatsHolder;
+import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
 
 import java.io.IOException;
@@ -67,7 +70,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
 
 
-  public byte[] segment(SignedEvent startEvent, List<BigInteger> callPath) throws Exception {
+  public Tuple<byte[], Boolean, Boolean> segment(SignedEvent startEvent, List<SignedEvent> segEvents, List<BigInteger> callPath) throws Exception {
 
     // TODO For the moment just support one level of function call.
     List<byte[]> encodedEvents = new ArrayList<>();
@@ -95,19 +98,37 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
     CbcSignedEvent.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
     LOG.info("Segment Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _callPath len: {}", segmentEventResponse._callPath.size());
-    LOG.info(" _hashOfCallGraph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
-    LOG.info(" _success: {}", segmentEventResponse._success);
-    LOG.info(" _returnValue: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
-    LOG.info(" num locked contracts: {}", segmentEventResponse._lockedContracts.size());
-//    for (String lockedContractAddress: segmentEventResponse._lockedContracts) {
-//      LOG.info(" locked contracts: {}", lockedContractAddress);
-//    }
+    LOG.info(" Cross-Blockchain Transaction Id: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
+    StringBuilder calls = new StringBuilder();
+    // TODO The code below is a hack to handle the fact that currently Web3J returns a Uint256 object, but the type is BigInteger.
+    // TODO this code will break when Web3J fixes their bug.
+    for (Object partOfCallPath: segmentEventResponse._callPath) {
+      Uint256 hack = (Uint256) partOfCallPath;
+      calls.append("[");
+      calls.append(hack.getValue());
+      calls.append("] ");
+    }
+    LOG.info(" Call Path: {}", calls);
+    LOG.info(" Hash Of Call Graph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
+    LOG.info(" Success: {}", segmentEventResponse._success);
+    LOG.info(" Return Value: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
+    StringBuilder lockedContracts = new StringBuilder();
+    // TODO The code below is a hack to handle the fact that currently Web3J returns an Address object, but the type is BigInteger.
+    // TODO this code will break when Web3J fixes their bug.
+    for (Object lockedContract: segmentEventResponse._lockedContracts) {
+      Address hack = (Address) lockedContract;
+      calls.append("[");
+      calls.append(hack.getValue());
+      calls.append("] ");
+    }
+    LOG.info(" Locked Contracts: [{}]", lockedContracts);
 
     showAllDumpEvents(txR);
 
-    return getEventData(txR, AbstractCbc.SEGMENT_EVENT_SIGNATURE_BYTES);
+    return new Tuple<byte[], Boolean, Boolean>(
+        getEventData(txR, AbstractCbc.SEGMENT_EVENT_SIGNATURE_BYTES),
+        segmentEventResponse._lockedContracts.isEmpty(),
+        segmentEventResponse._success);
   }
 
 

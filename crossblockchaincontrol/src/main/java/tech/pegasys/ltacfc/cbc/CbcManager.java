@@ -78,6 +78,13 @@ public class CbcManager {
     return this.blockchains.get(bcId).cbcTxRootTransfer;
   }
 
+  public CrossBlockchainControlSignedEvents getCbcContractSignedEvents(BigInteger bcId) {
+    if (!this.blockchains.containsKey(bcId)) {
+      throw new RuntimeException("Unknown blockchain: 0x" + bcId.toString(16));
+    }
+    return this.blockchains.get(bcId).cbcSignedEvents;
+  }
+
   public String getCbcAddress(BigInteger bcId) {
     if (!this.blockchains.containsKey(bcId)) {
       throw new RuntimeException("Unknown blockchain: 0x" + bcId.toString(16));

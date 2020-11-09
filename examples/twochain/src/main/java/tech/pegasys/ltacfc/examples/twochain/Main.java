@@ -28,6 +28,7 @@ import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.SignedEvent;
 import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.cbc.engine.AbstractCbcExecutor;
+import tech.pegasys.ltacfc.cbc.engine.CbcExecutorSignedEvents;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
 import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
@@ -150,6 +151,9 @@ public class Main {
     switch (consensusMethodology) {
       case TRANSACTION_RECEIPT_SIGNING:
         executor = new CbcExecutorTxReceiptRootTransfer(cbcManager);
+        break;
+      case EVENT_SIGNING:
+        executor = new CbcExecutorSignedEvents(cbcManager);
         break;
       default:
         throw new RuntimeException("Not implemented yet");
