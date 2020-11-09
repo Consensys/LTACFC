@@ -119,16 +119,13 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
 
     function segmentProcessing(
-        uint256 _rootBlockchainId, bytes memory _startEventData, uint256[] calldata _callPath) internal {
+        uint256 _rootBlockchainId, bytes memory _startEventData, bytes[] memory _segmentEvents,
+        uint256[] calldata _callPath) internal {
 
         // The tx.origin needs to be the same on all blockchains that are party to the
         // cross-blockchain transaction. As such, ensure start is only called from an
         // EOA.
         require(tx.origin == msg.sender, "Start must be called from an EOA");
-
-        // TODO require call path length >= 1
-
-
 
         activeCallCrossBlockchainTransactionId = BytesUtil.bytesToUint256(_startEventData, 0);
         address startCaller = BytesUtil.bytesToAddress1(_startEventData, 0x20);
@@ -142,9 +139,14 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
         bytes memory callGraph = BytesUtil.slice(_startEventData, 0xA0, lenOfActiveCallGraph);
         activeCallGraph = callGraph;
+        bytes32 hashOfCallGraph = keccak256(callGraph);
 
         activeCallRootBlockchainId = _rootBlockchainId;
         activeCallsCallPath = _callPath;
+
+        if (verifySegmentEvents(_segmentEvents, _callPath, hashOfCallGraph)) {
+            return;
+        }
 
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, _callPath);
         require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
@@ -153,7 +155,14 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         bytes memory returnValueEncoded;
         (isSuccess, returnValueEncoded) = targetContract.call(functionCall);
 
-        bytes32 hashOfCallGraph = keccak256(callGraph);
+        // Check that all cross-blockchain calls were used.
+        if (activeCallReturnValues.length != activeCallReturnValuesIndex) {
+            emit NotEnoughCalls(activeCallReturnValues.length, activeCallReturnValuesIndex);
+            isSuccess = false;
+        }
+
+        isSuccess = activeCallFailed ? false : isSuccess;
+
         // TODO emit segments understanding of root blockhain id
         emit Segment(activeCallCrossBlockchainTransactionId, hashOfCallGraph, _callPath, activeCallLockedContracts, isSuccess, returnValueEncoded);
 
@@ -206,52 +215,15 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         activeCallGraph = callGraph;
         bytes32 hashOfCallGraph = keccak256(callGraph);
 
-        //Verify the event information in the Segment Events.
-        // Check that the Segment Events correspond to function calls that the Start Event indicates that the
-        //  root function call should have been called.
-        // Exit if the information doesn’t match.
-        //If any of the Segment Events indicate an error, Goto Ignore.
-        for (uint256 i = 0; i < _segmentEvents.length; i++) {
-            bytes memory segmentEvent = _segmentEvents[i];
-
-            // Recall Segment event is defined as:
-            // event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
-            //        address[] _lockedContracts, bool _success, bytes _returnValue);
-            uint256 crossBlockchainTxId = BytesUtil.bytesToUint256(segmentEvent, 0);
-            bytes32 hashOfCallGraphFromSegment = BytesUtil.bytesToBytes32(segmentEvent, 0x20);
-            uint256 locationOfCallPath = BytesUtil.bytesToUint256(segmentEvent, 0x40);
-            // Not needed: uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(segmentEvent, 0x60);
-            uint256 success = BytesUtil.bytesToUint256(segmentEvent, 0x80);
-            uint256 locationOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, 0xA0);
-            uint256 lenOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, locationOfReturnValue);
-            bytes memory returnValue = BytesUtil.slice(segmentEvent, locationOfReturnValue + 0x20, lenOfReturnValue);
-            uint256 lenOfCallPath = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath);
-
-            require(crossBlockchainTxId == activeCallCrossBlockchainTransactionId, "Transaction id from segment and root do not match");
-            require(hashOfCallGraph == hashOfCallGraphFromSegment, "Call graph from segment and root do not match");
-            require(lenOfCallPath == 1 || lenOfCallPath == 2, "Call path length for segment for root transaction must be one or 2");
-            if (lenOfCallPath == 2) {
-                uint256 callPathSecondValue = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath + 0x40);
-                require(callPathSecondValue == 0, "Call path optional second element not zero");
-            }
-
-            // Fail the root transaction is one of the segments failed.
-            if (success == 0) {
-                failRootTransaction();
-                cleanupAfterCall();
-                return;
-            }
-
-            // Store the extracted return results from segment events.
-            activeCallReturnValues.push(returnValue);
-        }
-
         // The element will be the default, 0.
         uint256[] memory callPathForStart = new uint256[](1);
 
+        if (verifySegmentEvents(_segmentEvents, callPathForStart, hashOfCallGraph)) {
+            return;
+        }
+
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, callPathForStart);
         require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
-        //execute(targetContract, functionCall);
 
         bool isSuccess;
         (isSuccess, ) = targetContract.call(functionCall);
@@ -435,5 +407,51 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, retVal);
 
         return retVal;
+    }
+
+    function verifySegmentEvents(bytes[] memory _segmentEvents, uint256[] memory callPath, bytes32 hashOfCallGraph) private returns(bool){
+        //Verify the event information in the Segment Events.
+        // Check that the Segment Events correspond to function calls that the Start Event indicates that the
+        //  root function call should have been called.
+        // Exit if the information doesn’t match.
+        //If any of the Segment Events indicate an error, Goto Ignore.
+        for (uint256 i = 0; i < _segmentEvents.length; i++) {
+            bytes memory segmentEvent = _segmentEvents[i];
+
+            // Recall Segment event is defined as:
+            // event Segment(uint256 _crossBlockchainTransactionId, bytes32 _hashOfCallGraph, uint256[] _callPath,
+            //        address[] _lockedContracts, bool _success, bytes _returnValue);
+            uint256 crossBlockchainTxId = BytesUtil.bytesToUint256(segmentEvent, 0);
+            bytes32 hashOfCallGraphFromSegment = BytesUtil.bytesToBytes32(segmentEvent, 0x20);
+            uint256 locationOfCallPath = BytesUtil.bytesToUint256(segmentEvent, 0x40);
+            // Not needed: uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(segmentEvent, 0x60);
+            uint256 success = BytesUtil.bytesToUint256(segmentEvent, 0x80);
+            uint256 locationOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, 0xA0);
+            uint256 lenOfReturnValue = BytesUtil.bytesToUint256(segmentEvent, locationOfReturnValue);
+            bytes memory returnValue = BytesUtil.slice(segmentEvent, locationOfReturnValue + 0x20, lenOfReturnValue);
+            uint256 lenOfCallPath = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath);
+
+            require(crossBlockchainTxId == activeCallCrossBlockchainTransactionId, "Transaction id from segment and root do not match");
+            require(hashOfCallGraph == hashOfCallGraphFromSegment, "Call graph from segment and root do not match");
+
+            // Segments with offset zero of Root calls are the only ones that can call segments.
+            require(callPath[callPath.length - 1] == 0);
+            require(lenOfCallPath == callPath.length || lenOfCallPath == callPath.length+1, "Bad call path length for segment");
+            if (lenOfCallPath == callPath.length+1) {
+                uint256 callPathFinalValue = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath + 0x20 * (lenOfCallPath-1));
+                require(callPathFinalValue == 0, "Call path optional second element not zero");
+            }
+
+            // Fail the root transaction is one of the segments failed.
+            if (success == 0) {
+                failRootTransaction();
+                cleanupAfterCall();
+                return true;
+            }
+
+            // Store the extracted return results from segment events.
+            activeCallReturnValues.push(returnValue);
+        }
+        return false;
     }
 }

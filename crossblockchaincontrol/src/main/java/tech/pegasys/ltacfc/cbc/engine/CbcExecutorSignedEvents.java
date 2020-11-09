@@ -70,7 +70,7 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
 
     CrossBlockchainControlSignedEvents segmentCbcContract = this.cbcManager.getCbcContractSignedEvents(blockchainId);
 
-    List<SignedEvent> signedEvents = this.signedSegmentEvents.get(mapKey);
+    List<SignedEvent> signedEvents = this.signedSegmentEvents.computeIfAbsent(mapKey, k -> new ArrayList<>());
     Tuple<byte[], Boolean, Boolean> result = segmentCbcContract.segment(this.signedStartEvent, signedEvents, callPath);
     byte[] segEventData = result.getFirst();
     boolean noLockedContracts = result.getSecond();

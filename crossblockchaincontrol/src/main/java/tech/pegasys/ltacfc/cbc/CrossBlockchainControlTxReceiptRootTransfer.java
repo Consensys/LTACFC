@@ -95,16 +95,16 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
       List<TxReceiptRootTransferEventProof> segProofs,
       List<BigInteger> callPath) throws Exception {
 
+    List<byte[]> allProofs = new ArrayList<>();
+    allProofs.add(startProof.getEncodedProof());
+
+    for (TxReceiptRootTransferEventProof proofInfo: segProofs) {
+      allProofs.add(proofInfo.getEncodedProof());
+    }
+
     TransactionReceipt txR;
     try {
-      txR = this.crossBlockchainControlContract.segment(
-          startProof.getBlockchainId(),
-          startProof.getCrossBlockchainControlContract(),
-          startProof.getTransactionReceiptRoot(),
-          startProof.getTransactionReceipt(),
-          startProof.getProofOffsets(),
-          startProof.getProofs(),
-          callPath).send();
+      txR = this.crossBlockchainControlContract.segment(allProofs, callPath).send();
       StatsHolder.logGas("Segment Transaction", txR.getGasUsed());
     }
     catch (TransactionException ex) {

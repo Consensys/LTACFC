@@ -36,27 +36,21 @@ contract CbcTxRootTransfer is CrossBlockchainControl {
     }
 
 
-    function segment(
-        uint256 _rootBlockchainId, address _rootCBCContract,
-        bytes32 _startEventTxReceiptRoot, bytes calldata _encodedStartTxReceipt,
-        uint256[] calldata _proofOffsets, bytes[] calldata _proof, uint256[] calldata _callPath) external {
-
-
-        // TODO require call path length >= 1
-
-        txReceiptRootStorage.verify(_rootBlockchainId, _startEventTxReceiptRoot, _encodedStartTxReceipt,
-            _proofOffsets, _proof);
-
+    /**
+     * Segment call, when transaction root transfer consensus is used.
+     *
+     * The parameter should be an array of RLP encoded Event Proof, with the array offset 0 being the start event,
+     * and the other array elements being for segment events. Note that the segment events must be
+     * in order of the functions called.
+     *
+    **/
+    function segment(bytes[] calldata _eventProofsEncoded, uint256[] calldata _callPath) external {
+        uint256 startEventBlockchainId;
+        address startEventCbcAddress;
         bytes memory startEventData;
-        {
-            bytes memory _encodedStartTxReceiptLocal = _encodedStartTxReceipt;
-            RLP.RLPItem[] memory keyAndReceipt = RLP.toList(RLP.toRLPItem(_encodedStartTxReceiptLocal));
-            bytes memory receiptBytes = RLP.toData(keyAndReceipt[1]);
-            //        (RLP.RLPItem[] memory startEventTopics, bytes memory startEventData) =
-            (, startEventData) = extractEvent(_rootCBCContract, START_EVENT_SIGNATURE, receiptBytes);
-        }
-
-        segmentProcessing(_rootBlockchainId, startEventData, _callPath);
+        bytes[] memory segmentEvents;
+        (startEventBlockchainId, startEventCbcAddress, startEventData, segmentEvents) = unpackEventProofs(_eventProofsEncoded);
+        segmentProcessing(startEventBlockchainId, startEventData, segmentEvents, _callPath);
     }
 
 
@@ -72,32 +66,8 @@ contract CbcTxRootTransfer is CrossBlockchainControl {
         uint256 startEventBlockchainId;
         address startEventCbcAddress;
         bytes memory startEventData;
-        bytes[] memory segmentEvents = new bytes[](_eventProofsEncoded.length - 1);
-
-        //Verify the start event and all segment events.
-        for (uint256 i = 0; i < _eventProofsEncoded.length; i++) {
-            EventProof memory eventProof = toEventProof(_eventProofsEncoded[i]);
-            txReceiptRootStorage.verify(
-                eventProof.blockchainId,
-                    eventProof.txReceiptRoot,
-                    eventProof.encodedTxReceipt,
-                    eventProof.proofOffsets,
-                    eventProof.proof);
-
-            if (i == 0) {
-                startEventBlockchainId = eventProof.blockchainId;
-                startEventCbcAddress = eventProof.cbcContract;
-
-                // Extract the start event from the RLP encoded receipt trie data.
-                bytes memory encodedStartTxReceiptLocal = eventProof.encodedTxReceipt;
-                startEventData = extractStartEventData(address(this), encodedStartTxReceiptLocal);
-            }
-            else {
-                // Extract segment events
-                segmentEvents[i-1] = extractSegmentEventData(eventProof.cbcContract, eventProof.encodedTxReceipt);
-            }
-        }
-
+        bytes[] memory segmentEvents;
+        (startEventBlockchainId, startEventCbcAddress, startEventData, segmentEvents) = unpackEventProofs(_eventProofsEncoded);
         rootProcessing(startEventBlockchainId, startEventCbcAddress, startEventData, segmentEvents);
     }
 
@@ -144,6 +114,37 @@ contract CbcTxRootTransfer is CrossBlockchainControl {
             }
         }
         signallingProcessing(rootBlockchainId, rootEventData, segmentEvents);
+    }
+
+
+    function unpackEventProofs(bytes[] calldata _eventProofsEncoded) private view
+        returns(uint256 startEventBlockchainId, address startEventCbcAddress, bytes memory startEventData, bytes[] memory segmentEvents) {
+        segmentEvents = new bytes[](_eventProofsEncoded.length - 1);
+
+        //Verify the start event and all segment events.
+        for (uint256 i = 0; i < _eventProofsEncoded.length; i++) {
+            EventProof memory eventProof = toEventProof(_eventProofsEncoded[i]);
+            txReceiptRootStorage.verify(
+                eventProof.blockchainId,
+                eventProof.txReceiptRoot,
+                eventProof.encodedTxReceipt,
+                eventProof.proofOffsets,
+                eventProof.proof);
+
+            if (i == 0) {
+                startEventBlockchainId = eventProof.blockchainId;
+                startEventCbcAddress = eventProof.cbcContract;
+
+                // Extract the start event from the RLP encoded receipt trie data.
+                bytes memory encodedStartTxReceiptLocal = eventProof.encodedTxReceipt;
+                startEventData = extractStartEventData(address(this), encodedStartTxReceiptLocal);
+            }
+            else {
+                // Extract segment events
+                segmentEvents[i-1] = extractSegmentEventData(eventProof.cbcContract, eventProof.encodedTxReceipt);
+            }
+        }
+        return (startEventBlockchainId, startEventCbcAddress, startEventData, segmentEvents);
     }
 
 

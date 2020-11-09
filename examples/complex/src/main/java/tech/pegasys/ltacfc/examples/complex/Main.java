@@ -21,6 +21,7 @@ import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpType;
 import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.cbc.engine.AbstractCbcExecutor;
+import tech.pegasys.ltacfc.cbc.engine.CbcExecutorSignedEvents;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
 import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
@@ -163,169 +164,17 @@ public class Main {
       case TRANSACTION_RECEIPT_SIGNING:
         executor = new CbcExecutorTxReceiptRootTransfer(cbcManager);
         break;
+      case EVENT_SIGNING:
+        executor = new CbcExecutorSignedEvents(cbcManager);
+        break;
       default:
         throw new RuntimeException("Not implemented yet");
     }
 
     ExecutionEngine executionEngine = new SerialExecutionEngine(executor);
-    executionEngine.execute(callGraph, 300);
-    boolean success = false;
+    boolean success = executionEngine.execute(callGraph, 300);
 
-//
-//
-//
-//        BigInteger crossBlockchainTransactionId1 = AbstractCbc.generateRandomCrossBlockchainTransactionId();
-//    BigInteger timeout = BigInteger.valueOf(300);
-//
-//    LOG.info("start");
-//    boolean success;
-//    switch (consensusMethodology) {
-//      case TRANSACTION_RECEIPT_SIGNING:
-//        TransactionReceipt startTxReceipt = rootBlockchainCbcTxRootTransfer.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
-//        TxReceiptRootTransferEventProof startProof = rootBlockchainCbcTxRootTransfer.getStartEventProof(startTxReceipt);
-//
-//        // Add tx receipt root so event will be trusted.
-//        bc2BlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
-//        rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, startProof.getTransactionReceiptRoot());
-//
-//
-//        // Set of all segment proofs needed for the root call.
-//        List<TxReceiptRootTransferEventProof> allSegmentProofs = new ArrayList<>();
-//        // Set of all segments need for the signal call on Other Blockchain.
-//        List<TxReceiptRootTransferEventProof> signalSegProofs = new ArrayList<>();
-//
-//
-//        LOG.info("segment: getVal");
-//        StatsHolder.log("segment: getVal");
-//        List<BigInteger> getValCallPath = new ArrayList<>();
-//        getValCallPath.add(BigInteger.ONE);
-//        TransactionReceipt segGetValTxReceipt = bc2BlockchainCbcTxRootTransfer.segment(startProof, getValCallPath);
-//        TxReceiptRootTransferEventProof segGetValProof = bc2BlockchainCbcTxRootTransfer.getSegmentEventProof(segGetValTxReceipt);
-//        allSegmentProofs.add(segGetValProof);
-//        // Add tx receipt root so event will be trusted.
-//        bc2BlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
-//        rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segGetValProof.getTransactionReceiptRoot());
-//
-//        if (simTradeWallet.someComplexBusinessLogicIfTrue) {
-//          LOG.info("segment: setValues");
-//          StatsHolder.log("segment: setValues");
-//          List<BigInteger> setValuesCallPath = new ArrayList<>();
-//          setValuesCallPath.add(BigInteger.TWO);
-//          TransactionReceipt segSetValuesTxReceipt = bc2BlockchainCbcTxRootTransfer.segment(startProof, setValuesCallPath);
-//          TxReceiptRootTransferEventProof segSetValuesProof = bc2BlockchainCbcTxRootTransfer.getSegmentEventProof(segSetValuesTxReceipt);
-//          allSegmentProofs.add(segSetValuesProof);
-//          signalSegProofs.add(segSetValuesProof);
-//          // Add tx receipt root so event will be trusted.
-//          bc2BlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
-//          rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValuesProof.getTransactionReceiptRoot());
-//
-//        } else {
-//          LOG.info("segment: setVal");
-//          StatsHolder.log("segment: setVal");
-//          List<BigInteger> setValCallPath = new ArrayList<>();
-//          setValCallPath.add(BigInteger.TWO);
-//          TransactionReceipt segSetValTxReceipt = bc2BlockchainCbcTxRootTransfer.segment(startProof, setValCallPath);
-//          TxReceiptRootTransferEventProof segSetValProof = bc2BlockchainCbcTxRootTransfer.getSegmentEventProof(segSetValTxReceipt);
-//          allSegmentProofs.add(segSetValProof);
-//          signalSegProofs.add(segSetValProof);
-//          // Add tx receipt root so event will be trusted.
-//          bc2BlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
-//          rootBlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, otherBcId, segSetValProof.getTransactionReceiptRoot());
-//        }
-//
-//        LOG.info("root");
-//        TransactionReceipt rootTxReceipt = rootBlockchainCbcTxRootTransfer.root(startProof, allSegmentProofs);
-//        TxReceiptRootTransferEventProof rootProof = rootBlockchainCbcTxRootTransfer.getRootEventProof(rootTxReceipt);
-//        // Add tx receipt root so event will be trusted.
-//        bc2BlockchainCbcTxRootTransfer.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
-////    rootBlockchain.addTransactionReceiptRootToBlockchain(new AnIdentity[]{signer}, rootBcId, rootProof.getTransactionReceiptRoot());
-//
-//        LOG.info("signalling");
-//        // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
-//        bc2BlockchainCbcTxRootTransfer.signalling(rootProof, signalSegProofs);
-//
-//        success = rootBlockchainCbcTxRootTransfer.getRootEventSuccess();
-//
-//        rootBlockchainCbcTxRootTransfer.shutdown();
-//        bc2BlockchainCbcTxRootTransfer.shutdown();
-//        break;
-//
-//
-//      case EVENT_SIGNING:
-//        byte[] startEventData = rootBlockchainCbcSignedEvents.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
-//        SignedEvent signedStartEvent = new SignedEvent(new AnIdentity[]{signer},
-//            rootBcId, rootBlockchainCbcContractAddress, AbstractCbc.START_EVENT_SIGNATURE, startEventData);
-//
-//        // Set of all segment event information needed for the root call.
-//        List<SignedEvent> allSegmentEvents = new ArrayList<>();
-//        // Set of all segments need for the signal call on Other Blockchain.
-//        List<SignedEvent> signalSegEvents = new ArrayList<>();
-//
-//
-//        LOG.info("segment: getVal");
-//        StatsHolder.log("segment: getVal");
-//        getValCallPath = new ArrayList<>();
-//        getValCallPath.add(BigInteger.ONE);
-//        byte[] segEventData = bc2BlockchainCbcSignedEvents.segment(signedStartEvent, getValCallPath);
-//        SignedEvent segGetValEvent = new SignedEvent(new AnIdentity[]{signer},
-//            otherBcId, bc2BlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
-//        allSegmentEvents.add(segGetValEvent);
-//
-//        if (simTradeWallet.someComplexBusinessLogicIfTrue) {
-//          LOG.info("segment: setValues");
-//          StatsHolder.log("segment: setValues");
-//          List<BigInteger> setValuesCallPath = new ArrayList<>();
-//          setValuesCallPath.add(BigInteger.TWO);
-//          segEventData = bc2BlockchainCbcSignedEvents.segment(signedStartEvent, setValuesCallPath);
-//          SignedEvent segSetValuesEvent = new SignedEvent(new AnIdentity[]{signer},
-//              otherBcId, bc2BlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
-//          allSegmentEvents.add(segSetValuesEvent);
-//          signalSegEvents.add(segSetValuesEvent);
-//        } else {
-//
-//          LOG.info("segment: setVal");
-//          StatsHolder.log("segment: setVal");
-//          List<BigInteger> setValCallPath = new ArrayList<>();
-//          setValCallPath.add(BigInteger.TWO);
-//          segEventData = bc2BlockchainCbcSignedEvents.segment(signedStartEvent, setValCallPath);
-//          SignedEvent segSetValEvent = new SignedEvent(new AnIdentity[]{signer},
-//              otherBcId, bc2BlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
-//          allSegmentEvents.add(segSetValEvent);
-//          signalSegEvents.add(segSetValEvent);
-//        }
-//
-//        LOG.info("root");
-//        byte[] rootEventData = rootBlockchainCbcSignedEvents.root(signedStartEvent, allSegmentEvents);
-//        SignedEvent rootEvent = new SignedEvent(new AnIdentity[]{signer},
-//            rootBcId, rootBlockchainCbcContractAddress, AbstractCbc.ROOT_EVENT_SIGNATURE, rootEventData);
-//
-//        LOG.info("signalling");
-//        // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
-//        bc2BlockchainCbcSignedEvents.signalling(rootEvent, signalSegEvents);
-//
-//        success = rootBlockchainCbcSignedEvents.getRootEventSuccess();
-//
-//        rootBlockchainCbcSignedEvents.shutdown();
-//        bc2BlockchainCbcSignedEvents.shutdown();
-//        break;
-//
-//      default:
-//        throw new RuntimeException("Unknown consensus type");
-//    }
-
-//
-//    LOG.info("Cross-Blockchain Transaction was successful: {}", success);
-//    if (success) {
-//      LOG.info(" Simulated expected values: Root val1: {}, val2: {}, Other val: {}",
-//          simTradeWallet.getVal1(), simTradeWallet.getVal2(), simBusLogicContract.getVal());
-//    }
-//    else {
-//      LOG.info(" Expect unchanged initial values: Root val1: {}, val2: {}, Other val: {}",
-//          rootBcVal1InitialValue, rootBcVal2InitialValue, otherBcValInitialValue);
-//    }
-//    bc1TradeWalletBlockchain.showValues();
-//    bc2BusLogicBlockchain.showValues();
-//    LOG.info(" Other contract's storage is locked: {}", bc2BusLogicBlockchain.storageIsLocked());
+    LOG.info("Success: {}", success);
 
     bc1TradeWalletBlockchain.shutdown();
     bc2BusLogicBlockchain.shutdown();

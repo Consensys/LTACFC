@@ -71,12 +71,14 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
 
   public Tuple<byte[], Boolean, Boolean> segment(SignedEvent startEvent, List<SignedEvent> segEvents, List<BigInteger> callPath) throws Exception {
-
-    // TODO For the moment just support one level of function call.
     List<byte[]> encodedEvents = new ArrayList<>();
     encodedEvents.add(startEvent.getEncodedEventInformation());
     List<byte[]> encodedSignatures = new ArrayList<>();
     encodedSignatures.add(startEvent.getEncodedSignatures());
+    for (SignedEvent segEvent: segEvents) {
+      encodedEvents.add(segEvent.getEncodedEventInformation());
+      encodedSignatures.add(segEvent.getEncodedSignatures());
+    }
 
     //RlpDumper.dump(RLP.input(Bytes.wrap(encodedSignatures.get(0))));
     TransactionReceipt txR;

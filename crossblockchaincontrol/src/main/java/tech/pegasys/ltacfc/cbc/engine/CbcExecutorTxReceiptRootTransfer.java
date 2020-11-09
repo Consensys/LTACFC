@@ -67,7 +67,7 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
 
     CrossBlockchainControlTxReceiptRootTransfer segmentCbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
 
-    List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.get(mapKey);
+    List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.computeIfAbsent(mapKey, k -> new ArrayList<>());
     Tuple<TransactionReceipt, Boolean, Boolean> result = segmentCbcContract.segment(this.startProof, proofs, callPath);
     TransactionReceipt segTxReceipt = result.getFirst();
     boolean noContractsLocked = result.getSecond();

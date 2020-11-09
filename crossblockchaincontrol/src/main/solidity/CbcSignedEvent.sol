@@ -28,15 +28,12 @@ contract CbcSignedEvent is CrossBlockchainControl {
 
 
     function segment(bytes[] calldata _signedEventInfo, bytes[] calldata _signature, uint256[] calldata _callPath) external {
-        // TODO for the moment ignore segmentEvents. Need to add the ability for segment events to
-        // consume other segment events.
-
         uint256 rootBlockchainId;
         bytes memory startEventData;
-//        bytes[] memory segmentEventsData;
-        (rootBlockchainId, , startEventData, /* segmentEventsData */ ) = common(_signedEventInfo, _signature, START_EVENT_SIGNATURE);
+        bytes[] memory segmentEventsData;
+        (rootBlockchainId, , startEventData, segmentEventsData) = common(_signedEventInfo, _signature, START_EVENT_SIGNATURE);
 
-        segmentProcessing(rootBlockchainId, startEventData, _callPath);
+        segmentProcessing(rootBlockchainId, startEventData, segmentEventsData, _callPath);
     }
 
     function root(bytes[] calldata _signedEventInfo, bytes[] calldata _signature) external {
