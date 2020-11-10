@@ -73,6 +73,7 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     boolean noContractsLocked = result.getSecond();
     //boolean success = result.getThird();
     TxReceiptRootTransferEventProof segProof = segmentCbcContract.getSegmentEventProof(segTxReceipt);
+    this.transactionReceipts.put(mapKey, segTxReceipt);
 
     // Add the proof for the call that has just occurred to the map so it can be accessed when the next
     BigInteger parentMapKey = determineMapKeyOfCaller(callPath);
@@ -101,6 +102,7 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     List<TxReceiptRootTransferEventProof> proofs = this.segmentProofs.get(ROOT_CALL_MAP_KEY);
     TransactionReceipt rootTxReceipt = rootCbcContract.root(this.startProof, proofs);
     this.rootProof = rootCbcContract.getRootEventProof(rootTxReceipt);
+    this.transactionReceipts.put(ROOT_CALL_MAP_KEY, rootTxReceipt);
 
     this.success = rootCbcContract.getRootEventSuccess();
     publishReceiptRootToAll(this.rootBcId, this.rootProof.getTransactionReceiptRoot());

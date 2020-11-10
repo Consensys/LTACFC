@@ -17,12 +17,14 @@ package tech.pegasys.ltacfc.examples.complex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
 import tech.pegasys.ltacfc.examples.complex.soliditywrappers.BusLogic;
 
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.List;
 
 public class Bc2BusLogic extends AbstractBlockchain {
   static final Logger LOG = LogManager.getLogger(Bc2BusLogic.class);
@@ -38,13 +40,23 @@ public class Bc2BusLogic extends AbstractBlockchain {
       BigInteger balancesBcId, String balances,
       BigInteger oracleBcId, String oracle,
       BigInteger stockBcId, String stock) throws Exception {
-    LOG.info("Deploy Business Logic Contract to blockchain 0x{}", this.blockchainId.toString(16));
     this.busLogicContract = BusLogic.deploy(this.web3j, this.tm, this.gasProvider,
         cbc, balancesBcId, balances, oracleBcId, oracle, stockBcId, stock).send();
-    LOG.info(" BusLogic Contract: {}", this.busLogicContract.getContractAddress());
+    LOG.info("Business Logic contract deployed to {} on blockchain 0x{}",
+        this.busLogicContract.getContractAddress(), this.blockchainId.toString(16));
   }
 
   public String getRlpFunctionSignature_StockShipment(String seller, String buyer, BigInteger quantity) {
     return this.busLogicContract.getRLP_stockShipment(seller, buyer, quantity);
+  }
+
+  public void showEvents(TransactionReceipt txR) {
+    LOG.info("Business Logic Events");
+    List<BusLogic.HelpEventResponse> events = this.busLogicContract.getHelpEvents(txR);
+    for (BusLogic.HelpEventResponse e: events) {
+      LOG.info(" Info: {}", e._a);
+    }
+
+//    this.busLogicContract.
   }
 }

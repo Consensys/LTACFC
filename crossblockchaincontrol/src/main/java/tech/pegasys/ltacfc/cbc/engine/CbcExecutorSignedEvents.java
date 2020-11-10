@@ -71,12 +71,14 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
     CrossBlockchainControlSignedEvents segmentCbcContract = this.cbcManager.getCbcContractSignedEvents(blockchainId);
 
     List<SignedEvent> signedEvents = this.signedSegmentEvents.computeIfAbsent(mapKey, k -> new ArrayList<>());
-    Tuple<byte[], Boolean, Boolean> result = segmentCbcContract.segment(this.signedStartEvent, signedEvents, callPath);
+    Tuple<byte[], Boolean, TransactionReceipt> result = segmentCbcContract.segment(this.signedStartEvent, signedEvents, callPath);
     byte[] segEventData = result.getFirst();
     boolean noLockedContracts = result.getSecond();
+    TransactionReceipt transactionReceipt = result.getThird();
     //boolean success = result.getThird();
     SignedEvent signedSegEvent = new SignedEvent(this.cbcManager.getSigners(blockchainId),
             blockchainId, this.cbcManager.getCbcAddress(blockchainId), AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
+    this.transactionReceipts.put(mapKey, transactionReceipt);
 
     // Add the proof for the call that has just occurred to the map so it can be accessed when the next
     BigInteger parentMapKey = determineMapKeyOfCaller(callPath);
@@ -95,9 +97,12 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
   protected void root() throws Exception {
     CrossBlockchainControlSignedEvents rootCbcContract = this.cbcManager.getCbcContractSignedEvents(this.rootBcId);
     List<SignedEvent> signedSegEvents = this.signedSegmentEvents.get(ROOT_CALL_MAP_KEY);
-    byte[] rootEventData = rootCbcContract.root(this.signedStartEvent, signedSegEvents);
+    Tuple<byte[], TransactionReceipt, Boolean> result = rootCbcContract.root(this.signedStartEvent, signedSegEvents);
+    byte[] rootEventData = result.getFirst();
+    TransactionReceipt rootTxReceipt = result.getSecond();
     this.signedRootEvent = new SignedEvent(this.cbcManager.getSigners(this.rootBcId),
           this.rootBcId, this.cbcManager.getCbcAddress(this.rootBcId), AbstractCbc.ROOT_EVENT_SIGNATURE, rootEventData);
+    this.transactionReceipts.put(ROOT_CALL_MAP_KEY, rootTxReceipt);
     this.success = rootCbcContract.getRootEventSuccess();
   }
 
@@ -109,66 +114,4 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
       cbcContract.signalling(this.signedRootEvent, signedSegEventsLockedContractsCurrentBlockchain);
     }
   }
-//
-//    case EVENT_SIGNING:
-//      byte[] startEventData = rootBlockchainCbcSignedEvents.start(crossBlockchainTransactionId1, timeout, RlpEncoder.encode(callGraph));
-//      SignedEvent signedStartEvent = new SignedEvent(new AnIdentity[]{signer},
-//          rootBcId, rootBlockchainCbcContractAddress, AbstractCbc.START_EVENT_SIGNATURE, startEventData);
-//
-//      // Set of all segment event information needed for the root call.
-//      List<SignedEvent> allSegmentEvents = new ArrayList<>();
-//      // Set of all segments need for the signal call on Other Blockchain.
-//      List<SignedEvent> signalSegEvents = new ArrayList<>();
-//
-//
-//      LOG.info("segment: getVal");
-//      StatsHolder.log("segment: getVal");
-//      getValCallPath = new ArrayList<>();
-//      getValCallPath.add(BigInteger.ONE);
-//      byte[] segEventData = bc2BlockchainCbcSignedEvents.segment(signedStartEvent, getValCallPath);
-//      SignedEvent segGetValEvent = new SignedEvent(new AnIdentity[]{signer},
-//          otherBcId, bc2BlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
-//      allSegmentEvents.add(segGetValEvent);
-//
-//      if (simTradeWallet.someComplexBusinessLogicIfTrue) {
-//        LOG.info("segment: setValues");
-//        StatsHolder.log("segment: setValues");
-//        List<BigInteger> setValuesCallPath = new ArrayList<>();
-//        setValuesCallPath.add(BigInteger.TWO);
-//        segEventData = bc2BlockchainCbcSignedEvents.segment(signedStartEvent, setValuesCallPath);
-//        SignedEvent segSetValuesEvent = new SignedEvent(new AnIdentity[]{signer},
-//            otherBcId, bc2BlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
-//        allSegmentEvents.add(segSetValuesEvent);
-//        signalSegEvents.add(segSetValuesEvent);
-//      } else {
-//
-//        LOG.info("segment: setVal");
-//        StatsHolder.log("segment: setVal");
-//        List<BigInteger> setValCallPath = new ArrayList<>();
-//        setValCallPath.add(BigInteger.TWO);
-//        segEventData = bc2BlockchainCbcSignedEvents.segment(signedStartEvent, setValCallPath);
-//        SignedEvent segSetValEvent = new SignedEvent(new AnIdentity[]{signer},
-//            otherBcId, bc2BlockchainCbcContractAddress, AbstractCbc.SEGMENT_EVENT_SIGNATURE, segEventData);
-//        allSegmentEvents.add(segSetValEvent);
-//        signalSegEvents.add(segSetValEvent);
-//      }
-//
-//      LOG.info("root");
-//      byte[] rootEventData = rootBlockchainCbcSignedEvents.root(signedStartEvent, allSegmentEvents);
-//      SignedEvent rootEvent = new SignedEvent(new AnIdentity[]{signer},
-//          rootBcId, rootBlockchainCbcContractAddress, AbstractCbc.ROOT_EVENT_SIGNATURE, rootEventData);
-//
-//      LOG.info("signalling");
-//      // Do a signal call on all blockchain that have had segment calls that have caused contracts to be locked.
-//      bc2BlockchainCbcSignedEvents.signalling(rootEvent, signalSegEvents);
-//
-//      success = rootBlockchainCbcSignedEvents.getRootEventSuccess();
-//
-//      rootBlockchainCbcSignedEvents.shutdown();
-//      bc2BlockchainCbcSignedEvents.shutdown();
-//      break;
-//
-//    default:
-//      throw new RuntimeException("Unknown consensus type");
-//  }
 }

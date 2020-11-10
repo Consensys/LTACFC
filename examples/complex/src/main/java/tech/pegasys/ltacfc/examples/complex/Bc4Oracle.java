@@ -36,15 +36,20 @@ public class Bc4Oracle extends AbstractBlockchain {
 
 
   public void deployContracts(String cbcContractAddress) throws Exception {
-    LOG.info("Deploy Price Oracle Contract");
     this.priceOracleContract =
         PriceOracle.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
-    LOG.info(" Price Oracle Contract: {}", this.priceOracleContract.getContractAddress());
+    LOG.info("Price Oracle contract deployed to {}, on blockchain 0x{}",
+        this.priceOracleContract.getContractAddress(), this.blockchainId.toString(16));
   }
 
   public void setPrice(BigInteger newPrice) throws Exception {
     this.priceOracleContract.setPrice(newPrice).send();
   }
+
+  public BigInteger getPrice() throws Exception {
+    return this.priceOracleContract.getPrice().send();
+  }
+
 
   public String getRlpFunctionSignature_GetPrice() {
     return this.priceOracleContract.getRLP_getPrice();

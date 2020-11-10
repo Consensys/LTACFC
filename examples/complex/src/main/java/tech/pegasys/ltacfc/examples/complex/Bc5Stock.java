@@ -37,15 +37,16 @@ public class Bc5Stock extends AbstractBlockchain {
 
 
   public void deployContracts(String cbcContractAddress) throws Exception {
-    LOG.info("Deploy Stock Contracts");
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider,
         cbcContractAddress).send();
     this.stockContract =
         Stock.deploy(this.web3j, this.tm, this.gasProvider,
           this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.stockContract.getContractAddress()).send();
-    LOG.info(" Stock Contract: {}", this.stockContract.getContractAddress());
-    LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
+    LOG.info("Stock contract deployed to {} on blockchain 0x{}",
+        this.stockContract.getContractAddress(), this.blockchainId.toString(16));
+    LOG.info("Lockable Storage contract for Stock deployed to {} on blockchain 0x{}",
+        this.lockableStorageContract.getContractAddress(), this.blockchainId.toString(16));
   }
 
   public void setStock(String account, BigInteger newAmount) throws Exception {

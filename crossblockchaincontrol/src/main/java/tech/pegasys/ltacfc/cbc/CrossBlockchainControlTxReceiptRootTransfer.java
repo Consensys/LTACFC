@@ -115,38 +115,14 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
       throw new Exception("Segment transaction failed");
     }
 
+    showSegmentEvents(convertSegment(this.crossBlockchainControlContract.getSegmentEvents(txR)));
+    showCallEvents(convertCall(this.crossBlockchainControlContract.getCallEvents(txR)));
+    showNotEnoughCallsEvents(convertNotEnoughCalls(this.crossBlockchainControlContract.getNotEnoughCallsEvents(txR)));
+    showCallFailureEvents(convertCallFailure(this.crossBlockchainControlContract.getCallFailureEvents(txR)));
+    showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
 
     List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
     CbcTxRootTransfer.SegmentEventResponse segmentEventResponse = segmentEventResponses.get(0);
-    LOG.info("Segment Event:");
-    LOG.info(" Cross-Blockchain Transaction Id: {}", segmentEventResponse._crossBlockchainTransactionId.toString(16));
-    StringBuilder calls = new StringBuilder();
-    // TODO The code below is a hack to handle the fact that currently Web3J returns a Uint256 object, but the type is BigInteger.
-    // TODO this code will break when Web3J fixes their bug.
-    for (Object partOfCallPath: segmentEventResponse._callPath) {
-      Uint256 hack = (Uint256) partOfCallPath;
-      calls.append("[");
-      calls.append(hack.getValue());
-      calls.append("] ");
-    }
-    LOG.info(" Call Path: {}", calls);
-    LOG.info(" Hash Of Call Graph: {}", new BigInteger(1, segmentEventResponse._hashOfCallGraph).toString(16));
-    LOG.info(" Success: {}", segmentEventResponse._success);
-    LOG.info(" Return Value: {}", new BigInteger(1, segmentEventResponse._returnValue).toString(16));
-    StringBuilder lockedContracts = new StringBuilder();
-    // TODO The code below is a hack to handle the fact that currently Web3J returns an Address object, but the type is BigInteger.
-    // TODO this code will break when Web3J fixes their bug.
-    for (Object lockedContract: segmentEventResponse._lockedContracts) {
-      Address hack = (Address) lockedContract;
-      calls.append("[");
-      calls.append(hack.getValue());
-      calls.append("] ");
-    }
-    LOG.info(" Locked Contracts: [{}]", lockedContracts);
-
-    showAllCallEvents(txR);
-    showAllNotEnoughCallsEvents(txR);
-    showAllDumpEvents(txR);
 
     return new Tuple<TransactionReceipt, Boolean, Boolean>
         (txR, segmentEventResponse._lockedContracts.isEmpty(), segmentEventResponse._success);
@@ -174,25 +150,20 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     try {
       txR = this.crossBlockchainControlContract.root(allProofs).send();
       StatsHolder.logGas("Root Transaction", txR.getGasUsed());
+      if (!txR.isStatusOK()) {
+        throw new Exception("Root transaction failed");
+      }
     }
     catch (TransactionException ex) {
       LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       throw ex;
     }
-    if (!txR.isStatusOK()) {
-      throw new Exception("Root transaction failed");
-    }
 
-    List<CbcTxRootTransfer.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
-    CbcTxRootTransfer.RootEventResponse rootEventResponse = rootEventResponses.get(0);
-    LOG.info("Root Event:");
-    LOG.info(" _crossBlockchainTransactionId: {}", rootEventResponse._crossBlockchainTransactionId.toString(16));
-    LOG.info(" _success: {}", rootEventResponse._success);
-    this.rootEventSuccess = rootEventResponse._success;
-
-    showAllCallEvents(txR);
-    showAllNotEnoughCallsEvents(txR);
-    showAllDumpEvents(txR);
+    showRootEvents(convertRoot(this.crossBlockchainControlContract.getRootEvents(txR)));
+    showCallEvents(convertCall(this.crossBlockchainControlContract.getCallEvents(txR)));
+    showNotEnoughCallsEvents(convertNotEnoughCalls(this.crossBlockchainControlContract.getNotEnoughCallsEvents(txR)));
+    showCallFailureEvents(convertCallFailure(this.crossBlockchainControlContract.getCallFailureEvents(txR)));
+    showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
 
     return txR;
   }
@@ -227,7 +198,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     LOG.info(" Root Blockchain Id: 0x{}", sigEventResponse._rootBcId.toString(16));
     LOG.info(" Cross-Blockchain Transaction Id: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
 
-    showAllDumpEvents(txR);
+    showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
   }
 
 
@@ -472,51 +443,76 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     return getProofForTxReceipt(this.blockchainId, this.crossBlockchainControlContract.getContractAddress(), segmentTxReceipt);
   }
 
-  protected void showAllCallEvents(TransactionReceipt txR) {
-    LOG.info("Call Events");
-    List<CbcTxRootTransfer.CallEventResponse> callEventResponses = this.crossBlockchainControlContract.getCallEvents(txR);
-    if (callEventResponses.isEmpty()) {
-      LOG.info(" None");
+
+  private List<CallEventResponse> convertCall(List<CbcTxRootTransfer.CallEventResponse> callEventResponses) {
+    List<CallEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.CallEventResponse e : callEventResponses) {
+      CallEventResponse event = new CallEventResponse(e._expectedBlockchainId, e._actualBlockchainId,
+          e._expectedContract, e._actualContract, e._expectedFunctionCall, e._actualFunctionCall, e._retVal);
+      result.add(event);
     }
-    for (CbcTxRootTransfer.CallEventResponse callEventResponse : callEventResponses) {
-      LOG.info(" Event:");
-      LOG.info("   Expected Blockchain Id: 0x{}", callEventResponse._expectedBlockchainId.toString(16));
-      LOG.info("   Actual Blockchain Id: 0x{}", callEventResponse._actualBlockchainId.toString(16));
-      LOG.info("   Expected Contract: {}", callEventResponse._expectedContract);
-      LOG.info("   Actual Contract: {}", callEventResponse._actualContract);
-      LOG.info("   Expected Function Call: {}", new BigInteger(1, callEventResponse._expectedFunctionCall).toString(16));
-      LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
-      LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
-    }
+    return result;
   }
 
-
-  protected void showAllNotEnoughCallsEvents(TransactionReceipt txR) {
-    LOG.info("Not Enough Call Events");
-    List<CbcTxRootTransfer.NotEnoughCallsEventResponse> notEnoughCallsEventResponses = this.crossBlockchainControlContract.getNotEnoughCallsEvents(txR);
-    if (notEnoughCallsEventResponses.isEmpty()) {
-      LOG.info(" None");
+  private List<CallFailureEventResponse> convertCallFailure(List<CbcTxRootTransfer.CallFailureEventResponse> callFailureEventResponses) {
+    List<CallFailureEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.CallFailureEventResponse e : callFailureEventResponses) {
+      CallFailureEventResponse event = new CallFailureEventResponse(e._revertReason);
+      result.add(event);
     }
-    for (CbcTxRootTransfer.NotEnoughCallsEventResponse notEnoughCallsEventResponse: notEnoughCallsEventResponses) {
-      LOG.info("  Event:");
-      LOG.info("   Actual Number of Calls: {}", notEnoughCallsEventResponse._actualNumberOfCalls);
-      LOG.info("   Expected Number of Calls: {}", notEnoughCallsEventResponse._expectedNumberOfCalls);
-    }
+    return result;
   }
 
-  protected void showAllDumpEvents(TransactionReceipt txR) {
-    LOG.info("Dump Events");
-    List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses = this.crossBlockchainControlContract.getDumpEvents(txR);
-    if (dumpEventResponses.isEmpty()) {
-      LOG.info(" None");
+  private List<DumpEventResponse> convertDump(List<CbcTxRootTransfer.DumpEventResponse> dumpEventResponses) {
+    List<DumpEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.DumpEventResponse e : dumpEventResponses) {
+      DumpEventResponse event = new DumpEventResponse(e._val1, e._val2, e._val3, e._val4);
+      result.add(event);
     }
-    for (CbcTxRootTransfer.DumpEventResponse dumpEventResponse : dumpEventResponses) {
-      LOG.info(" Event:");
-      LOG.info("  Uint256: {}", dumpEventResponse._val1.toString(16));
-      LOG.info("  Bytes32: {}", new BigInteger(1, dumpEventResponse._val2).toString(16));
-      LOG.info("  Address: {}", dumpEventResponse._val3);
-      LOG.info("  Bytes: {}", new BigInteger(1, dumpEventResponse._val4).toString(16));
-    }
+    return result;
   }
+
+  private List<NotEnoughCallsEventResponse> convertNotEnoughCalls(List<CbcTxRootTransfer.NotEnoughCallsEventResponse> notEnoughCallsEventResponses) {
+    List<NotEnoughCallsEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.NotEnoughCallsEventResponse e : notEnoughCallsEventResponses) {
+      NotEnoughCallsEventResponse event = new NotEnoughCallsEventResponse(e._expectedNumberOfCalls, e._actualNumberOfCalls);
+      result.add(event);
+    }
+    return result;
+  }
+
+  private List<RootEventResponse> convertRoot(List<CbcTxRootTransfer.RootEventResponse> rootEventResponses) {
+    List<RootEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.RootEventResponse e : rootEventResponses) {
+      RootEventResponse event = new RootEventResponse(e._crossBlockchainTransactionId, e._success);
+      result.add(event);
+    }
+    return result;
+  }
+
+  private List<SegmentEventResponse> convertSegment(List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses) {
+    List<SegmentEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.SegmentEventResponse e : segmentEventResponses) {
+      // TODO The code below is a hack to handle the fact that currently Web3J returns a Uint256 object, but the type is BigInteger.
+      // TODO this code will break when Web3J fixes their bug.
+      List<BigInteger> callPathFixed = new ArrayList<>();
+      for (Object partOfCallPath: e._callPath) {
+        Uint256 hack = (Uint256) partOfCallPath;
+        callPathFixed.add(hack.getValue());
+      }
+      // TODO The code below is a hack to handle the fact that currently Web3J returns an Address object, but the type is BigInteger.
+      // TODO this code will break when Web3J fixes their bug.
+      List<String> lockedContractsFixed = new ArrayList<>();
+      for (Object lockedContract: e._lockedContracts) {
+        Address hack = (Address) lockedContract;
+        lockedContractsFixed.add(hack.getValue());
+      }
+      SegmentEventResponse event = new SegmentEventResponse(e._crossBlockchainTransactionId, e._hashOfCallGraph,
+          callPathFixed, lockedContractsFixed, e._success, e._returnValue);
+      result.add(event);
+    }
+    return result;
+  }
+
 
 }

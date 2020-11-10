@@ -21,7 +21,7 @@ import "./BusLogic.sol";
 contract TradeWallet is LockableStorageWrapper {
     CbcLockableStorageInterface private crossBlockchainControl;
 
-    uint256 busLoicBcId;
+    uint256 busLogicBcId;
     BusLogic busLogicContract;
 
 
@@ -32,15 +32,15 @@ contract TradeWallet is LockableStorageWrapper {
     constructor (address _cbc, uint256 _busLogicBcId, address _busLogicContract, address _storageContract)
         LockableStorageWrapper(_storageContract) {
         crossBlockchainControl = CbcLockableStorageInterface(_cbc);
-        busLoicBcId = _busLogicBcId;
+        busLogicBcId = _busLogicBcId;
         busLogicContract = BusLogic(_busLogicContract);
     }
 
     function executeTrade(address _seller, uint256 _quantity) public {
-        crossBlockchainControl.crossBlockchainCall(busLoicBcId, address(busLogicContract),
+        crossBlockchainControl.crossBlockchainCall(busLogicBcId, address(busLogicContract),
             abi.encodeWithSelector(busLogicContract.stockShipment.selector, _seller, msg.sender, _quantity));
 
-        bytes32 tradeId = keccak256(abi.encodePacked(_seller, msg.sender, _quantity));
+        bytes32 tradeId = keccak256(abi.encodePacked(_seller, tx.origin, _quantity));
 
         pushArrayValue(KEY_TRADES_ARRAY, uint256(tradeId));
 

@@ -1,10 +1,22 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package tech.pegasys.ltacfc.examples.complex.sim;
 
 import tech.pegasys.ltacfc.examples.complex.Bc5Stock;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
 
 public class SimStockContract {
   private String transfer_from;
@@ -12,34 +24,25 @@ public class SimStockContract {
   private BigInteger transfer_quantity;
   private Bc5Stock bc5Stock;
 
-  Map<String, BigInteger> stockLevels = new HashMap<>();
-
   public SimStockContract(Bc5Stock contract) {
     this.bc5Stock = contract;
   }
 
-
-  public void setStock(String account, BigInteger newQuantity) {
-    this.stockLevels.put(account, newQuantity);
-  }
 
   public void transfer(String from, String to, BigInteger quantity) throws Exception {
     this.transfer_from = from;
     this.transfer_to = to;
     this.transfer_quantity = quantity;
 
+    // Do the following check to see if the execution is likely to fail.
     BigInteger fromBalance = getStock(from);
-    BigInteger toBalance = getStock(to);
     if (fromBalance.longValue() < quantity.longValue()) {
       throw new Exception("Stock transfer: insufficient balance. From stock: " + fromBalance + ", Transfer quantity: " + quantity);
     }
-
-    setStock(from, fromBalance.subtract(quantity));
-    setStock(to, toBalance.add(quantity));
   }
 
-  public BigInteger getStock(String account) {
-    return this.stockLevels.get(account);
+  public BigInteger getStock(String account) throws Exception {
+    return this.bc5Stock.getStock(account);
   }
 
   public String getRlpFunctionSignature_transfer() {

@@ -17,6 +17,7 @@ package tech.pegasys.ltacfc.examples.complex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpType;
 import tech.pegasys.ltacfc.cbc.CbcManager;
@@ -118,22 +119,17 @@ public class Main {
     BigInteger buyerInitialBalance = BigInteger.valueOf(10000000);
     BigInteger sellerInitialBalance = BigInteger.valueOf(10);
     String buyerAddress = creds.getAddress();
+    LOG.info("Buyer address (EOA Account): {}", buyerAddress);
     String sellerAddress = CredentialsCreator.createCredentials().getAddress();
+    LOG.info("Seller address: {}", sellerAddress);
     BigInteger buyerInitialStock = BigInteger.valueOf(1);
     BigInteger sellerInitialStock = BigInteger.valueOf(100);
     BigInteger price = BigInteger.valueOf(77);
 
-    simPriceOracleContract.setPrice(price);
     bc4OracleBlockchain.setPrice(price);
-
-    simStockContract.setStock(buyerAddress, buyerInitialStock);
     bc5StockBlockchain.setStock(buyerAddress, buyerInitialStock);
-    simStockContract.setStock(sellerAddress, sellerInitialStock);
     bc5StockBlockchain.setStock(sellerAddress, sellerInitialStock);
-
-    simBalancesContract.setBalance(buyerAddress, buyerInitialBalance);
     bc3BalancesBlockchain.setBalance(buyerAddress, buyerInitialBalance);
-    simBalancesContract.setBalance(sellerAddress, sellerInitialBalance);
     bc3BalancesBlockchain.setBalance(sellerAddress, sellerInitialBalance);
 
 
@@ -141,11 +137,17 @@ public class Main {
     BigInteger quantity = BigInteger.valueOf(7);
     simTradeWallet.executeTrade(buyerAddress, sellerAddress, quantity);
 
+    LOG.info("Function Calls");
     String rlpRootExecuteTrade = simTradeWallet.getRlpFunctionSignature_executeTrade();
+    LOG.info(" Trade Wallet: Execute Trade: {}", rlpRootExecuteTrade);
     String rlpBusLogicStockShipment = simBusLogicContract.getRlpFunctionSignature_stockShipment();
+    LOG.info(" Business Logic: Stock Shipment: {}", rlpBusLogicStockShipment);
     String rlpPriceOracleGetPrice = simPriceOracleContract.getRlpFunctionSignature_getPrice();
+    LOG.info(" Price Oracle: Get Price: {}", rlpPriceOracleGetPrice);
     String rlpBalancesTransfer = simBalancesContract.getRlpFunctionSignature_transfer();
+    LOG.info(" Balances: Transfer: {}", rlpBalancesTransfer);
     String rlpStockTransfer = simStockContract.getRlpFunctionSignature_transfer();
+    LOG.info(" Stock: Tranfer: {}", rlpStockTransfer);
 
     RlpList getPrice = createLeafFunctionCall(bc4BcId, priceOracleContractAddress, rlpPriceOracleGetPrice);
     RlpList balanceTransfer = createLeafFunctionCall(bc3BcId, balancesContractAddress, rlpBalancesTransfer);
@@ -175,6 +177,12 @@ public class Main {
     boolean success = executionEngine.execute(callGraph, 300);
 
     LOG.info("Success: {}", success);
+
+    List<BigInteger> callP = new ArrayList<>();
+    callP.add(BigInteger.ONE);
+    callP.add(BigInteger.ZERO);
+    TransactionReceipt txR = executor.getTransationReceipt(callP);
+    bc2BusLogicBlockchain.showEvents(txR);
 
     bc1TradeWalletBlockchain.shutdown();
     bc2BusLogicBlockchain.shutdown();

@@ -16,15 +16,15 @@ package tech.pegasys.ltacfc.cbc.engine;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.web3j.rlp.RlpList;
-import org.web3j.rlp.RlpType;
-import tech.pegasys.ltacfc.cbc.AbstractCbc;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractCbcExecutor {
   static final Logger LOG = LogManager.getLogger(AbstractCbcExecutor.class);
@@ -42,6 +42,7 @@ public abstract class AbstractCbcExecutor {
     return callPathToMapKey(rootCallPath);
   }
 
+  protected Map<BigInteger, TransactionReceipt> transactionReceipts = new HashMap<>();
 
   private CrossBlockchainConsensus consensusMethodology;
 
@@ -83,6 +84,9 @@ public abstract class AbstractCbcExecutor {
   }
 
 
+  public TransactionReceipt getTransationReceipt(List<BigInteger> callPath) {
+    return this.transactionReceipts.get(callPathToMapKey(callPath));
+  }
 
   /**
    * Determine a key that can be used for a map that uniquely identifies the call path's

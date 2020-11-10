@@ -36,7 +36,6 @@ public class Bc1TradeWallet extends AbstractBlockchain {
   }
 
   public void deployContracts(String cbcContractAddress, BigInteger busLogicBlockchainId, String busLogicContractAddress) throws Exception {
-    LOG.info("Deploy Root Blockchain Contracts");
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
     this.tradeWalletContract =
         TradeWallet.deploy(this.web3j, this.tm, this.gasProvider,
@@ -45,8 +44,10 @@ public class Bc1TradeWallet extends AbstractBlockchain {
             busLogicContractAddress,
             this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.tradeWalletContract.getContractAddress()).send();
-    LOG.info(" Root Blockchain Contract: {}", this.tradeWalletContract.getContractAddress());
-    LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
+    LOG.info("Trade Wallet contract deployed to {} on blockchain 0x{}",
+        this.tradeWalletContract.getContractAddress(), this.blockchainId.toString(16));
+    LOG.info("Lockable Storage contract for Trade Wallet deployed to {} on blockchain 0x{}",
+        this.lockableStorageContract.getContractAddress(), this.blockchainId.toString(16));
   }
 
   public String getRlpFunctionSignature_ExecuteTrade(String buyFrom, BigInteger quantity) {

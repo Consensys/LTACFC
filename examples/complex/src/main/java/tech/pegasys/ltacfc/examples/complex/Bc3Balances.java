@@ -37,15 +37,16 @@ public class Bc3Balances extends AbstractBlockchain {
 
 
   public void deployContracts(String cbcContractAddress) throws Exception {
-    LOG.info("Deploy Balances Contracts to blockchain 0x{}", this.blockchainId.toString(16));
     this.lockableStorageContract = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider,
         cbcContractAddress).send();
     this.balancesContract =
         Balances.deploy(this.web3j, this.tm, this.gasProvider,
           this.lockableStorageContract.getContractAddress()).send();
     this.lockableStorageContract.setBusinessLogicContract(this.balancesContract.getContractAddress()).send();
-    LOG.info(" Balances Contract: {}", this.balancesContract.getContractAddress());
-    LOG.info(" Lockable Storage Contract: {}", this.lockableStorageContract.getContractAddress());
+    LOG.info("Balances contract deployed to {} on blockchain 0x{}",
+        this.balancesContract.getContractAddress(), this.blockchainId.toString(16));
+    LOG.info("Lockable Storage contract for Balances deployed to {} on blockchain 0x{}",
+        this.lockableStorageContract.getContractAddress(), this.blockchainId.toString(16));
   }
 
   public void setBalance(String account, BigInteger newBalance) throws Exception {

@@ -41,6 +41,7 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         bytes _expectedFunctionCall, bytes _actualFunctionCall,
         bytes _retVal);
     event NotEnoughCalls(uint256 _expectedNumberOfCalls, uint256 _actualNumberOfCalls);
+    event CallFailure(string _revertReason);
 
     event Dump(uint256 _val1, bytes32 _val2, address _val3, bytes _val4);
 
@@ -148,20 +149,9 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             return;
         }
 
-        (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, _callPath);
-        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
-
         bool isSuccess;
         bytes memory returnValueEncoded;
-        (isSuccess, returnValueEncoded) = targetContract.call(functionCall);
-
-        // Check that all cross-blockchain calls were used.
-        if (activeCallReturnValues.length != activeCallReturnValuesIndex) {
-            emit NotEnoughCalls(activeCallReturnValues.length, activeCallReturnValuesIndex);
-            isSuccess = false;
-        }
-
-        isSuccess = activeCallFailed ? false : isSuccess;
+        (isSuccess, returnValueEncoded) = makeCall(callGraph, _callPath);
 
         // TODO emit segments understanding of root blockhain id
         emit Segment(activeCallCrossBlockchainTransactionId, hashOfCallGraph, _callPath, activeCallLockedContracts, isSuccess, returnValueEncoded);
@@ -217,29 +207,17 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
         // The element will be the default, 0.
         uint256[] memory callPathForStart = new uint256[](1);
+        activeCallsCallPath = callPathForStart;
 
         if (verifySegmentEvents(_segmentEvents, callPathForStart, hashOfCallGraph)) {
             return;
         }
 
-        (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(callGraph, callPathForStart);
-        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
-
         bool isSuccess;
-        (isSuccess, ) = targetContract.call(functionCall);
-
-        // Check that all cross-blockchain calls were used.
-        if (activeCallReturnValues.length != activeCallReturnValuesIndex) {
-            emit NotEnoughCalls(activeCallReturnValues.length, activeCallReturnValuesIndex);
-            isSuccess = false;
-        }
-
-        isSuccess = activeCallFailed ? false : isSuccess;
+        (isSuccess, ) = makeCall(callGraph, callPathForStart);
 
         unlockContracts(isSuccess);
-
         rootTransactionInformation[activeCallCrossBlockchainTransactionId] = isSuccess ? SUCCESS : FAILURE;
-
         emit Root(activeCallCrossBlockchainTransactionId, isSuccess);
         cleanupAfterCall();
     }
@@ -296,15 +274,26 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
 
     function crossBlockchainCall(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) external override {
-        bytes memory returnValue = commonCallProcessing(_blockchainId, _contract, _functionCallData);
+        bool failed;
+        bytes memory returnValue;
+        (failed, returnValue) = commonCallProcessing(_blockchainId, _contract, _functionCallData);
 
-        // Revert if return value != empty then assert
-        require(compare(returnValue, bytes("")));
+        if (!failed) {
+            if (!(compare(returnValue, bytes("")))) {
+                emit CallFailure("Cross Blockchain Call with unexpected return values");
+                activeCallFailed = true;
+            }
+        }
     }
 
 
     function crossBlockchainCallReturnsUint256(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) external override returns (uint256){
-        bytes memory returnValue = commonCallProcessing(_blockchainId, _contract, _functionCallData);
+        bool failed;
+        bytes memory returnValue;
+        (failed, returnValue) = commonCallProcessing(_blockchainId, _contract, _functionCallData);
+        if (failed) {
+            return 0;
+        }
         return BytesUtil.bytesToUint256(returnValue, 0);
     }
 
@@ -332,6 +321,30 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         return activeCallCrossBlockchainTransactionId;
     }
 
+    function makeCall(bytes memory _callGraph, uint256[] memory _callPath) private returns(bool, bytes memory) {
+        (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(_callGraph, _callPath);
+        require(targetBlockchainId == myBlockchainId, "Target blockchain id does not match my blockchain id");
+
+        bool isSuccess;
+        bytes memory returnValueEncoded;
+        (isSuccess, returnValueEncoded) = targetContract.call(functionCall);
+
+        if (!isSuccess) {
+            emit CallFailure(getRevertMsg(returnValueEncoded));
+        }
+
+        // Check that all cross-blockchain calls were used.
+        // Do this even if the call has already failed: it will provide a bit
+        // more debug information.
+        if (activeCallReturnValues.length != activeCallReturnValuesIndex) {
+            emit NotEnoughCalls(activeCallReturnValues.length, activeCallReturnValuesIndex);
+            isSuccess = false;
+        }
+
+        // Fail if one of the called segments failed.
+        isSuccess = activeCallFailed ? false : isSuccess;
+        return (isSuccess, returnValueEncoded);
+    }
 
 
     function extractTargetFromCallGraph(bytes memory _callGraph, uint256[] memory _callPath) private pure
@@ -343,6 +356,9 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             functions = RLP.toList(functions[_callPath[i]]);
         }
         RLP.RLPItem[] memory func = RLP.toList(functions[_callPath[_callPath.length - 1]]);
+        if (RLP.isList(func[0])) {
+            func = RLP.toList(func[0]);
+        }
         targetBlockchainId = RLP.toUint(func[0]);
         targetContract = RLP.toAddress(func[1]);
         functionCall = RLP.toData(func[2]);
@@ -384,29 +400,36 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
     }
 
 
-    function commonCallProcessing(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) private returns(bytes memory) {
-//        emit Dump(_blockchainId, bytes32(0), _contract, _functionCallData);
+    function commonCallProcessing(uint256 _blockchainId, address _contract, bytes calldata _functionCallData) private returns(bool, bytes memory) {
+        // Fail if we have run out of return results.
+        if (activeCallReturnValuesIndex >= activeCallReturnValues.length) {
+            activeCallFailed = true;
+            activeCallReturnValuesIndex++;
+            return (true, bytes(""));
+        }
 
-        require(activeCallReturnValuesIndex < activeCallReturnValues.length, "Call to cross call without return value");
-
-        // Check that this function call should occur
-        uint256[] memory callPath = new uint256[](activeCallsCallPath.length + 1);
-        for (uint i = 0; i < activeCallsCallPath.length; i++) {
+        // Check that this function call should occur.
+        // First create the call path to the next function that should execute.`
+        require(activeCallsCallPath.length != 0, "Active Calls call path length is zero");
+        uint256[] memory callPath = new uint256[](activeCallsCallPath.length);
+        for (uint i = 0; i < activeCallsCallPath.length - 1; i++) {
             callPath[i] = activeCallsCallPath[i];
         }
         callPath[callPath.length - 1] = activeCallReturnValuesIndex + 1;
         (uint256 targetBlockchainId, address targetContract, bytes memory functionCall) = extractTargetFromCallGraph(activeCallGraph, callPath);
 
+        // Fail if what was called doesn't match what was expected to be called.
         if (_blockchainId != targetBlockchainId ||
             _contract != targetContract ||
             !compare(_functionCallData, functionCall)) {
+
             activeCallFailed = true;
+            emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, bytes(""));
+            return (true, bytes(""));
         }
         bytes memory retVal = activeCallReturnValues[activeCallReturnValuesIndex++];
-
         emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, retVal);
-
-        return retVal;
+        return (false, retVal);
     }
 
     function verifySegmentEvents(bytes[] memory _segmentEvents, uint256[] memory callPath, bytes32 hashOfCallGraph) private returns(bool){
@@ -437,10 +460,11 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             // Segments with offset zero of Root calls are the only ones that can call segments.
             require(callPath[callPath.length - 1] == 0);
             require(lenOfCallPath == callPath.length || lenOfCallPath == callPath.length+1, "Bad call path length for segment");
-            if (lenOfCallPath == callPath.length+1) {
-                uint256 callPathFinalValue = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath + 0x20 * (lenOfCallPath-1));
-                require(callPathFinalValue == 0, "Call path optional second element not zero");
-            }
+            // TODO
+//            if (lenOfCallPath == callPath.length+1) {
+//                uint256 callPathFinalValue = BytesUtil.bytesToUint256(segmentEvent, locationOfCallPath + 0x20 * (lenOfCallPath-1));
+//                require(callPathFinalValue == 0, "Call path optional second element not zero");
+//            }
 
             // Fail the root transaction is one of the segments failed.
             if (success == 0) {
@@ -453,5 +477,16 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             activeCallReturnValues.push(returnValue);
         }
         return false;
+    }
+
+    function getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
+        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
+        if (_returnData.length < 68) return 'Transaction reverted silently';
+
+        assembly {
+        // Slice the sighash.
+            _returnData := add(_returnData, 0x04)
+        }
+        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 }
