@@ -35,11 +35,11 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
     event Root(uint256 _crossBlockchainTransactionId, bool _success);
     event Signalling(uint256 _rootBcId, uint256 _crossBlockchainTransactionId);
 
-    event Call(
+    event BadCall(
         uint256 _expectedBlockchainId, uint256 _actualBlockchainId,
         address _expectedContract, address _actualContract,
-        bytes _expectedFunctionCall, bytes _actualFunctionCall,
-        bytes _retVal);
+        bytes _expectedFunctionCall, bytes _actualFunctionCall);
+    event CallResult(uint256 _blockchainId, address _contract, bytes _functionCall, bytes _result);
     event NotEnoughCalls(uint256 _expectedNumberOfCalls, uint256 _actualNumberOfCalls);
     event CallFailure(string _revertReason);
 
@@ -292,7 +292,7 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         bytes memory returnValue;
         (failed, returnValue) = commonCallProcessing(_blockchainId, _contract, _functionCallData);
         if (failed) {
-            return 0;
+            return uint256(0);
         }
         return BytesUtil.bytesToUint256(returnValue, 0);
     }
@@ -424,11 +424,12 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             !compare(_functionCallData, functionCall)) {
 
             activeCallFailed = true;
-            emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, bytes(""));
+            activeCallReturnValuesIndex++;
+            emit BadCall(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData);
             return (true, bytes(""));
         }
         bytes memory retVal = activeCallReturnValues[activeCallReturnValuesIndex++];
-        emit Call(targetBlockchainId, _blockchainId, targetContract, _contract, functionCall, _functionCallData, retVal);
+        emit CallResult(_blockchainId, _contract, _functionCallData, retVal);
         return (false, retVal);
     }
 

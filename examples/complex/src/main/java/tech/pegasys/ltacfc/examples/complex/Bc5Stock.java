@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 public class Bc5Stock extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc5Stock.class);
+  private static final Logger LOG = LogManager.getLogger(Bc5Stock.class);
 
   Stock stockContract;
-  LockableStorage lockableStorageContract;
+  private LockableStorage lockableStorageContract;
 
   public Bc5Stock(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);

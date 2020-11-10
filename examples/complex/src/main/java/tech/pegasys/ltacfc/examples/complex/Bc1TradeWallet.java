@@ -26,10 +26,10 @@ import java.math.BigInteger;
 
 
 public class Bc1TradeWallet extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc1TradeWallet.class);
+  private static final Logger LOG = LogManager.getLogger(Bc1TradeWallet.class);
 
   TradeWallet tradeWalletContract;
-  LockableStorage lockableStorageContract;
+  private LockableStorage lockableStorageContract;
 
   public Bc1TradeWallet(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
@@ -71,5 +71,9 @@ public class Bc1TradeWallet extends AbstractBlockchain {
       BigInteger trade = this.tradeWalletContract.getTrade(BigInteger.valueOf(i)).send();
       LOG.info(" 0x{}", trade.toString(16));
     }
+  }
+
+  public boolean storageIsLocked() throws Exception {
+    return  this.lockableStorageContract.locked().send();
   }
 }

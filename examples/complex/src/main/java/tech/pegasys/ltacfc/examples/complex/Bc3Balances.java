@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 public class Bc3Balances extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc3Balances.class);
+  private static final Logger LOG = LogManager.getLogger(Bc3Balances.class);
 
   Balances balancesContract;
-  LockableStorage lockableStorageContract;
+  private LockableStorage lockableStorageContract;
 
   public Bc3Balances(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);

@@ -27,7 +27,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 public class Bc2BusLogic extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc2BusLogic.class);
+  private static final Logger LOG = LogManager.getLogger(Bc2BusLogic.class);
 
   BusLogic busLogicContract;
 
@@ -51,12 +51,13 @@ public class Bc2BusLogic extends AbstractBlockchain {
   }
 
   public void showEvents(TransactionReceipt txR) {
-    LOG.info("Business Logic Events");
-    List<BusLogic.HelpEventResponse> events = this.busLogicContract.getHelpEvents(txR);
-    for (BusLogic.HelpEventResponse e: events) {
-      LOG.info(" Info: {}", e._a);
+    LOG.info("Business Logic: Stock Shipment Events");
+    List<BusLogic.StockShipmentEventResponse> events = this.busLogicContract.getStockShipmentEvents(txR);
+    for (BusLogic.StockShipmentEventResponse e: events) {
+      LOG.info(" Seller: {}", e._seller);
+      LOG.info(" Buyer: {}", e._buyer);
+      LOG.info(" Quantity: {}", e._quantity);
+      LOG.info(" Price: {}", e._price);
     }
-
-//    this.busLogicContract.
   }
 }

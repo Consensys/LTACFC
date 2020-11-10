@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 public class Bc4Oracle extends AbstractBlockchain {
-  static final Logger LOG = LogManager.getLogger(Bc4Oracle.class);
+  private static final Logger LOG = LogManager.getLogger(Bc4Oracle.class);
 
   PriceOracle priceOracleContract;
 

@@ -116,9 +116,10 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     }
 
     showSegmentEvents(convertSegment(this.crossBlockchainControlContract.getSegmentEvents(txR)));
-    showCallEvents(convertCall(this.crossBlockchainControlContract.getCallEvents(txR)));
+    showBadCallEvents(convertBadCall(this.crossBlockchainControlContract.getBadCallEvents(txR)));
     showNotEnoughCallsEvents(convertNotEnoughCalls(this.crossBlockchainControlContract.getNotEnoughCallsEvents(txR)));
     showCallFailureEvents(convertCallFailure(this.crossBlockchainControlContract.getCallFailureEvents(txR)));
+    showCallResultEvents(convertCallResult(this.crossBlockchainControlContract.getCallResultEvents(txR)));
     showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
 
     List<CbcTxRootTransfer.SegmentEventResponse> segmentEventResponses = this.crossBlockchainControlContract.getSegmentEvents(txR);
@@ -160,9 +161,10 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     }
 
     showRootEvents(convertRoot(this.crossBlockchainControlContract.getRootEvents(txR)));
-    showCallEvents(convertCall(this.crossBlockchainControlContract.getCallEvents(txR)));
+    showBadCallEvents(convertBadCall(this.crossBlockchainControlContract.getBadCallEvents(txR)));
     showNotEnoughCallsEvents(convertNotEnoughCalls(this.crossBlockchainControlContract.getNotEnoughCallsEvents(txR)));
     showCallFailureEvents(convertCallFailure(this.crossBlockchainControlContract.getCallFailureEvents(txR)));
+    showCallResultEvents(convertCallResult(this.crossBlockchainControlContract.getCallResultEvents(txR)));
     showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
 
     return txR;
@@ -444,11 +446,11 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
   }
 
 
-  private List<CallEventResponse> convertCall(List<CbcTxRootTransfer.CallEventResponse> callEventResponses) {
-    List<CallEventResponse> result = new ArrayList<>();
-    for (CbcTxRootTransfer.CallEventResponse e : callEventResponses) {
-      CallEventResponse event = new CallEventResponse(e._expectedBlockchainId, e._actualBlockchainId,
-          e._expectedContract, e._actualContract, e._expectedFunctionCall, e._actualFunctionCall, e._retVal);
+  private List<BadCallEventResponse> convertBadCall(List<CbcTxRootTransfer.BadCallEventResponse> callEventResponses) {
+    List<BadCallEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.BadCallEventResponse e : callEventResponses) {
+      BadCallEventResponse event = new BadCallEventResponse(e._expectedBlockchainId, e._actualBlockchainId,
+          e._expectedContract, e._actualContract, e._expectedFunctionCall, e._actualFunctionCall);
       result.add(event);
     }
     return result;
@@ -458,6 +460,15 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     List<CallFailureEventResponse> result = new ArrayList<>();
     for (CbcTxRootTransfer.CallFailureEventResponse e : callFailureEventResponses) {
       CallFailureEventResponse event = new CallFailureEventResponse(e._revertReason);
+      result.add(event);
+    }
+    return result;
+  }
+
+  private List<CallResultEventResponse> convertCallResult(List<CbcTxRootTransfer.CallResultEventResponse> callResultEventResponses) {
+    List<CallResultEventResponse> result = new ArrayList<>();
+    for (CbcTxRootTransfer.CallResultEventResponse e : callResultEventResponses) {
+      CallResultEventResponse event = new CallResultEventResponse(e._blockchainId, e._contract, e._functionCall, e._result);
       result.add(event);
     }
     return result;

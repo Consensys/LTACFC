@@ -124,7 +124,7 @@ public class Main {
     LOG.info("Seller address: {}", sellerAddress);
     BigInteger buyerInitialStock = BigInteger.valueOf(1);
     BigInteger sellerInitialStock = BigInteger.valueOf(100);
-    BigInteger price = BigInteger.valueOf(77);
+    BigInteger price = BigInteger.valueOf(25);
 
     bc4OracleBlockchain.setPrice(price);
     bc5StockBlockchain.setStock(buyerAddress, buyerInitialStock);
@@ -178,11 +178,25 @@ public class Main {
 
     LOG.info("Success: {}", success);
 
+    bc1TradeWalletBlockchain.showAllTrades();
+
     List<BigInteger> callP = new ArrayList<>();
     callP.add(BigInteger.ONE);
     callP.add(BigInteger.ZERO);
     TransactionReceipt txR = executor.getTransationReceipt(callP);
     bc2BusLogicBlockchain.showEvents(txR);
+
+    LOG.info("Trade Wallet contract's lockable storaged locked: {}", bc1TradeWalletBlockchain.storageIsLocked());
+    LOG.info("Balances contract's lockable storaged locked: {}", bc3BalancesBlockchain.storageIsLocked());
+    LOG.info("Stock contract's lockable storaged locked: {}", bc5StockBlockchain.storageIsLocked());
+
+    LOG.info("Buyer: Initial Stock: {}, Initial Balance: {}, Final Stock: {}, Final Balance: {}",
+        buyerInitialStock,
+        buyerInitialBalance,
+        bc5StockBlockchain.getStock(buyerAddress),
+        bc3BalancesBlockchain.getBalance(buyerAddress));
+    LOG.info("Seller: Initial Stock: {}, Initial Balance: {}, Final Stock: {}, Final Balance: {}",
+        sellerInitialStock, sellerInitialBalance, bc5StockBlockchain.getStock(sellerAddress), bc3BalancesBlockchain.getBalance(sellerAddress));
 
     bc1TradeWalletBlockchain.shutdown();
     bc2BusLogicBlockchain.shutdown();

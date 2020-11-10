@@ -18,15 +18,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.crypto.Hash;
-import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.BaseEventResponse;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
-import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
-import tech.pegasys.ltacfc.soliditywrappers.CbcTxRootTransfer;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 
 import java.io.IOException;
@@ -87,23 +83,21 @@ public abstract class AbstractCbc extends AbstractBlockchain {
 
 
 
-  public static class CallEventResponse extends BaseEventResponse {
+  public static class BadCallEventResponse extends BaseEventResponse {
     public BigInteger _expectedBlockchainId;
     public BigInteger _actualBlockchainId;
     public String _expectedContract;
     public String _actualContract;
     public byte[] _expectedFunctionCall;
     public byte[] _actualFunctionCall;
-    public byte[] _retVal;
-    public CallEventResponse(BigInteger _expectedBlockchainId, BigInteger _actualBlockchainId, String _expectedContract,
-                             String _actualContract, byte[] _expectedFunctionCall, byte[] _actualFunctionCall, byte[] _retVal) {
+    public BadCallEventResponse(BigInteger _expectedBlockchainId, BigInteger _actualBlockchainId, String _expectedContract,
+                                String _actualContract, byte[] _expectedFunctionCall, byte[] _actualFunctionCall) {
       this._expectedBlockchainId = _expectedBlockchainId;
       this._actualBlockchainId = _actualBlockchainId;
       this._expectedContract = _expectedContract;
       this._actualContract = _actualContract;
       this._expectedFunctionCall = _expectedFunctionCall;
       this._actualFunctionCall = _actualFunctionCall;
-      this._retVal = _retVal;
     }
   }
 
@@ -111,6 +105,20 @@ public abstract class AbstractCbc extends AbstractBlockchain {
     public String _revertReason;
     public CallFailureEventResponse(String _revertReason) {
       this._revertReason = _revertReason;
+    }
+  }
+
+  public static class CallResultEventResponse extends BaseEventResponse {
+    public BigInteger blockchainId;
+    public String contract;
+    public byte[] functionCall;
+    public byte[] result;
+
+    public CallResultEventResponse(BigInteger blockchainId, String contract, byte[] functionCall, byte[] result) {
+      this.blockchainId = blockchainId;
+      this.contract = contract;
+      this.functionCall = functionCall;
+      this.result = result;
     }
   }
 
@@ -185,20 +193,19 @@ public abstract class AbstractCbc extends AbstractBlockchain {
     }
   }
 
-  protected void showCallEvents(List<CallEventResponse> callEventResponses) {
-    LOG.info("Call Events");
-    if (callEventResponses.isEmpty()) {
+  protected void showBadCallEvents(List<BadCallEventResponse> badCallEventRespons) {
+    LOG.info("Bad Call Events");
+    if (badCallEventRespons.isEmpty()) {
       LOG.info(" None");
     }
-    for (CallEventResponse callEventResponse : callEventResponses) {
+    for (BadCallEventResponse badCallEventResponse : badCallEventRespons) {
       LOG.info(" Event:");
-      LOG.info("   Expected Blockchain Id: 0x{}", callEventResponse._expectedBlockchainId.toString(16));
-      LOG.info("   Actual Blockchain Id: 0x{}", callEventResponse._actualBlockchainId.toString(16));
-      LOG.info("   Expected Contract: {}", callEventResponse._expectedContract);
-      LOG.info("   Actual Contract: {}", callEventResponse._actualContract);
-      LOG.info("   Expected Function Call: {}", new BigInteger(1, callEventResponse._expectedFunctionCall).toString(16));
-      LOG.info("   Actual Function Call: {}", new BigInteger(1, callEventResponse._actualFunctionCall).toString(16));
-      LOG.info("   Return Value: {}", new BigInteger(1, callEventResponse._retVal).toString(16));
+      LOG.info("   Expected Blockchain Id: 0x{}", badCallEventResponse._expectedBlockchainId.toString(16));
+      LOG.info("   Actual Blockchain Id: 0x{}", badCallEventResponse._actualBlockchainId.toString(16));
+      LOG.info("   Expected Contract: {}", badCallEventResponse._expectedContract);
+      LOG.info("   Actual Contract: {}", badCallEventResponse._actualContract);
+      LOG.info("   Expected Function Call: {}", new BigInteger(1, badCallEventResponse._expectedFunctionCall).toString(16));
+      LOG.info("   Actual Function Call: {}", new BigInteger(1, badCallEventResponse._actualFunctionCall).toString(16));
     }
   }
 
@@ -212,6 +219,19 @@ public abstract class AbstractCbc extends AbstractBlockchain {
     }
   }
 
+  protected void showCallResultEvents(List<CallResultEventResponse> callResultEventResponses) {
+    LOG.info("Call Result Events");
+    if (callResultEventResponses.isEmpty()) {
+      LOG.info(" None");
+    }
+    for (CallResultEventResponse callResultEventResponse : callResultEventResponses) {
+      LOG.info(" Event:");
+      LOG.info("   Blockchain Id: 0x{}", callResultEventResponse.blockchainId.toString(16));
+      LOG.info("   Contract: {}", callResultEventResponse.contract);
+      LOG.info("   Function Call: {}", new BigInteger(1, callResultEventResponse.functionCall).toString(16));
+      LOG.info("   Result: 0x{}", new BigInteger(1, callResultEventResponse.result).toString(16));
+    }
+  }
 
   protected void showDumpEvents(List<DumpEventResponse> dumpEventResponses) {
     LOG.info("Dump Events");
