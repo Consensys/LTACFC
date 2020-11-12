@@ -258,7 +258,7 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             emit Dump(numElementsOfArray, bytes32(0), address(0), _segmentEvents[i]);
             for (uint256 j = 0; j < numElementsOfArray; j++) {
                 address lockedContractAddr = BytesUtil.bytesToAddress1(_segmentEvents[i], locationOfLockedContracts + 0x20 + 0x20 * j);
-                emit Dump(0, bytes32(0), lockedContractAddr, _segmentEvents[i]);
+                emit Dump(i * 100 + j, bytes32(0), lockedContractAddr, bytes(""));
                 LockableStorage lockedContract = LockableStorage(lockedContractAddr);
                 // Check that the contract really has been locked by this transaction.
                 require(lockedContract.locked());

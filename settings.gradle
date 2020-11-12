@@ -9,8 +9,8 @@ include 'crossblockchaincontrol'
 include 'common'
 include 'lockablestorage'
 include 'examples-twochain'
-include 'examples-complex'
+include 'examples-trade'
 
 project(":examples-twochain").projectDir = file("examples/twochain")
-project(":examples-complex").projectDir = file("examples/complex")
+project(":examples-trade").projectDir = file("examples/trade")
 
