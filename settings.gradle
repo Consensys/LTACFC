@@ -8,10 +8,12 @@ include 'blockheader'
 include 'crossblockchaincontrol'
 include 'common'
 include 'lockablestorage'
+include 'examples-read'
 include 'examples-twochain'
 include 'examples-trade'
 include 'examples-singlebc-trade'
 
+project(":examples-read").projectDir = file("examples/read")
 project(":examples-twochain").projectDir = file("examples/twochain")
 project(":examples-trade").projectDir = file("examples/trade")
 project(":examples-singlebc-trade").projectDir = file("examples/singlebc-trade")
