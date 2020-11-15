@@ -43,7 +43,7 @@ public class Main {
   static final Logger LOG = LogManager.getLogger(Main.class);
 
   // Running multiple times will reveal any gas difference due to rerunning.
-  static boolean RUN_TWICE = true;
+  static int NUM_TIMES_EXECUTE = 2;
 
   public static void main(String[] args) throws Exception {
     StatsHolder.log("Start");
@@ -92,7 +92,8 @@ public class Main {
 
     int numExecutions = 0;
     while (true) {
-      LOG.info("Execution: {}", numExecutions);
+      LOG.info("Execution: {}  *****************", numExecutions);
+      StatsHolder.log("Execution: " + numExecutions + " **************************");
 
       LOG.info("Function Calls");
       String rlpGet = simContractB.getRlpFunctionSignature_Get();
@@ -128,15 +129,9 @@ public class Main {
       bc1ContractABlockchain.showEvents(txR);
 
 
-      if (RUN_TWICE) {
-        if (numExecutions == 2) {
-          break;
-        }
-      }
-      else {
+      if (++numExecutions >= NUM_TIMES_EXECUTE) {
         break;
       }
-      numExecutions++;
     }
 
 
