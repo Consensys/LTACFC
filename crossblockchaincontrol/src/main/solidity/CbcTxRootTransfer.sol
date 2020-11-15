@@ -137,7 +137,7 @@ contract CbcTxRootTransfer is CrossBlockchainControl {
 
                 // Extract the start event from the RLP encoded receipt trie data.
                 bytes memory encodedStartTxReceiptLocal = eventProof.encodedTxReceipt;
-                startEventData = extractStartEventData(address(this), encodedStartTxReceiptLocal);
+                startEventData = extractStartEventData(startEventCbcAddress, encodedStartTxReceiptLocal);
             }
             else {
                 // Extract segment events
