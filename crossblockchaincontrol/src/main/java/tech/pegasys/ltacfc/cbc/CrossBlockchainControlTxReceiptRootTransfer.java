@@ -50,6 +50,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
   private static final Logger LOG = LogManager.getLogger(CrossBlockchainControlTxReceiptRootTransfer.class);
@@ -173,7 +174,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
 
 
-  public void signalling(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
+  public void signallingSerial(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
     List<byte[]> allProofs = new ArrayList<>();
     allProofs.add(rootProof.getEncodedProof());
 
@@ -191,6 +192,33 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
       throw ex;
     }
     if (!txR.isStatusOK()) {
+      throw new Exception("Signalling transaction failed");
+    }
+
+    List<CbcTxRootTransfer.SignallingEventResponse> sigEventResponses = this.crossBlockchainControlContract.getSignallingEvents(txR);
+    CbcTxRootTransfer.SignallingEventResponse sigEventResponse = sigEventResponses.get(0);
+    LOG.info("Signalling Event:");
+    LOG.info(" Root Blockchain Id: 0x{}", sigEventResponse._rootBcId.toString(16));
+    LOG.info(" Cross-Blockchain Transaction Id: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
+
+    showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
+  }
+
+  public CompletableFuture<TransactionReceipt> signallingAsyncPart1(TxReceiptRootTransferEventProof rootProof, List<TxReceiptRootTransferEventProof> segProofs) throws Exception {
+    List<byte[]> allProofs = new ArrayList<>();
+    allProofs.add(rootProof.getEncodedProof());
+
+    for (TxReceiptRootTransferEventProof proofInfo: segProofs) {
+      allProofs.add(proofInfo.getEncodedProof());
+    }
+
+    return this.crossBlockchainControlContract.signalling(allProofs).sendAsync();
+  }
+
+  public void signallingAsyncPart2(TransactionReceipt txR) throws Exception {
+    StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
+    if (!txR.isStatusOK()) {
+      LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(txR.getRevertReason()));
       throw new Exception("Signalling transaction failed");
     }
 

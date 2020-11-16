@@ -159,7 +159,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
         txR, false);
   }
 
-  public void signalling(SignedEvent rootEvent, List<SignedEvent> segEvents) throws Exception {
+  public void signallingOldSerial(SignedEvent rootEvent, List<SignedEvent> segEvents) throws Exception {
     List<byte[]> encodedEvents = new ArrayList<>();
     encodedEvents.add(rootEvent.getEncodedEventInformation());
     List<byte[]> encodedSignatures = new ArrayList<>();
@@ -201,6 +201,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
   public void signallingAsyncPart2(TransactionReceipt txR) throws Exception {
     StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
     if (!txR.isStatusOK()) {
+      LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(txR.getRevertReason()));
       throw new Exception("Signalling transaction failed");
     }
 

@@ -24,7 +24,6 @@ import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 import tech.pegasys.ltacfc.common.Tuple;
 
-import javax.sound.midi.Track;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
   static final Logger LOG = LogManager.getLogger(CbcExecutorTxReceiptRootTransfer.class);
@@ -108,12 +108,43 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     publishReceiptRootToAll(this.rootBcId, this.rootProof.getTransactionReceiptRoot());
   }
 
-  protected void doSignallingCalls() throws Exception {
+  protected void doSignallingCallsOldSerial() throws Exception {
     for (BigInteger blockchainId: this.segmentProofsWithLockedContracts.keySet()) {
       List<TxReceiptRootTransferEventProof> segProofsLockedContractsCurrentBlockchain =
           this.segmentProofsWithLockedContracts.get(blockchainId);
       CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
-      cbcContract.signalling(this.rootProof, segProofsLockedContractsCurrentBlockchain);
+      cbcContract.signallingSerial(this.rootProof, segProofsLockedContractsCurrentBlockchain);
+    }
+  }
+
+  /**
+   * This method executes all of the signalling transactions in parallel. They are for separate
+   * blockchains, so this is definitely safe.
+   *
+   * @throws Exception
+   */
+  protected void doSignallingCalls() throws Exception {
+    int numSignalsToSend = this.segmentProofsWithLockedContracts.size();
+    if (numSignalsToSend == 0) {
+      return;
+    }
+
+    CompletableFuture<?>[] transactionReceiptCompletableFutures = new CompletableFuture<?>[numSignalsToSend];
+    int i = 0;
+    for (BigInteger blockchainId: this.segmentProofsWithLockedContracts.keySet()) {
+      List<TxReceiptRootTransferEventProof> segProofsLockedContractsCurrentBlockchain =
+          this.segmentProofsWithLockedContracts.get(blockchainId);
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
+      transactionReceiptCompletableFutures[i++] = cbcContract.signallingAsyncPart1(this.rootProof, segProofsLockedContractsCurrentBlockchain);
+    }
+    CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(transactionReceiptCompletableFutures);
+    combinedFuture.get();
+
+    i = 0;
+    for (BigInteger blockchainId: this.segmentProofsWithLockedContracts.keySet()) {
+      TransactionReceipt receipt = (TransactionReceipt) transactionReceiptCompletableFutures[i++].get();
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
+      cbcContract.signallingAsyncPart2(receipt);
     }
   }
 

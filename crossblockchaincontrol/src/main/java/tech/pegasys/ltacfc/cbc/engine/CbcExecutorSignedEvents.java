@@ -20,20 +20,15 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.AbstractCbc;
 import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.cbc.CrossBlockchainControlSignedEvents;
-import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.SignedEvent;
-import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
-import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
 import tech.pegasys.ltacfc.common.Tuple;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
@@ -107,12 +102,12 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
     this.success = rootCbcContract.getRootEventSuccess();
   }
 
-  protected void doSignallingCalls1() throws Exception {
+  protected void doSignallingCallsOldSerial() throws Exception {
     for (BigInteger blockchainId: this.signedSegmentEventsWithLockedContracts.keySet()) {
       List<SignedEvent> signedSegEventsLockedContractsCurrentBlockchain =
           this.signedSegmentEventsWithLockedContracts.get(blockchainId);
       CrossBlockchainControlSignedEvents cbcContract = this.cbcManager.getCbcContractSignedEvents(blockchainId);
-      cbcContract.signalling(this.signedRootEvent, signedSegEventsLockedContractsCurrentBlockchain);
+      cbcContract.signallingOldSerial(this.signedRootEvent, signedSegEventsLockedContractsCurrentBlockchain);
     }
   }
 
