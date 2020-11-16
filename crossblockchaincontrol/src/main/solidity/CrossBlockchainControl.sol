@@ -21,6 +21,7 @@ import "../../../../blockheader/src/main/solidity/TxReceiptsRootStorageInterface
 import "../../../../receipts/src/main/solidity/Receipts.sol";
 import "../../../../registrar/src/main/solidity/Registrar.sol";
 import "../../../../lockablestorage/src/main/solidity/LockableStorage.sol";
+import "../../../../examples/twochain/src/main/solidity/OtherBlockchainContract.sol";
 
 
 abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipts {
@@ -90,8 +91,6 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
     uint256 private activeCallReturnValuesIndex;
 
     // The set of contracts locked by the current call segment.
-    // Map to ensure contract addresses aren't added twice.
-    mapping(address => bool) private activeCallLockedContractsMap;
     // List of locked contracts.
     address[] private activeCallLockedContracts;
 
@@ -299,10 +298,14 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
 
     // Called by a provisional storage contract indicating the contract needs to be locked.
     function addToListOfLockedContracts(address _contractToLock) external override {
-        if (activeCallLockedContractsMap[_contractToLock] == false) {
-            activeCallLockedContracts.push(_contractToLock);
-            activeCallLockedContractsMap[_contractToLock] = true;
+        // Don't add the same contract twice. So, check the contract isn't in
+        // the array first.
+        for (uint256 i = 0; i < activeCallLockedContracts.length; i++) {
+            if (activeCallLockedContracts[i] == _contractToLock) {
+                return;
+            }
         }
+        activeCallLockedContracts.push(_contractToLock);
     }
 
 
@@ -381,9 +384,6 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
         delete activeCallRootBlockchainId;
         delete activeCallGraph;
         delete activeCallsCallPath;
-        for (uint i = 0; i < activeCallLockedContracts.length; i++) {
-            delete activeCallLockedContractsMap[activeCallLockedContracts[i]];
-        }
         delete activeCallLockedContracts;
         delete activeCallReturnValues;
         delete activeCallReturnValuesIndex;
