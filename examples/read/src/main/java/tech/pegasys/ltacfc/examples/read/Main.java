@@ -127,6 +127,7 @@ public class Main {
       callP.add(BigInteger.ZERO);
       TransactionReceipt txR = executor.getTransationReceipt(callP);
       bc1ContractABlockchain.showEvents(txR);
+      bc1ContractABlockchain.showValueRead();
 
 
       if (++numExecutions >= NUM_TIMES_EXECUTE) {

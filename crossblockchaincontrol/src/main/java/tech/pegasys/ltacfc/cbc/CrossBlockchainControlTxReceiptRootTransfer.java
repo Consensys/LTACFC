@@ -168,6 +168,10 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     showCallResultEvents(convertCallResult(this.crossBlockchainControlContract.getCallResultEvents(txR)));
     showDumpEvents(convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
 
+    List<CbcTxRootTransfer.RootEventResponse> rootEventResponses = this.crossBlockchainControlContract.getRootEvents(txR);
+    CbcTxRootTransfer.RootEventResponse rootEventResponse = rootEventResponses.get(0);
+    this.rootEventSuccess = rootEventResponse._success;
+
     return txR;
   }
 

@@ -16,15 +16,21 @@ pragma solidity >=0.7.1;
 
 import "./ContractB.sol";
 import "../../../../../crossblockchaincontrol/src/main/solidity/CbcLockableStorageInterface.sol";
+import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
 
-contract ContractA {
+
+contract ContractA is LockableStorageWrapper {
     uint256 otherBcId;
     ContractB contractB;
     CbcLockableStorageInterface crossBlockchainControl;
 
+    uint256 constant private KEY_VAL = 0;
+
     event ValueRead(uint256 _val);
 
-    constructor (address _cbc, uint256 _otherBcId, address _contractBAddress) {
+    constructor (address _cbc, uint256 _otherBcId, address _contractBAddress, address _storageContract)
+        LockableStorageWrapper(_storageContract) {
+
         crossBlockchainControl = CbcLockableStorageInterface(_cbc);
         otherBcId = _otherBcId;
         contractB = ContractB(_contractBAddress);
@@ -33,6 +39,11 @@ contract ContractA {
     function doCrosschainRead() external {
         uint256 val = crossBlockchainControl.crossBlockchainCallReturnsUint256(
             otherBcId, address(contractB), abi.encodeWithSelector(contractB.get.selector));
+        setUint256(KEY_VAL, val);
         emit ValueRead(val);
+    }
+
+    function getVal() external view returns(uint256) {
+        return getUint256(KEY_VAL);
     }
 }
