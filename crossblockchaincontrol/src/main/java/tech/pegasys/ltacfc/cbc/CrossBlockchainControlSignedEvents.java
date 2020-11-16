@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class CrossBlockchainControlSignedEvents extends AbstractCbc {
   private static final Logger LOG = LogManager.getLogger(CrossBlockchainControlSignedEvents.class);
@@ -170,6 +171,34 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
 
     TransactionReceipt txR = this.crossBlockchainControlContract.signalling(encodedEvents, encodedSignatures).send();
+    StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
+    if (!txR.isStatusOK()) {
+      throw new Exception("Signalling transaction failed");
+    }
+
+    List<CbcSignedEvent.SignallingEventResponse> sigEventResponses = this.crossBlockchainControlContract.getSignallingEvents(txR);
+    CbcSignedEvent.SignallingEventResponse sigEventResponse = sigEventResponses.get(0);
+    LOG.info("Signalling Event:");
+    LOG.info(" _rootBlockchainId: {}", sigEventResponse._rootBcId.toString(16));
+    LOG.info(" _crossBlockchainTransactionId: {}", sigEventResponse._crossBlockchainTransactionId.toString(16));
+
+    showDumpEvents(this.convertDump(this.crossBlockchainControlContract.getDumpEvents(txR)));
+  }
+
+  public CompletableFuture<TransactionReceipt> signallingAsyncPart1(SignedEvent rootEvent, List<SignedEvent> segEvents) throws Exception {
+    List<byte[]> encodedEvents = new ArrayList<>();
+    encodedEvents.add(rootEvent.getEncodedEventInformation());
+    List<byte[]> encodedSignatures = new ArrayList<>();
+    encodedSignatures.add(rootEvent.getEncodedSignatures());
+    for (SignedEvent segEvent : segEvents) {
+      encodedEvents.add(segEvent.getEncodedEventInformation());
+      encodedSignatures.add(segEvent.getEncodedSignatures());
+    }
+
+    return this.crossBlockchainControlContract.signalling(encodedEvents, encodedSignatures).sendAsync();
+  }
+
+  public void signallingAsyncPart2(TransactionReceipt txR) throws Exception {
     StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
     if (!txR.isStatusOK()) {
       throw new Exception("Signalling transaction failed");

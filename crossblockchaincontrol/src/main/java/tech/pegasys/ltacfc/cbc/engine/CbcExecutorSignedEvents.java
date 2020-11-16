@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
   static final Logger LOG = LogManager.getLogger(CbcExecutorSignedEvents.class);
@@ -106,12 +107,43 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
     this.success = rootCbcContract.getRootEventSuccess();
   }
 
-  protected void doSignallingCalls() throws Exception {
+  protected void doSignallingCalls1() throws Exception {
     for (BigInteger blockchainId: this.signedSegmentEventsWithLockedContracts.keySet()) {
       List<SignedEvent> signedSegEventsLockedContractsCurrentBlockchain =
           this.signedSegmentEventsWithLockedContracts.get(blockchainId);
       CrossBlockchainControlSignedEvents cbcContract = this.cbcManager.getCbcContractSignedEvents(blockchainId);
       cbcContract.signalling(this.signedRootEvent, signedSegEventsLockedContractsCurrentBlockchain);
+    }
+  }
+
+  /**
+   * This method executes all of the signalling transactions in parallel. They are for separate
+   * blockchains, so this is definitely safe.
+   *
+   * @throws Exception
+   */
+  protected void doSignallingCalls() throws Exception {
+    int numSignalsToSend = this.signedSegmentEventsWithLockedContracts.size();
+    if (numSignalsToSend == 0) {
+      return;
+    }
+
+    CompletableFuture<?>[] transactionReceiptCompletableFutures = new CompletableFuture<?>[numSignalsToSend];
+    int i = 0;
+    for (BigInteger blockchainId: this.signedSegmentEventsWithLockedContracts.keySet()) {
+      List<SignedEvent> signedSegEventsLockedContractsCurrentBlockchain =
+          this.signedSegmentEventsWithLockedContracts.get(blockchainId);
+      CrossBlockchainControlSignedEvents cbcContract = this.cbcManager.getCbcContractSignedEvents(blockchainId);
+      transactionReceiptCompletableFutures[i++] = cbcContract.signallingAsyncPart1(this.signedRootEvent, signedSegEventsLockedContractsCurrentBlockchain);
+    }
+    CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(transactionReceiptCompletableFutures);
+    combinedFuture.get();
+
+    i = 0;
+    for (BigInteger blockchainId: this.signedSegmentEventsWithLockedContracts.keySet()) {
+      TransactionReceipt receipt = (TransactionReceipt) transactionReceiptCompletableFutures[i++].get();
+      CrossBlockchainControlSignedEvents cbcContract = this.cbcManager.getCbcContractSignedEvents(blockchainId);
+      cbcContract.signallingAsyncPart2(receipt);
     }
   }
 }

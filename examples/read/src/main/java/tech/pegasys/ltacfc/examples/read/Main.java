@@ -46,7 +46,7 @@ public class Main {
   static int NUM_TIMES_EXECUTE = 2;
 
   public static void main(String[] args) throws Exception {
-    StatsHolder.log("Start");
+    StatsHolder.log("Example: Read");
     LOG.info("Started");
 
     if (args.length != 1) {

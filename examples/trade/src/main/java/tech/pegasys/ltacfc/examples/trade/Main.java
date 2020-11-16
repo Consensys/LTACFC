@@ -47,7 +47,7 @@ public class Main {
   static final Logger LOG = LogManager.getLogger(Main.class);
 
   public static void main(String[] args) throws Exception {
-    StatsHolder.log("Start");
+    StatsHolder.log("Example: Trade");
     LOG.info("Started");
 
     if (args.length != 1) {

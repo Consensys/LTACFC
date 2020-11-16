@@ -56,10 +56,10 @@ public class StatsHolder {
     }
     for (Stats s: this.stats) {
       if (s.gas == null) {
-        LOG.info("{}:{}: {}", s.timestamp, s.nanoTime, s.event);
+        LOG.info("{} {} {}", s.timestamp, s.nanoTime, s.event);
       }
       else {
-        LOG.info("{}:{}: {}: gas: {}", s.timestamp, s.nanoTime, s.event, s.gas);
+        LOG.info("{} {} {}: gas: {}", s.timestamp, s.nanoTime, s.event, s.gas);
       }
     }
   }

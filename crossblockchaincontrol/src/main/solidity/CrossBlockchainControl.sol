@@ -253,12 +253,12 @@ abstract contract CrossBlockchainControl is CbcLockableStorageInterface, Receipt
             // For each address indicated in the Segment Event as being locked, Commit or Ignore updates
             // according to what the Root Event says.
             uint256 locationOfLockedContracts = BytesUtil.bytesToUint256(_segmentEvents[i], 0x60);
-            emit Dump(locationOfLockedContracts, bytes32(0), address(0), _segmentEvents[i]);
+//            emit Dump(locationOfLockedContracts, bytes32(0), address(0), _segmentEvents[i]);
             uint256 numElementsOfArray = BytesUtil.bytesToUint256(_segmentEvents[i], locationOfLockedContracts);
-            emit Dump(numElementsOfArray, bytes32(0), address(0), _segmentEvents[i]);
+            //emit Dump(numElementsOfArray, bytes32(0), address(0), _segmentEvents[i]);
             for (uint256 j = 0; j < numElementsOfArray; j++) {
                 address lockedContractAddr = BytesUtil.bytesToAddress1(_segmentEvents[i], locationOfLockedContracts + 0x20 + 0x20 * j);
-                emit Dump(i * 100 + j, bytes32(0), lockedContractAddr, bytes(""));
+                //emit Dump(i * 100 + j, bytes32(0), lockedContractAddr, bytes(""));
                 LockableStorage lockedContract = LockableStorage(lockedContractAddr);
                 // Check that the contract really has been locked by this transaction.
                 require(lockedContract.locked());
