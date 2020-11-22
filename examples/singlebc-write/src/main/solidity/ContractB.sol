@@ -14,24 +14,17 @@
  */
 pragma solidity >=0.7.1;
 
-import "../../../../../lockablestorage/src/main/solidity/LockableStorageWrapper.sol";
-
-
-contract ContractB is LockableStorageWrapper {
-    uint256 constant private KEY_VAL = 0;
-
-
+contract ContractB {
+    uint256 private val;
     event ValueWritten(uint256 _val);
 
-    constructor(address _storageContract) LockableStorageWrapper(_storageContract) {
-    }
-
     function set(uint256 _val) external {
-        setUint256(KEY_VAL, _val);
+        val = _val;
         emit ValueWritten(_val);
     }
 
-    function getVal() external view returns(uint256) {
-        return getUint256(KEY_VAL);
+
+    function getVal() external view returns (uint256) {
+        return val;
     }
 }

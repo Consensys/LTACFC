@@ -70,7 +70,7 @@ public class Main {
 
     // Set-up client side and deploy contracts on the blockchains.
     BigInteger bc2BcId = bc2ContractBBlockchain.getBlockchainId();
-    bc2ContractBBlockchain.deployContracts();
+    bc2ContractBBlockchain.deployContracts(cbcManager.getCbcAddress(bc2BcId));
     String contractBContractAddress = bc2ContractBBlockchain.contractB.getContractAddress();
 
     BigInteger rootBcId = bc1ContractABlockchain.getBlockchainId();
@@ -132,8 +132,7 @@ public class Main {
       callP.add(BigInteger.ZERO);
       TransactionReceipt txR = executor.getTransationReceipt(callP);
       bc2ContractBBlockchain.showEvents(txR);
-
-
+      bc2ContractBBlockchain.showValueWritten();
 
       if (++numExecutions >= NUM_TIMES_EXECUTE) {
         break;

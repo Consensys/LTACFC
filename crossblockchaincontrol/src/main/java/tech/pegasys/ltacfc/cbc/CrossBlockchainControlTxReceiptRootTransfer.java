@@ -83,6 +83,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
 
 
   public TransactionReceipt start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
+    StatsHolder.log("Start call now");
     TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
     StatsHolder.logGas("Start Transaction", txR.getGasUsed());
     List<CbcTxRootTransfer.StartEventResponse> startEvents = this.crossBlockchainControlContract.getStartEvents(txR);

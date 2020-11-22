@@ -12,16 +12,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package tech.pegasys.ltacfc.examples.write;
+package tech.pegasys.ltacfc.examples.singlebc.write;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.AbstractBlockchain;
-import tech.pegasys.ltacfc.examples.write.soliditywrappers.ContractA;
-import tech.pegasys.ltacfc.examples.write.soliditywrappers.ContractB;
-import tech.pegasys.ltacfc.lockablestorage.soliditywrappers.LockableStorage;
+import tech.pegasys.ltacfc.examples.singlebc.write.soliditywrappers.ContractB;
+import tech.pegasys.ltacfc.examples.singlebc.write.soliditywrappers.ContractA;
 
 
 import java.io.IOException;
@@ -32,28 +31,19 @@ public class Bc2ContractB extends AbstractBlockchain {
   private static final Logger LOG = LogManager.getLogger(Bc2ContractB.class);
 
   ContractB contractB;
-  LockableStorage lockableStorage;
 
   public Bc2ContractB(Credentials credentials, String bcId, String uri, String gasPriceStrategy, String blockPeriod) throws IOException {
     super(credentials, bcId, uri, gasPriceStrategy, blockPeriod);
   }
 
-  public void deployContracts(String cbcContractAddress) throws Exception {
-    this.lockableStorage = LockableStorage.deploy(this.web3j, this.tm, this.gasProvider, cbcContractAddress).send();
-    this.contractB = ContractB.deploy(this.web3j, this.tm, this.gasProvider, this.lockableStorage.getContractAddress()).send();
-    this.lockableStorage.setBusinessLogicContract(this.contractB.getContractAddress()).send();
+  public void deployContracts() throws Exception {
+    this.contractB = ContractB.deploy(this.web3j, this.tm, this.gasProvider).send();
     LOG.info("ContractB deployed to {} on blockchain 0x{}",
         this.contractB.getContractAddress(), this.blockchainId.toString(16));
-    LOG.info("Lockable Storage for Contract deployed to {} on blockchain 0x{}",
-        this.lockableStorage.getContractAddress(), this.blockchainId.toString(16));
-  }
-
-  public String getRlpFunctionSignature_Set(BigInteger val) {
-    return this.contractB.getRLP_set(val);
   }
 
   public void showEvents(TransactionReceipt txR) {
-    LOG.info("ContractB: Value Write Events");
+    LOG.info("ContractA: Value Read Events");
     List<ContractB.ValueWrittenEventResponse> events = this.contractB.getValueWrittenEvents(txR);
     for (ContractB.ValueWrittenEventResponse e: events) {
       LOG.info(" Value: {}", e._val);
@@ -61,12 +51,6 @@ public class Bc2ContractB extends AbstractBlockchain {
   }
 
   public void showValueWritten() throws Exception {
-    boolean isLocked = this.lockableStorage.locked().send();
-    LOG.info("Contract B's lockable storage: locked: {}", isLocked);
-    if (isLocked) {
-      throw new RuntimeException("Contract B's lockable storage locked after end of crosschain transaction");
-    }
     LOG.info("ContractB: Value: {}", this.contractB.getVal().send());
   }
-
 }
