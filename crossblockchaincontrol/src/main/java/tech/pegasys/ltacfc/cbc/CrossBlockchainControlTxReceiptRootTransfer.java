@@ -287,6 +287,36 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
     }
   }
 
+  public CompletableFuture<TransactionReceipt> addTransactionReceiptRootToBlockchainAsyncPart1(
+      AnIdentity[] signers, BigInteger sourceBlockchainId, byte[] transactionReceiptRoot) throws Exception {
+    // Add the transaction receipt root for the blockchain
+    // Sign the txReceiptRoot
+    List<String> theSigners = new ArrayList<>();
+    List<byte[]> sigR = new ArrayList<>();
+    List<byte[]> sigS = new ArrayList<>();
+    List<BigInteger> sigV = new ArrayList<>();
+    for (AnIdentity signer: signers) {
+      Sign.SignatureData signatureData = signer.sign(transactionReceiptRoot);
+      theSigners.add(signer.getAddress());
+      sigR.add(signatureData.getR());
+      sigS.add(signatureData.getS());
+      sigV.add(BigInteger.valueOf(signatureData.getV()[0]));
+    }
+
+    return this.txReceiptsRootStorageContract.addTxReceiptRoot(sourceBlockchainId, theSigners, sigR, sigS, sigV, transactionReceiptRoot).sendAsync();
+  }
+
+
+  public void addTransactionReceiptRootToBlockchainAsyncPart2(TransactionReceipt txR) throws Exception {
+    if (!txR.isStatusOK()) {
+      String revertReason = txR.getRevertReason();
+      LOG.error("Transaction to add transaction receipt root failed: Revert Reason: {}", RevertReason.decodeRevertReason(revertReason));
+      throw new Exception("Transaction to add transaction receipt root failed: Revert Reason: " + RevertReason.decodeRevertReason(revertReason));
+    }
+    StatsHolder.logGas("AddTxReceiptRoot Transaction", txR.getGasUsed());
+  }
+
+
 
   public TxReceiptRootTransferEventProof getProofForTxReceipt(BigInteger blockchainId, String cbcContractAddress, TransactionReceipt aReceipt) throws Exception {
     // Calculate receipt root based on logs for all receipts of all transactions in the block.

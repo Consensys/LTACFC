@@ -108,15 +108,6 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     publishReceiptRootToAll(this.rootBcId, this.rootProof.getTransactionReceiptRoot());
   }
 
-  protected void doSignallingCallsOldSerial() throws Exception {
-    for (BigInteger blockchainId: this.segmentProofsWithLockedContracts.keySet()) {
-      List<TxReceiptRootTransferEventProof> segProofsLockedContractsCurrentBlockchain =
-          this.segmentProofsWithLockedContracts.get(blockchainId);
-      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
-      cbcContract.signallingSerial(this.rootProof, segProofsLockedContractsCurrentBlockchain);
-    }
-  }
-
   /**
    * This method executes all of the signalling transactions in parallel. They are for separate
    * blockchains, so this is definitely safe.
@@ -156,10 +147,45 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
 
   // Add tx receipt root so event will be trusted.
   private void publishReceiptRoot(BigInteger publishingFrom,  byte[] transactionReceiptRoot, Set<BigInteger> blockchainsToPublishTo) throws Exception {
+    int numToShareWith =  blockchainsToPublishTo.size();
+    if (numToShareWith == 0) {
+      throw new RuntimeException("Unexpectedly, zero blockchains to publish to");
+    }
+
+    CompletableFuture<?>[] transactionReceiptCompletableFutures = new CompletableFuture<?>[numToShareWith];
+    int i = 0;
+    for (BigInteger bcId: blockchainsToPublishTo) {
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(bcId);
+      AnIdentity[] signers = this.cbcManager.getSigners(bcId);
+      transactionReceiptCompletableFutures[i++] = cbcContract.addTransactionReceiptRootToBlockchainAsyncPart1(signers, publishingFrom, transactionReceiptRoot);
+    }
+    CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(transactionReceiptCompletableFutures);
+    combinedFuture.get();
+
+    i = 0;
+    for (BigInteger bcId: blockchainsToPublishTo) {
+      TransactionReceipt receipt = (TransactionReceipt) transactionReceiptCompletableFutures[i++].get();
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(bcId);
+      cbcContract.addTransactionReceiptRootToBlockchainAsyncPart2(receipt);
+    }
+  }
+
+
+  protected void doSignallingCallsSync() throws Exception {
+    for (BigInteger blockchainId: this.segmentProofsWithLockedContracts.keySet()) {
+      List<TxReceiptRootTransferEventProof> segProofsLockedContractsCurrentBlockchain =
+          this.segmentProofsWithLockedContracts.get(blockchainId);
+      CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(blockchainId);
+      cbcContract.signallingSerial(this.rootProof, segProofsLockedContractsCurrentBlockchain);
+    }
+  }
+
+  private void publishReceiptRootSync(BigInteger publishingFrom,  byte[] transactionReceiptRoot, Set<BigInteger> blockchainsToPublishTo) throws Exception {
     for (BigInteger bcId: blockchainsToPublishTo) {
       CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(bcId);
       AnIdentity[] signers = this.cbcManager.getSigners(bcId);
       cbcContract.addTransactionReceiptRootToBlockchain(signers, publishingFrom, transactionReceiptRoot);
     }
   }
+
 }
