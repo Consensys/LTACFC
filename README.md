@@ -45,11 +45,11 @@ anonymous. A crosschain transaction capability is needed to meet these requireme
 ## More information
 [Protocol Description](https://arxiv.org/abs/2005.09790)
 
-[How to build](https://raw.githubusercontent.com/ConsenSys/LTACFC/master/doc/build.md)
+[How to build](https://github.com/ConsenSys/LTACFC/blob/master/doc/build.md)
 
-[Reproducing Performance Results](https://raw.githubusercontent.com/ConsenSys/LTACFC/master/doc/perf.md)
+[Reproducing Performance Results](https://github.com/ConsenSys/LTACFC/blob/master/doc/perf.md)
 
-[Directories in this Repo](https://raw.githubusercontent.com/ConsenSys/LTACFC/master/doc/directories.md)
+[Directories in this Repo](https://github.com/ConsenSys/LTACFC/blob/master/doc/directories.md)
 
 
 
