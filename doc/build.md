@@ -24,6 +24,13 @@ The special version of Web3J needs to end up in the directory `./LTACFC/..`. To 
 * tar xvf codegen-4.7.0-SNAPSHOT.tar
 * cd ../../../../LTACFC
 
+## Creating a blockchain for test purposes
+To build:
+```$xslt
+scripts/create_chain.js 32 1
+```
+
+
 ## Building Solidity, Wrapper code and Test Code
 To build:
 ```$xslt
@@ -32,6 +39,10 @@ To build:
 
 To build and test:
 ```$xslt
+./scripts/run_node.js 32
+```
+and then in another command window:
+```
 ./gradlew test
 ```
 
