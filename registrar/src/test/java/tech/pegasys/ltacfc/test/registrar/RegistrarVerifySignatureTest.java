@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
+import tech.pegasys.ltacfc.common.RevertReason;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
 import tech.pegasys.ltacfc.common.AnIdentity;
 
@@ -88,7 +89,8 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     // This will revert if the signature does not verify
-    this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+    boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+    assert(verified);
   }
 
 
@@ -118,10 +120,13 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
 
     // This will revert if the signature does not verify
     try {
-      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      throw new Exception("Unexpectedly, no error while verifying");
+      boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying. Verified: " + verified);
     } catch (TransactionException ex) {
+      System.err.println("Revert reason: " + RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       // ignore
+    } catch (org.web3j.tx.exceptions.ContractCallException ex1) {
+      // System.err.println("Exception: " + ex1.getMessage());
     }
   }
 
@@ -151,10 +156,13 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
 
     // This will revert as signer2 is has not been registered for the blockchain
     try {
-      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      throw new Exception("Unexpectedly, no error while verifying");
+      boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying. Verified: " + verified);
     } catch (TransactionException ex) {
+      System.err.println("Revert reason: " + RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       // ignore
+    } catch (org.web3j.tx.exceptions.ContractCallException ex1) {
+      // System.err.println("Exception: " + ex1.getMessage());
     }
   }
 
@@ -190,10 +198,13 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      throw new Exception("Unexpectedly, no error while verifying");
+      boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying. Verified: " + verified);
     } catch (TransactionException ex) {
+      System.err.println("Revert reason: " + RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       // ignore
+    } catch (org.web3j.tx.exceptions.ContractCallException ex1) {
+      // System.err.println("Exception: " + ex1.getMessage());
     }
   }
 
@@ -229,10 +240,13 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      throw new Exception("Unexpectedly, no error while verifying");
+      boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying. Verified: " + verified);
     } catch (TransactionException ex) {
+      System.err.println("Revert reason: " + RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       // ignore
+    } catch (org.web3j.tx.exceptions.ContractCallException ex1) {
+      // System.err.println("Exception: " + ex1.getMessage());
     }
   }
 
@@ -268,10 +282,13 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      throw new Exception("Unexpectedly, no error while verifying");
+      boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying. Verified: " + verified);
     } catch (TransactionException ex) {
+      System.err.println("Revert reason: " + RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       // ignore
+    } catch (org.web3j.tx.exceptions.ContractCallException ex1) {
+      // System.err.println("Exception: " + ex1.getMessage());
     }
   }
 
@@ -307,10 +324,13 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     //sigV.add(BigInteger.valueOf(signatureData2.getV()[0]));
 
     try {
-      this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
-      throw new Exception("Unexpectedly, no error while verifying");
+      boolean verified = this.registrarContract.verify(blockchainId, signers, sigR, sigS, sigV, this.plainText).send();
+      throw new Exception("Unexpectedly, no error while verifying. Verified: " + verified);
     } catch (TransactionException ex) {
+      System.err.println("Revert reason: " + RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
       // ignore
+    } catch (org.web3j.tx.exceptions.ContractCallException ex1) {
+      // System.err.println("Exception: " + ex1.getMessage());
     }
   }
 
