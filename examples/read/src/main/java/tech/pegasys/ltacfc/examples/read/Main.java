@@ -27,7 +27,7 @@ import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
 import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
 import tech.pegasys.ltacfc.common.AnIdentity;
-import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.examples.read.sim.SimContractA;
@@ -58,7 +58,7 @@ public class Main {
     Credentials creds = propsLoader.getCredentials();
     PropertiesLoader.BlockchainInfo root = propsLoader.getBlockchainInfo("ROOT");
     PropertiesLoader.BlockchainInfo bc2 = propsLoader.getBlockchainInfo("BC2");
-    CrossBlockchainConsensus consensusMethodology = propsLoader.getConsensusMethodology();
+    CrossBlockchainConsensusType consensusMethodology = propsLoader.getConsensusMethodology();
     StatsHolder.log(consensusMethodology.name());
 
     Bc1ContractA bc1ContractABlockchain = new Bc1ContractA(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);

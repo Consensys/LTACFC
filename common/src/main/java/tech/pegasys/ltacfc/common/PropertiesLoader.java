@@ -80,10 +80,15 @@ public class PropertiesLoader {
     return new BlockchainInfo(bcIdStr, uriStr, gasPriceStrategyStr, blockPeriodStr);
   }
 
-  public CrossBlockchainConsensus getConsensusMethodology() {
+  public CrossBlockchainConsensusType getConsensusMethodology() {
     String consensus = this.properties.getProperty("CONSENSUS_METHODOLOGY");
     LOG.info(" CONSENSUS_METHODOLOGY: {}", consensus);
-    return CrossBlockchainConsensus.valueOf(consensus);
+    return CrossBlockchainConsensusType.valueOf(consensus);
   }
 
+  public ExecutionEngineType getExecutionEnngine() {
+    String engineType = this.properties.getProperty("EXECUTION_ENGINE");
+    LOG.info(" EXECUTION_ENGINE: {}", engineType);
+    return ExecutionEngineType.valueOf(engineType);
+  }
 }

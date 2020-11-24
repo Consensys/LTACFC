@@ -21,7 +21,7 @@ import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
-import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
 import tech.pegasys.ltacfc.common.Tuple;
 
 import java.math.BigInteger;
@@ -46,7 +46,7 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
   Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofsWithLockedContracts = new HashMap<>();
 
   public CbcExecutorTxReceiptRootTransfer(CbcManager cbcManager) throws Exception {
-    super(CrossBlockchainConsensus.TRANSACTION_RECEIPT_SIGNING, cbcManager);
+    super(CrossBlockchainConsensusType.TRANSACTION_RECEIPT_SIGNING, cbcManager);
   }
 
 

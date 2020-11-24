@@ -4,10 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import tech.pegasys.ltacfc.common.AnIdentity;
-import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,10 +17,10 @@ import java.util.Set;
 public class CbcManager {
   static final Logger LOG = LogManager.getLogger(CbcManager.class);
 
-  CrossBlockchainConsensus consensusMethodology;
+  CrossBlockchainConsensusType consensusMethodology;
   Map<BigInteger, BcHolder> blockchains = new HashMap<>();
 
-  public CbcManager(CrossBlockchainConsensus consensusMethodology) {
+  public CbcManager(CrossBlockchainConsensusType consensusMethodology) {
     this.consensusMethodology = consensusMethodology;
   }
 

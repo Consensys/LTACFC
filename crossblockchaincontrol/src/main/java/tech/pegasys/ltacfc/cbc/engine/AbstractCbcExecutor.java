@@ -18,7 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.cbc.CbcManager;
-import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public abstract class AbstractCbcExecutor {
 
   protected Map<BigInteger, TransactionReceipt> transactionReceipts = new HashMap<>();
 
-  private CrossBlockchainConsensus consensusMethodology;
+  private CrossBlockchainConsensusType consensusMethodology;
 
   CbcManager cbcManager;
 
@@ -58,7 +58,7 @@ public abstract class AbstractCbcExecutor {
   boolean success = false;
 
 
-  public AbstractCbcExecutor(CrossBlockchainConsensus consensusMethodology, CbcManager cbcManager) {
+  public AbstractCbcExecutor(CrossBlockchainConsensusType consensusMethodology, CbcManager cbcManager) {
     this.consensusMethodology = consensusMethodology;
     this.cbcManager = cbcManager;
   }

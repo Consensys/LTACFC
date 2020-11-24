@@ -21,15 +21,15 @@ import tech.pegasys.ltacfc.cbc.AbstractCbc;
 import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.cbc.CrossBlockchainControlSignedEvents;
 import tech.pegasys.ltacfc.cbc.SignedEvent;
-import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
 import tech.pegasys.ltacfc.common.Tuple;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
   static final Logger LOG = LogManager.getLogger(CbcExecutorSignedEvents.class);
@@ -39,13 +39,13 @@ public class CbcExecutorSignedEvents extends AbstractCbcExecutor {
 
 
   // Key for this map is the call path of the caller.
-  Map<BigInteger, List<SignedEvent>> signedSegmentEvents = new HashMap<>();
+  Map<BigInteger, List<SignedEvent>> signedSegmentEvents = new ConcurrentHashMap<>();
 
   // Key for this map is the blockchain id that the segment occurred on.
-  Map<BigInteger, List<SignedEvent>> signedSegmentEventsWithLockedContracts = new HashMap<>();
+  Map<BigInteger, List<SignedEvent>> signedSegmentEventsWithLockedContracts = new ConcurrentHashMap<>();
 
   public CbcExecutorSignedEvents(CbcManager cbcManager) throws Exception {
-    super(CrossBlockchainConsensus.EVENT_SIGNING, cbcManager);
+    super(CrossBlockchainConsensusType.EVENT_SIGNING, cbcManager);
   }
 
 

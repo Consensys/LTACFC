@@ -17,26 +17,18 @@ package tech.pegasys.ltacfc.examples.twochain;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.ltacfc.cbc.AbstractCbc;
 import tech.pegasys.ltacfc.cbc.CbcManager;
-import tech.pegasys.ltacfc.cbc.CrossBlockchainControlSignedEvents;
-import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
-import tech.pegasys.ltacfc.cbc.SignedEvent;
-import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.cbc.engine.AbstractCbcExecutor;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorSignedEvents;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
 import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
 import tech.pegasys.ltacfc.common.AnIdentity;
-import tech.pegasys.ltacfc.common.CrossBlockchainConsensus;
+import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.common.StatsHolder;
-import tech.pegasys.ltacfc.common.Tuple;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimRootContract;
 
@@ -63,7 +55,7 @@ public class Main {
     Credentials creds = propsLoader.getCredentials();
     PropertiesLoader.BlockchainInfo root = propsLoader.getBlockchainInfo("ROOT");
     PropertiesLoader.BlockchainInfo other = propsLoader.getBlockchainInfo("OTHER");
-    CrossBlockchainConsensus consensusMethodology = propsLoader.getConsensusMethodology();
+    CrossBlockchainConsensusType consensusMethodology = propsLoader.getConsensusMethodology();
     StatsHolder.log(consensusMethodology.name());
 
     RootBc rootBlockchain = new RootBc(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);
