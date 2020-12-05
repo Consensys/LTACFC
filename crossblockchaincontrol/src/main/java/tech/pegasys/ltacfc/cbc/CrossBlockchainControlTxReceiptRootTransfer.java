@@ -303,6 +303,7 @@ public class CrossBlockchainControlTxReceiptRootTransfer extends AbstractCbc {
       sigV.add(BigInteger.valueOf(signatureData.getV()[0]));
     }
 
+    LOG.info("txReceiptsRootStorageContract.addTxReceiptRoot: publishing to BC ID {}, from BC ID: {}", this.blockchainId, sourceBlockchainId);
     return this.txReceiptsRootStorageContract.addTxReceiptRoot(sourceBlockchainId, theSigners, sigR, sigS, sigV, transactionReceiptRoot).sendAsync();
   }
 

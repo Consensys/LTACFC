@@ -105,11 +105,8 @@ public class Main {
     bc1TradeWalletBlockchain.deployContracts(cbcManager.getCbcAddress(rootBcId), bc2BcId, businessLogicContractAddress);
     String tradeWalletContractAddress = bc1TradeWalletBlockchain.tradeWalletContract.getContractAddress();
 
-    // To make the example simple, just have one signer, and have the same signer for all blockchains.
-    // Note that signers only need to be registered against blockchains that they will consume
-    // events from.
-    AnIdentity signer = new AnIdentity();
-    cbcManager.registerSignerOnAllBlockchains(signer);
+    // To keep the example simple, just have one signer for all blockchains.
+    cbcManager.registerSignerOnAllBlockchains(new AnIdentity());
 
     // Create simulators
     SimStockContract simStockContract = new SimStockContract(bc5StockBlockchain);

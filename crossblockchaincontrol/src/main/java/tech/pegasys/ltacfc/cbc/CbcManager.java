@@ -55,13 +55,22 @@ public class CbcManager {
 
   public void registerSignerOnAllBlockchains(AnIdentity signer) throws Exception {
     for (BigInteger bcId1: this.blockchains.keySet()) {
-      BcHolder holder = this.blockchains.get(bcId1);
-      for (BigInteger bcId2: this.blockchains.keySet()) {
-        holder.cbc.registerSigner(signer, bcId2);
-      }
-      holder.signers.add(signer);
+      registerSigner(signer, bcId1);
     }
   }
+
+  public void registerSigner(AnIdentity signer, BigInteger bcId1) throws Exception {
+    // Add the signer (their private key) to app for the blockchain
+    BcHolder holder = this.blockchains.get(bcId1);
+    holder.signers.add(signer);
+
+    // Add the signer (their address / public key) to each blockchain
+    for (BigInteger bcId2: this.blockchains.keySet()) {
+      BcHolder holder2 = this.blockchains.get(bcId2);
+      holder2.cbc.registerSigner(signer, bcId1);
+    }
+  }
+
 
   public AbstractCbc getCbcContract(BigInteger bcId) {
     if (!this.blockchains.containsKey(bcId)) {

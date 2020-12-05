@@ -17,11 +17,14 @@ package tech.pegasys.ltacfc.cbc.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.cbc.CbcManager;
 import tech.pegasys.ltacfc.cbc.CrossBlockchainControlTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.TxReceiptRootTransferEventProof;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
+import tech.pegasys.ltacfc.common.RevertReason;
+import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.common.Tuple;
 
 import java.math.BigInteger;
@@ -32,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
   static final Logger LOG = LogManager.getLogger(CbcExecutorTxReceiptRootTransfer.class);
@@ -40,10 +45,10 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
   TxReceiptRootTransferEventProof rootProof;
 
   // Key for this map is the call path of the caller.
-  Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofs = new HashMap<>();
+  Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofs = new ConcurrentHashMap<>();
 
   // Key for this map is the blockchain id that the segment occurred on.
-  Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofsWithLockedContracts = new HashMap<>();
+  Map<BigInteger, List<TxReceiptRootTransferEventProof>> segmentProofsWithLockedContracts = new ConcurrentHashMap<>();
 
   public CbcExecutorTxReceiptRootTransfer(CbcManager cbcManager) throws Exception {
     super(CrossBlockchainConsensusType.TRANSACTION_RECEIPT_SIGNING, cbcManager);
@@ -156,11 +161,22 @@ public class CbcExecutorTxReceiptRootTransfer extends AbstractCbcExecutor {
     int i = 0;
     for (BigInteger bcId: blockchainsToPublishTo) {
       CrossBlockchainControlTxReceiptRootTransfer cbcContract = this.cbcManager.getCbcContractTxRootTransfer(bcId);
-      AnIdentity[] signers = this.cbcManager.getSigners(bcId);
+      AnIdentity[] signers = this.cbcManager.getSigners(publishingFrom);
       transactionReceiptCompletableFutures[i++] = cbcContract.addTransactionReceiptRootToBlockchainAsyncPart1(signers, publishingFrom, transactionReceiptRoot);
     }
     CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(transactionReceiptCompletableFutures);
-    combinedFuture.get();
+    try {
+      combinedFuture.get();
+    }
+    catch (ExecutionException ex) {
+      Throwable th = ex.getCause();
+      if (th instanceof TransactionException) {
+        TransactionException txEx = (TransactionException) th;
+        LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(txEx.getTransactionReceipt().get().getRevertReason()));
+      }
+      throw ex;
+    }
+
 
     i = 0;
     for (BigInteger bcId: blockchainsToPublishTo) {
