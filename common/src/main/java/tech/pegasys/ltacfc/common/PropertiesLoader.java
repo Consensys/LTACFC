@@ -45,7 +45,13 @@ public class PropertiesLoader {
 
 
   public PropertiesLoader(String fileName) throws IOException {
-    Path propertiesFile = Paths.get(System.getProperty("user.dir"), fileName);
+    Path propertiesFile;
+    if (fileName.startsWith("/")) {
+      propertiesFile = Paths.get(fileName);
+    }
+    else {
+      propertiesFile = Paths.get(System.getProperty("user.dir"), fileName);
+    }
     FileInputStream fis = new FileInputStream(propertiesFile.toFile());
     this.properties.load(fis);
     LOG.info("Loaded properties from file {}", propertiesFile.toString());

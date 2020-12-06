@@ -44,7 +44,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         // The type of vote being voted on.
         VoteType voteType;
         // Additional information about what is being voted on.
-        uint256 additionalInfo;
+        uint256 additionalInfo1;
+        uint256 additionalInfo2;
         // The block number when voting will cease.
         uint endOfVotingBlockNumber;
 
@@ -63,6 +64,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         // Conforming relayers should not add transaction receipt roots to blocks that
         // are not final.
         uint64 finality;
+
+        address approvedContract;
 
         // Number of active signers
         uint64 numSigners;
@@ -113,7 +116,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
 
 
 
-    function proposeVote(uint16 _action, uint256 _voteTarget, uint256 _additionalInfo) external override(RegistrarInterface) onlyAdmin() {
+    function proposeVote(uint16 _action, uint256 _voteTarget, uint256 _additionalInfo1, uint256 _additionalInfo2) external override(RegistrarInterface) onlyAdmin() {
         // This will throw an error if the action is not a valid VoteType.
         VoteType action = VoteType(_action);
 
@@ -121,7 +124,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         require(votes[_voteTarget].voteType == VoteType.VOTE_NONE);
 
         address targetAddr = address(_voteTarget);
-        address additionalAddress = address(_additionalInfo);
+        address additionalAddress = address(_additionalInfo1);
 
         if (action == VoteType.VOTE_ADD_ADMIN) {
             // If the action is to add an admin, then they shouldn't be an admin already.
@@ -141,7 +144,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
             // Ensure the blockchain does not yet exist
             require(blockchains[_voteTarget].signingThreshold == 0);
             // Ensure the signature algorithm is the only one supported.
-            SigAlgorithm sigAlg = SigAlgorithm(_additionalInfo);
+            SigAlgorithm sigAlg = SigAlgorithm(_additionalInfo2);
             require(sigAlg == SigAlgorithm.ALG_ECDSA_KECCAK256_SECP256K1);
         }
         else if (action == VoteType.VOTE_SET_SIGNING_THRESHOLD) {
@@ -149,6 +152,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
             require(blockchains[_voteTarget].signingThreshold != 0);
         }
         else if (action == VoteType.VOTE_ADD_SIGNER) {
+            // Ensure the blockchain exists
+            require(blockchains[_voteTarget].signingThreshold != 0);
             // Can only add a signer if they aren't a signer yet
             require(blockchains[_voteTarget].signersMap[additionalAddress] == 0);
         }
@@ -161,7 +166,8 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         // Set-up the vote.
         votes[_voteTarget].voteType = action;
         votes[_voteTarget].endOfVotingBlockNumber = block.number + votingPeriod;
-        votes[_voteTarget].additionalInfo = _additionalInfo;
+        votes[_voteTarget].additionalInfo1 = _additionalInfo1;
+        votes[_voteTarget].additionalInfo2 = _additionalInfo2;
 
         if (votingAlgorithmContract == address(0)) {
             // If there is no voting algorithm then all proposals are acted upon immediately.
@@ -231,6 +237,14 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         return true;
     }
 
+    function verifyContract(
+        uint256 _blockchainId,
+        address _emittingContract) external view override(RegistrarInterface) returns (bool){
+        require(_emittingContract == blockchains[_blockchainId].approvedContract, "Data not emitted by approved contract");
+        return true;
+    }
+
+
 
     function adminArraySize() external view override(RegistrarInterface) returns (uint256) {
         return adminsArray.length;
@@ -268,6 +282,9 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         return blockchains[_blockchainId].finality;
     }
 
+    function getApprovedContract(uint256 _blockchainId) external view override(RegistrarInterface) returns (address) {
+        return blockchains[_blockchainId].approvedContract;
+    }
 
     /************************************* PRIVATE FUNCTIONS BELOW HERE *************************************
     /************************************* PRIVATE FUNCTIONS BELOW HERE *************************************
@@ -295,9 +312,10 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
         if (_result) {
             // The vote has been decided in the affirmative.
             VoteType action = votes[_voteTarget].voteType;
-            uint256 additionalInfo = votes[_voteTarget].additionalInfo;
+            uint256 additionalInfo1 = votes[_voteTarget].additionalInfo1;
+            uint256 additionalInfo2 = votes[_voteTarget].additionalInfo2;
             address addr1 = address(_voteTarget);
-            address addr2 = address(additionalInfo);
+            address addr2 = address(additionalInfo1);
             if (action == VoteType.VOTE_ADD_ADMIN) {
                 adminsArray.push(addr1);
                 adminsMap[addr1] = adminsArray.length;
@@ -311,14 +329,15 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
             }
             else if (action == VoteType.VOTE_CHANGE_VOTING) {
                 votingAlgorithmContract = addr1;
-                votingPeriod = uint64(additionalInfo);
+                votingPeriod = uint64(additionalInfo1);
             }
             else if (action == VoteType.VOTE_ADD_BLOCKCHAIN) {
-                blockchains[_voteTarget].sigAlgorithm = SigAlgorithm(additionalInfo);
+                blockchains[_voteTarget].approvedContract = addr2;
+                blockchains[_voteTarget].sigAlgorithm = SigAlgorithm(additionalInfo2);
                 blockchains[_voteTarget].signingThreshold = 1;
             }
             else if (action == VoteType.VOTE_SET_SIGNING_THRESHOLD) {
-                blockchains[_voteTarget].signingThreshold = uint64(additionalInfo);
+                blockchains[_voteTarget].signingThreshold = uint64(additionalInfo1);
             }
             else if (action == VoteType.VOTE_ADD_SIGNER) {
                 blockchains[_voteTarget].signersArray.push(addr2);
@@ -332,7 +351,7 @@ contract Registrar is RegistrarInterface, EcdsaSignatureVerification, ERC165Mapp
                 blockchains[_voteTarget].numSigners--;
             }
             else if (action == VoteType.VOTE_SET_FINALITY) {
-                blockchains[_voteTarget].finality = uint64(additionalInfo);
+                blockchains[_voteTarget].finality = uint64(additionalInfo1);
             }
         }
 

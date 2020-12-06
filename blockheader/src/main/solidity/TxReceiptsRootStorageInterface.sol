@@ -76,6 +76,7 @@ interface TxReceiptsRootStorageInterface is ERC165 {
      * found in the next level up proof.
      *
      * @param _blockchainId Identifier of blockchain that the transaction receipt belongs to
+     * @param _cbcContract Address of contract that emitted the event.
      * @param _txReceiptsRoot The transaction receipt root to reference.
      * @param _txReceipt The value that is being proven to be part of the Merkle Patricia Trie of transaction receipts.
      * @param _proofOffsets The offset of the message digest of the previous level node in the Merkle Patricia Trie
@@ -83,7 +84,7 @@ interface TxReceiptsRootStorageInterface is ERC165 {
      * @param _proof The RLP encoding of branch nodes in the transaction receipt Merkle Patricia Trie.
      *
      */
-    function verify(uint256 _blockchainId, bytes32 _txReceiptsRoot, bytes calldata _txReceipt,
+    function verify(uint256 _blockchainId, address _cbcContract, bytes32 _txReceiptsRoot, bytes calldata _txReceipt,
         uint256[] calldata _proofOffsets, bytes[] calldata _proof) external view returns (bool) ;
 
 

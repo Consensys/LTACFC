@@ -24,9 +24,11 @@ import tech.pegasys.ltacfc.cbc.engine.AbstractCbcExecutor;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorSignedEvents;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
+import tech.pegasys.ltacfc.cbc.engine.ParallelExecutionEngine;
 import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
+import tech.pegasys.ltacfc.common.ExecutionEngineType;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.examples.twochain.sim.SimOtherContract;
@@ -57,6 +59,9 @@ public class Main {
     PropertiesLoader.BlockchainInfo other = propsLoader.getBlockchainInfo("OTHER");
     CrossBlockchainConsensusType consensusMethodology = propsLoader.getConsensusMethodology();
     StatsHolder.log(consensusMethodology.name());
+    ExecutionEngineType engineType = propsLoader.getExecutionEnngine();
+    StatsHolder.log(engineType.name());
+
 
     RootBc rootBlockchain = new RootBc(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);
     OtherBc otherBlockchain = new OtherBc(creds, other.bcId, other.uri, other.gasPriceStrategy, other.period);
@@ -65,6 +70,7 @@ public class Main {
     cbcManager.addBlockchainAndDeployContracts(creds, root);
     cbcManager.addBlockchainAndDeployContracts(creds, other);
 
+    cbcManager.setupCrosschainTrust();
 
     // Set-up client side and deploy contracts on the blockchains.
     BigInteger otherBcId = otherBlockchain.getBlockchainId();
@@ -152,9 +158,20 @@ public class Main {
     }
 
 
-    ExecutionEngine executionEngine = new SerialExecutionEngine(executor);
+    ExecutionEngine executionEngine;
+    switch (engineType) {
+      case SERIAL:
+        executionEngine = new SerialExecutionEngine(executor);
+        break;
+      case PARALLEL:
+        executionEngine = new ParallelExecutionEngine(executor);
+        break;
+      default:
+        throw new RuntimeException("Not implemented yet");
+    }
     boolean success = executionEngine.execute(callGraph, 300);
 
+    LOG.info("Success: {}", success);
 
 
 //
@@ -301,7 +318,6 @@ public class Main {
 //    }
 
 
-    LOG.info("Cross-Blockchain Transaction was successful: {}", success);
     if (success) {
       LOG.info(" Simulated expected values: Root val1: {}, val2: {}, Other val: {}",
           simRootContract.getVal1(), simRootContract.getVal2(), simOtherContract.getVal());

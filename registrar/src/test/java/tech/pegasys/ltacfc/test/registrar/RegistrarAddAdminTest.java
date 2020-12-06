@@ -50,7 +50,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
     BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
+        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // The newly added address should be an admin.
@@ -74,7 +74,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
 
     try {
       TransactionReceipt receipt = regContract2.proposeVote(
-          RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
+          RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.
@@ -97,7 +97,7 @@ public class RegistrarAddAdminTest extends AbstractRegistrarTest {
 
     try {
       TransactionReceipt receipt = this.registrarContract.proposeVote(
-          RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), credAddressBig, BigInteger.ZERO).send();
+          RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), credAddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.

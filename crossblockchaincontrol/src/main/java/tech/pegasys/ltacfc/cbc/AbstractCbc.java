@@ -23,6 +23,7 @@ import org.web3j.protocol.core.methods.response.BaseEventResponse;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
+import tech.pegasys.ltacfc.registrar.SigAlgorithmTypes;
 import tech.pegasys.ltacfc.soliditywrappers.Registrar;
 
 import java.io.IOException;
@@ -57,6 +58,19 @@ public abstract class AbstractCbc extends AbstractBlockchain {
     LOG.info(" Registrar Contract: {}", this.registrarContract.getContractAddress());
   }
 
+  public void addBlockchain(BigInteger bcId, String cbcContractAddress) throws Exception {
+    BigInteger cbcContract = new BigInteger(cbcContractAddress.substring(2), 16);
+    BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
+    TransactionReceipt receipt1 = this.registrarContract.proposeVote(
+        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), bcId, cbcContract, sigAlgorithm).send();
+    if (!receipt1.isStatusOK()) {
+      LOG.error("Transaction to add trusted blockchain 0x{} and CBC contract {} for blockchain 0x{} failed",
+          bcId.toString(16), cbcContractAddress, this.blockchainId.toString(16));
+      throw new Exception("Transaction to add trusted blockchain and CBC contract failed");
+    }
+  }
+
+
   public void registerSignerThisBlockchain(AnIdentity signer) throws Exception {
     registerSigner(signer, this.blockchainId);
   }
@@ -65,7 +79,7 @@ public abstract class AbstractCbc extends AbstractBlockchain {
     LOG.info("Registering signer 0x{} as signer for blockchain 0x{} in registration contract on blockchain 0x{}",
         signer.getAddress(), bcId.toString(16), this.blockchainId.toString(16));
     TransactionReceipt receipt1 = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), bcId, signer.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), bcId, signer.getAddressAsBigInt(), BigInteger.ZERO).send();
     if (!receipt1.isStatusOK()) {
       throw new Exception("Transaction to register signer failed");
     }

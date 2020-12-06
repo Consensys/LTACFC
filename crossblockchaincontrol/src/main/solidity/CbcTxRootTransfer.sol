@@ -90,6 +90,7 @@ contract CbcTxRootTransfer is CrossBlockchainControl {
             EventProof memory eventProof = toEventProof(_eventProofsEncoded[i]);
             txReceiptRootStorage.verify(
                 eventProof.blockchainId,
+                eventProof.cbcContract,
                 eventProof.txReceiptRoot,
                 eventProof.encodedTxReceipt,
                 eventProof.proofOffsets,
@@ -126,6 +127,7 @@ contract CbcTxRootTransfer is CrossBlockchainControl {
             EventProof memory eventProof = toEventProof(_eventProofsEncoded[i]);
             txReceiptRootStorage.verify(
                 eventProof.blockchainId,
+                eventProof.cbcContract,
                 eventProof.txReceiptRoot,
                 eventProof.encodedTxReceipt,
                 eventProof.proofOffsets,

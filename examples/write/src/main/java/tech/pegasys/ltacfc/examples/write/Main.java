@@ -25,9 +25,11 @@ import tech.pegasys.ltacfc.cbc.engine.AbstractCbcExecutor;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorSignedEvents;
 import tech.pegasys.ltacfc.cbc.engine.CbcExecutorTxReceiptRootTransfer;
 import tech.pegasys.ltacfc.cbc.engine.ExecutionEngine;
+import tech.pegasys.ltacfc.cbc.engine.ParallelExecutionEngine;
 import tech.pegasys.ltacfc.cbc.engine.SerialExecutionEngine;
 import tech.pegasys.ltacfc.common.AnIdentity;
 import tech.pegasys.ltacfc.common.CrossBlockchainConsensusType;
+import tech.pegasys.ltacfc.common.ExecutionEngineType;
 import tech.pegasys.ltacfc.common.PropertiesLoader;
 import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.examples.write.sim.SimContractA;
@@ -60,6 +62,9 @@ public class Main {
     PropertiesLoader.BlockchainInfo bc2 = propsLoader.getBlockchainInfo("BC2");
     CrossBlockchainConsensusType consensusMethodology = propsLoader.getConsensusMethodology();
     StatsHolder.log(consensusMethodology.name());
+    ExecutionEngineType engineType = propsLoader.getExecutionEnngine();
+    StatsHolder.log(engineType.name());
+
 
     Bc1ContractA bc1ContractABlockchain = new Bc1ContractA(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);
     Bc2ContractB bc2ContractBBlockchain = new Bc2ContractB(creds, bc2.bcId, bc2.uri, bc2.gasPriceStrategy, bc2.period);
@@ -67,6 +72,8 @@ public class Main {
     CbcManager cbcManager = new CbcManager(consensusMethodology);
     cbcManager.addBlockchainAndDeployContracts(creds, root);
     cbcManager.addBlockchainAndDeployContracts(creds, bc2);
+
+    cbcManager.setupCrosschainTrust();
 
     // Set-up client side and deploy contracts on the blockchains.
     BigInteger bc2BcId = bc2ContractBBlockchain.getBlockchainId();
@@ -123,7 +130,17 @@ public class Main {
           throw new RuntimeException("Not implemented yet");
       }
 
-      ExecutionEngine executionEngine = new SerialExecutionEngine(executor);
+      ExecutionEngine executionEngine;
+      switch (engineType) {
+        case SERIAL:
+          executionEngine = new SerialExecutionEngine(executor);
+          break;
+        case PARALLEL:
+          executionEngine = new ParallelExecutionEngine(executor);
+          break;
+        default:
+          throw new RuntimeException("Not implemented yet");
+      }
       boolean success = executionEngine.execute(callGraph, 300);
 
       LOG.info("Success: {}", success);

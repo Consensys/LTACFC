@@ -26,6 +26,8 @@ import org.web3j.protocol.exceptions.TransactionException;
 import tech.pegasys.ltacfc.common.RevertReason;
 import tech.pegasys.ltacfc.common.StatsHolder;
 import tech.pegasys.ltacfc.common.Tuple;
+import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
+import tech.pegasys.ltacfc.registrar.SigAlgorithmTypes;
 import tech.pegasys.ltacfc.soliditywrappers.CbcSignedEvent;
 
 import java.io.IOException;

@@ -14,6 +14,8 @@
  */
 package tech.pegasys.ltacfc.test.blockheader;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -32,6 +34,7 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.RawTransactionManager;
+import tech.pegasys.ltacfc.common.RevertReason;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
 import tech.pegasys.ltacfc.common.AnIdentity;
@@ -52,6 +55,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 
 public class TxRootAddTest extends AbstractRegistrarTest {
+  static final Logger LOG = LogManager.getLogger(TxRootAddTest.class);
+
   final byte[] txReceiptRoot = new byte[32];
 
   TxReceiptsRootStorage txReceiptRootStorageContract;
@@ -72,7 +77,7 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     // Set-up one signer for the blockchain
     AnIdentity newSigner = new AnIdentity();
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     deployTxReceiptRootStorageContract();
@@ -93,8 +98,13 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     assertFalse(containsReceiptRoot);
 
     // This will revert if the signature does not verify
-    receipt = this.txReceiptRootStorageContract.addTxReceiptRoot(blockchainId, signers, sigR, sigS, sigV, this.txReceiptRoot).send();
-    assert(receipt.isStatusOK());
+    try {
+      receipt = this.txReceiptRootStorageContract.addTxReceiptRoot(blockchainId, signers, sigR, sigS, sigV, this.txReceiptRoot).send();
+      assert(receipt.isStatusOK());
+    } catch (TransactionException ex) {
+      LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
+      throw ex;
+    }
 
     // Check that the receipt root is has been registered.
     containsReceiptRoot = this.txReceiptRootStorageContract.containsTxReceiptRoot(blockchainId, this.txReceiptRoot).send();
@@ -132,7 +142,7 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     // Set-up one signer for the blockchain
     AnIdentity newSigner = new AnIdentity();
     TransactionReceipt receipt1 = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), sourceBlockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), sourceBlockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt1.isStatusOK());
 
     deployTxReceiptRootStorageContract();
@@ -283,8 +293,11 @@ public class TxRootAddTest extends AbstractRegistrarTest {
       }
       assertEquals(besuCalculatedReceiptsRoot.toHexString(), org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode).toHexString());
 
+      String fakeCbcAddress = "0";
+
       this.txReceiptRootStorageContract.verify(
           sourceBlockchainId,
+          fakeCbcAddress,
           besuCalculatedReceiptsRoot.toArray(),
           transactionReceipt.toArray(),
           proofOffsets,

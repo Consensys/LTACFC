@@ -90,6 +90,7 @@ contract CbcSignedEvent is CrossBlockchainControl {
         for (uint256 i = 0; i < numEvents; i++) {
             Holder memory holder = extractEventInfo(_signedEventInfo[i]);
             verifyEventSignature(holder.blockchainId, _signedEventInfo[i], _signature[i]);
+            registrar.verifyContract(holder.blockchainId, holder.cbcContract);
 
             if (i == 0) {
                 require(holder.eventSignature == _startOrRootEventSig, "Incorrect first event");
