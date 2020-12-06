@@ -25,42 +25,42 @@ commands:
       - run:
           name: Check out Web3j and Besu
           command: |
-            git clone https://github.com/PegaSysEng/sidechains-web3j.git ../sidechains-web3j
-            git --git-dir=../sidechains-web3j/.git rev-parse HEAD > ../sidechains-web3j/headcommit
-            git clone https://github.com/PegaSysEng/sidechains-besu.git ../sidechains-besu
-            git --git-dir=../sidechains-besu/.git rev-parse HEAD > ../sidechains-besu/headcommit
+            git clone https://github.com/drinkcoffee/web3j-rlp.git ../web3j-rlp
+            git --git-dir=../web3j-rlp/.git rev-parse HEAD > ../web3j-rlp/headcommit
+            git clone https://github.com/hyperledger/besu ../besu
+            git --git-dir=../besu/.git rev-parse HEAD > ../besu/headcommit
             #git rev-parse HEAD > headcommit
 
       - restore_cache:
           name: Restore cached Besu gradle dependencies
           keys:
-            - deps-besu-{{ checksum "../sidechains-besu/gradle/versions.gradle" }}
+            - deps-besu-{{ checksum "../besu/gradle/versions.gradle" }}
             - deps-besu
 
       - restore_cache:
           name: Restore cached Besu build products
           keys:
-            - products-besu-{{ checksum "../sidechains-besu/headcommit" }}
+            - products-besu-{{ checksum "../besu/headcommit" }}
             - products-besu
 
       - restore_cache:
           name: Restore cached Web3j gradle dependencies
           keys:
-            - deps-web3j-{{ checksum "../sidechains-web3j/build.gradle" }}
+            - deps-web3j-{{ checksum "../web3j-rlp/build.gradle" }}
             - deps-web3j
 
       - restore_cache:
-          name: Restore cached Samples gradle dependencies
+          name: Restore cached GPACT gradle dependencies
           keys:
-            - deps-samples-{{ checksum "build.gradle" }}
-            - deps-samples
+            - deps-gpact-{{ checksum "build.gradle" }}
+            - deps-gpact
 
       - restore_cache:
           name: Restore gradle build cache
           keys: # by decreasing rate of change...
-            - build-cache-{{ checksum "../sidechains-besu/headcommit" }}-{{ checksum "../sidechains-web3j/headcommit" }}-{{ .Revision }}
-            - build-cache-{{ checksum "../sidechains-besu/headcommit" }}-{{ checksum "../sidechains-web3j/headcommit" }}
-            - build-cache-{{ checksum "../sidechains-besu/headcommit" }}
+            - build-cache-{{ checksum "../besu/headcommit" }}-{{ checksum "../web3j-rlp/headcommit" }}-{{ .Revision }}
+            - build-cache-{{ checksum "../besu/headcommit" }}-{{ checksum "../web3j-rlp/headcommit" }}
+            - build-cache-{{ checksum "../besu/headcommit" }}
             - build-cache
 
   capture_test_results:
@@ -107,46 +107,46 @@ jobs:
           command: |
             pushd .
             # Build our Web3j
-            cd ../sidechains-web3j
+            cd ../web3j-rlp
             ./gradlew --parallel --stacktrace --info --build-cache installDist
-            # Build our Besu
-            cd ../sidechains-besu
+            # Build Besu
+            cd ../besu
             ./gradlew --parallel --stacktrace --info --build-cache installDist
             popd
-            # Build the samples
+            # Build the GPACT
             ./gradlew --parallel --stacktrace --info --build-cache clean compileJava compileTestJava assemble
 
       - save_cache:
           name: Caching Besu gradle dependencies
-          key: deps-besu-{{ checksum "../sidechains-besu/gradle/versions.gradle" }}
+          key: deps-besu-{{ checksum "../besu/gradle/versions.gradle" }}
           paths:
-            - ../sidechains-besu/.gradle
+            - ../besu/.gradle
       - save_cache:
           name: Caching Web3j gradle dependencies
-          key: deps-web3j-{{ checksum "../sidechains-web3j/build.gradle" }}
+          key: deps-web3j-{{ checksum "../web3j-rlp/build.gradle" }}
           paths:
-            - ../sidechains-web3j/.gradle
+            - ../web3j-rlp/.gradle
       - save_cache:
-          name: Caching Samples gradle dependencies
-          key: deps-samples-{{ checksum "build.gradle" }}
+          name: Caching GPACT gradle dependencies
+          key: deps-gpact-{{ checksum "build.gradle" }}
           paths:
             - .gradle
       - save_cache:
           name: Caching Besu build products
-          key: products-besu-{{ checksum "../sidechains-besu/headcommit" }}
+          key: products-besu-{{ checksum "../besu/headcommit" }}
           paths:
-            - ../sidechains-besu/build/
+            - ../besu/build/
       - save_cache:
           name: Caching gradle build cache
-          key: build-cache-{{ checksum "../sidechains-besu/headcommit" }}-{{ checksum "../sidechains-web3j/headcommit" }}-{{ .Revision }}
+          key: build-cache-{{ checksum "../besu/headcommit" }}-{{ checksum "../web3j-rlp/headcommit" }}-{{ .Revision }}
           paths:
             - ~/.gradle
       - persist_to_workspace:
           root: ~/
           paths:
             - ./project
-            - ./sidechains-web3j
-            - ./sidechains-besu/build/install
+            - ./web3j-rlp
+            - ./besu/build/install
       - store_artifacts:
           name: Distribution artifacts
           path:  build/distributions
@@ -180,12 +180,14 @@ jobs:
             sudo apt-get install -y nodejs
             npm install scripts
       - run:
-          name: Create sidechains
+          name: Create blockchains
           no_output_timeout: 1m
           command: |
-            scripts/create_chain.js 11 1
-            scripts/create_chain.js 22 1
+            scripts/create_chain.js 31 1
+            scripts/create_chain.js 32 1
             scripts/create_chain.js 33 1
+            scripts/create_chain.js 34 1
+            scripts/create_chain.js 35 1
       - restore_cache:
           name: Restore cached Samples gradle dependencies
           keys:
@@ -196,11 +198,14 @@ jobs:
           no_output_timeout: 1m
           command: |
             # Run the sidechains
-            nohup scripts/run_node.js 11 0 > node_11_0.out 2> node_11_0.err &
-            nohup scripts/run_node.js 22 0 > node_22_0.out 2> node_22_0.err &
+            nohup scripts/run_node.js 31 0 > node_31_0.out 2> node_31_0.err &
+            nohup scripts/run_node.js 32 0 > node_32_0.out 2> node_32_0.err &
             nohup scripts/run_node.js 33 0 > node_33_0.out 2> node_33_0.err &
+            nohup scripts/run_node.js 34 0 > node_33_0.out 2> node_34_0.err &
+            nohup scripts/run_node.js 35 0 > node_33_0.out 2> node_35_0.err &
             # Run the tests proper
-            ./gradlew --parallel --stacktrace --info --build-cache integrationTest
+            #./gradlew --parallel --stacktrace --info --build-cache test
+            ./gradlew --stacktrace --info --build-cache test
       - capture_test_results
       - capture_nodes_outputs
 
