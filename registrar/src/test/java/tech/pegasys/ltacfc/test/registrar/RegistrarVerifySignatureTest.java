@@ -40,7 +40,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData = newSigner.sign(this.plainText);
@@ -67,10 +67,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
     receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData1 = newSigner1.sign(this.plainText);
@@ -104,7 +104,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData = newSigner.sign(this.plainText);
@@ -141,7 +141,7 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData2 = newSigner2.sign(this.plainText);
@@ -176,10 +176,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
     receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData1 = newSigner1.sign(this.plainText);
@@ -218,10 +218,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
     receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData1 = newSigner1.sign(this.plainText);
@@ -260,10 +260,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
     receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData1 = newSigner1.sign(this.plainText);
@@ -302,10 +302,10 @@ public class RegistrarVerifySignatureTest extends AbstractRegistrarTest {
     AnIdentity newSigner2 = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner1.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
     receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner2.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     Sign.SignatureData signatureData1 = newSigner1.sign(this.plainText);

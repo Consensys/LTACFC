@@ -42,7 +42,7 @@ public abstract class AbstractRegistrarTest extends AbstractWeb3Test {
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
+        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, BigInteger.ZERO, sigAlgorithm).send();
     assert(receipt.isStatusOK());
   }
 }

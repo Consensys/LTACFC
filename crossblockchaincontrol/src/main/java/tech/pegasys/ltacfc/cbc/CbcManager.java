@@ -116,6 +116,17 @@ public class CbcManager {
     }
   }
 
+  public void setupCrosschainTrust() throws Exception {
+    for (BigInteger bcId1: this.blockchains.keySet()) {
+      BcHolder holder1 = this.blockchains.get(bcId1);
+
+      for (BigInteger bcId2: this.blockchains.keySet()) {
+        BcHolder holder2 = this.blockchains.get(bcId2);
+        holder1.cbc.addBlockchain(bcId2, holder2.cbcContractAddress);
+      }
+    }
+  }
+
   private static class BcHolder {
     CrossBlockchainControlTxReceiptRootTransfer cbcTxRootTransfer;
     CrossBlockchainControlSignedEvents cbcSignedEvents;

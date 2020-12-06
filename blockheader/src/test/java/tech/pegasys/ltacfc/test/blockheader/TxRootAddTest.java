@@ -14,6 +14,8 @@
  */
 package tech.pegasys.ltacfc.test.blockheader;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -32,6 +34,8 @@ import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.RawTransactionManager;
+import org.web3j.tx.exceptions.ContractCallException;
+import tech.pegasys.ltacfc.common.RevertReason;
 import tech.pegasys.ltacfc.registrar.RegistrarVoteTypes;
 import tech.pegasys.ltacfc.soliditywrappers.TxReceiptsRootStorage;
 import tech.pegasys.ltacfc.common.AnIdentity;
@@ -52,6 +56,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 
 public class TxRootAddTest extends AbstractRegistrarTest {
+  static final Logger LOG = LogManager.getLogger(TxRootAddTest.class);
+
   final byte[] txReceiptRoot = new byte[32];
 
   TxReceiptsRootStorage txReceiptRootStorageContract;
@@ -72,7 +78,7 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     // Set-up one signer for the blockchain
     AnIdentity newSigner = new AnIdentity();
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     deployTxReceiptRootStorageContract();
@@ -93,8 +99,13 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     assertFalse(containsReceiptRoot);
 
     // This will revert if the signature does not verify
-    receipt = this.txReceiptRootStorageContract.addTxReceiptRoot(blockchainId, signers, sigR, sigS, sigV, this.txReceiptRoot).send();
-    assert(receipt.isStatusOK());
+    try {
+      receipt = this.txReceiptRootStorageContract.addTxReceiptRoot(blockchainId, signers, sigR, sigS, sigV, this.txReceiptRoot).send();
+      assert(receipt.isStatusOK());
+    } catch (TransactionException ex) {
+      LOG.error(" Revert Reason: {}", RevertReason.decodeRevertReason(ex.getTransactionReceipt().get().getRevertReason()));
+      throw ex;
+    }
 
     // Check that the receipt root is has been registered.
     containsReceiptRoot = this.txReceiptRootStorageContract.containsTxReceiptRoot(blockchainId, this.txReceiptRoot).send();
@@ -105,22 +116,41 @@ public class TxRootAddTest extends AbstractRegistrarTest {
   @Test
   public void proveTxReceiptOneTxPerBlock() throws Exception {
     // This will result in just a leaf node in the trie.
-    proveTxReceipt(1);
+    proveTxReceipt(1, true, true);
   }
 
   @Test
   public void proveTxReceiptTwoTxPerBlock() throws Exception {
     // This will result in just a branch node and two leaf nodes in the trie.
-    proveTxReceipt(2);
+    proveTxReceipt(2, true, true);
   }
 
   @Test
   public void proveTxReceipt17TxPerBlock() throws Exception {
     // This will result in just a branch node, another branch node and seventeen leaf nodes in the trie.
-    proveTxReceipt(17);
+    proveTxReceipt(17, true, true);
   }
 
-  private void proveTxReceipt(int numTransactionsPerBlock) throws Exception {
+  @Test
+  public void failTxReceiptProofBadBlockchain() throws Exception {
+    // This will result in just a leaf node in the trie.
+    try {
+      proveTxReceipt(1, false, true);
+    } catch (ContractCallException ex) {
+      // Ignore
+    }
+  }
+
+  @Test
+  public void failTxReceiptProofBadCbcContract() throws Exception {
+    try {
+      proveTxReceipt(1, true, false);
+    } catch (ContractCallException ex) {
+      // Ignore
+    }
+  }
+
+  private void proveTxReceipt(int numTransactionsPerBlock, boolean correctBlockchain, boolean correctCbcContract) throws Exception {
     setupWeb3();
     deployRegistrarContract();
     // In this test, the transactions being proven are actually on the same blockchain. However,
@@ -132,7 +162,7 @@ public class TxRootAddTest extends AbstractRegistrarTest {
     // Set-up one signer for the blockchain
     AnIdentity newSigner = new AnIdentity();
     TransactionReceipt receipt1 = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), sourceBlockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), sourceBlockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt1.isStatusOK());
 
     deployTxReceiptRootStorageContract();
@@ -283,8 +313,19 @@ public class TxRootAddTest extends AbstractRegistrarTest {
       }
       assertEquals(besuCalculatedReceiptsRoot.toHexString(), org.hyperledger.besu.crypto.Hash.keccak256(rlpOfNode).toHexString());
 
+      BigInteger bcId = sourceBlockchainId;
+      if (!correctBlockchain) {
+        bcId = sourceBlockchainId.add(BigInteger.ONE);
+      }
+
+      String cbcContractAddress = "0";
+      if (!correctCbcContract) {
+        cbcContractAddress = "1";
+      }
+
       this.txReceiptRootStorageContract.verify(
-          sourceBlockchainId,
+          bcId,
+          cbcContractAddress,
           besuCalculatedReceiptsRoot.toArray(),
           transactionReceipt.toArray(),
           proofOffsets,

@@ -44,12 +44,12 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
 
     // Add an admin
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
+        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // Remove the original admin
     receipt = regContract2.proposeVote(
-        RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred1AddressBig, BigInteger.ZERO).send();
+        RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred1AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // Check that the new admin is an admin and that the old admin is no longer an admin
@@ -70,14 +70,14 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     BigInteger cred2AddressBig = new BigInteger(cred2Address.substring(2), 16);
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO).send();
+        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred2AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // Remove the original admin using the original admin's credentials.
     try {
       BigInteger cred1AddressBig = new BigInteger(this.credentials.getAddress().substring(2), 16);
       receipt = this.registrarContract.proposeVote(
-          RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred1AddressBig, BigInteger.ZERO).send();
+          RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred1AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.
@@ -105,7 +105,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     String cred3Address = credentials3.getAddress();
     BigInteger cred3AddressBig = new BigInteger(cred3Address.substring(2), 16);
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO).send();
+        RegistrarVoteTypes.VOTE_ADD_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     // Check only added admins are admins
@@ -116,7 +116,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
     // Remove the original admin using the original admin's credentials.
     try {
       receipt = regContract2.proposeVote(
-          RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO).send();
+          RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.
@@ -140,7 +140,7 @@ public class RegistrarRemoveAdminTest extends AbstractRegistrarTest {
 
     try {
       TransactionReceipt receipt = this.registrarContract.proposeVote(
-          RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO).send();
+          RegistrarVoteTypes.VOTE_REMOVE_ADMIN.asBigInt(), cred3AddressBig, BigInteger.ZERO, BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.

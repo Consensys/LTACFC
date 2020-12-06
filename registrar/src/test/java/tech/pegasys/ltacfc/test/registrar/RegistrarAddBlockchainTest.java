@@ -22,6 +22,7 @@ import tech.pegasys.ltacfc.registrar.SigAlgorithmTypes;
 
 import java.math.BigInteger;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 
 public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
@@ -32,16 +33,21 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
     deployRegistrarContract();
 
     BigInteger blockchainId = BigInteger.TEN;
+    // Use the registrar contract's address
+    BigInteger contract = new BigInteger(this.registrarContract.getContractAddress().substring(2), 16);
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
+        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, contract, sigAlgorithm).send();
     assert(receipt.isStatusOK());
 
     // Check the signature algorithm has been set correctly.
     assert(this.registrarContract.getSigAlgorithm(blockchainId).send().compareTo(sigAlgorithm) == 0);
     // The initial signing threshold is one.
     assert(this.registrarContract.getSigningThreshold(blockchainId).send().compareTo(BigInteger.ONE) == 0);
+
+    // Check contract set correctly
+    assertEquals(this.registrarContract.getContractAddress(), this.registrarContract.getApprovedContract(blockchainId).send());
   }
 
 
@@ -55,12 +61,12 @@ public class RegistrarAddBlockchainTest extends AbstractRegistrarTest {
     BigInteger sigAlgorithm = SigAlgorithmTypes.ALG_ECDSA_KECCAK256_SECP256K1.asBigInt();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
+        RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, BigInteger.ZERO, sigAlgorithm).send();
     assert(receipt.isStatusOK());
 
     try {
       receipt = this.registrarContract.proposeVote(
-          RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, sigAlgorithm).send();
+          RegistrarVoteTypes.VOTE_ADD_BLOCKCHAIN.asBigInt(), blockchainId, BigInteger.ZERO, sigAlgorithm).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.

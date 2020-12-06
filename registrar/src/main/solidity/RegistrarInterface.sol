@@ -55,27 +55,30 @@ interface RegistrarInterface is ERC165 {
      *
      * Types of votes:
      *
-     * Value  Action                                  Target                        Additional Information
-     * 1      Add an admin                            Address of admin to add       ignored
+     * Value  Action                                  Target                        Additional Information1            Additional Information2
+     * 1      Add an admin                            Address of admin to add       ignored                            ignored
      *         Revert if the address is already an admin.
-     * 2      Remove an admin                         Address of admin to remove    ignored
+     * 2      Remove an admin                         Address of admin to remove    ignored                            ignored
      *         Revert if the address is not an admin.
-     * 3      Change voting algorithm & voting period Address of voting contract    Voting period
+     * 3      Change voting algorithm & voting period Address of voting contract    Voting period                      ignored
      *         Proposing a voting algorithm with address(0) removes the voting algorithm.
      *         The voting period must be greater than 1.
-     * 4      Add a blockchain                        Blockchain Id                 Signing algorithm used for blockchain.
+     * 4      Add a blockchain                        Blockchain Id                 Emitting contract                  Signing algorithm used for blockchain.
      *         The blockchain must not exist yet. The signing algorithm must be valid.
-     * 5     Change signing threshold                 Blockchain Id                 Signing threshold
+     * 5     Change signing threshold                 Blockchain Id                 Signing threshold                  ignored
      *         The signing threshold must be 1 or more.
-     * 6     Add signer                              Blockchain Id                  Address corresponding to public key of signer.
-     * 7     Remove signer                           Blockchain Id                  Address corresponding to public key of signer.
-     * 8     Set finality for a blockchain           Ignored                        Number of confirmation blocks  
+     * 6     Add signer                              Blockchain Id                  Address corresponding to public    ignored
+     *                                                                              key of signer.
+     * 7     Remove signer                           Blockchain Id                  Address corresponding to public    ignored
+     *                                                                              key of signer.
+     * 8     Set finality for a blockchain           Ignored                        Number of confirmation blocks      ignored
      * 
      * @param _action         The type of vote
      * @param _voteTarget     What is being voted on
-     * @param _additionalInfo Additional information as per the table above.
+     * @param _additionalInfo1 Additional information as per the table above.
+     * @param _additionalInfo2 Additional information as per the table above.
      */
-    function proposeVote(uint16 _action, uint256 _voteTarget, uint256 _additionalInfo) external;
+    function proposeVote(uint16 _action, uint256 _voteTarget, uint256 _additionalInfo1, uint256 _additionalInfo2) external;
 
     /**
      * Vote for a proposal.
@@ -115,6 +118,9 @@ interface RegistrarInterface is ERC165 {
         uint8[] calldata _sigV,
         bytes calldata _plainText) external view returns (bool);
 
+    function verifyContract(
+        uint256 _blockchainId,
+        address _emittingContract) external view returns (bool);
 
     function adminArraySize() external view returns (uint256);
 
@@ -134,6 +140,7 @@ interface RegistrarInterface is ERC165 {
     
     function getChainFinality(uint256 _blockchainId) external view returns (uint64);
 
+    function getApprovedContract(uint256 _blockchainId) external view returns (address);
 
     event Voted(address _participant, uint16 _action, uint256 _voteTarget, bool _votedFor);
     event VoteResult(uint16 _action, uint256 _voteTarget, bool _result);

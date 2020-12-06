@@ -82,6 +82,7 @@ public class Main {
     cbcManager.addBlockchainAndDeployContracts(creds, bc4);
     cbcManager.addBlockchainAndDeployContracts(creds, bc5);
 
+    cbcManager.setupCrosschainTrust();
 
     // Set-up client side and deploy contracts on the blockchains.
     BigInteger bc3BcId = bc3BalancesBlockchain.getBlockchainId();

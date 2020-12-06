@@ -35,7 +35,7 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
     AnIdentity newSigner = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     assert(this.registrarContract.isSigner(blockchainId, newSigner.getAddress()).send());
@@ -53,12 +53,12 @@ public class RegistrarAddSignerTest extends AbstractRegistrarTest {
     AnIdentity newSigner = new AnIdentity();
 
     TransactionReceipt receipt = this.registrarContract.proposeVote(
-        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+        RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
     assert(receipt.isStatusOK());
 
     try {
       receipt = this.registrarContract.proposeVote(
-          RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt()).send();
+          RegistrarVoteTypes.VOTE_ADD_SIGNER.asBigInt(), blockchainId, newSigner.getAddressAsBigInt(), BigInteger.ZERO).send();
       assertFalse(receipt.isStatusOK());
     } catch (TransactionException ex) {
       // Do nothing.

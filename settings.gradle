@@ -15,6 +15,7 @@ include 'examples-trade'
 include 'examples-singlebc-read'
 include 'examples-singlebc-write'
 include 'examples-singlebc-trade'
+include 'examples-test'
 
 project(":examples-read").projectDir = file("examples/read")
 project(":examples-write").projectDir = file("examples/write")
@@ -23,4 +24,4 @@ project(":examples-trade").projectDir = file("examples/trade")
 project(":examples-singlebc-read").projectDir = file("examples/singlebc-read")
 project(":examples-singlebc-write").projectDir = file("examples/singlebc-write")
 project(":examples-singlebc-trade").projectDir = file("examples/singlebc-trade")
-
+project(":examples-test").projectDir = file("examples/test")
