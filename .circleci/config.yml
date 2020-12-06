@@ -1,0 +1,216 @@
+---
+version: 2.1
+executors:
+  executor_med: # 2cpu, 4G ram
+    docker:
+      - image: circleci/openjdk:11.0.4-jdk-stretch
+    resource_class: medium
+    working_directory: ~/project
+    environment:
+      GRADLE_OPTS: -Xmx2048m -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+
+  executor_xl: # 8cpu, 16G ram
+    docker:
+      - image: circleci/openjdk:11.0.4-jdk-stretch
+    resource_class: xlarge
+    working_directory: ~/project
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4
+
+commands:
+  prepare:
+    description: "Prepare"
+    steps:
+      - checkout
+      - run:
+          name: Check out Web3j and Besu
+          command: |
+            git clone https://github.com/PegaSysEng/sidechains-web3j.git ../sidechains-web3j
+            git --git-dir=../sidechains-web3j/.git rev-parse HEAD > ../sidechains-web3j/headcommit
+            git clone https://github.com/PegaSysEng/sidechains-besu.git ../sidechains-besu
+            git --git-dir=../sidechains-besu/.git rev-parse HEAD > ../sidechains-besu/headcommit
+            #git rev-parse HEAD > headcommit
+
+      - restore_cache:
+          name: Restore cached Besu gradle dependencies
+          keys:
+            - deps-besu-{{ checksum "../sidechains-besu/gradle/versions.gradle" }}
+            - deps-besu
+
+      - restore_cache:
+          name: Restore cached Besu build products
+          keys:
+            - products-besu-{{ checksum "../sidechains-besu/headcommit" }}
+            - products-besu
+
+      - restore_cache:
+          name: Restore cached Web3j gradle dependencies
+          keys:
+            - deps-web3j-{{ checksum "../sidechains-web3j/build.gradle" }}
+            - deps-web3j
+
+      - restore_cache:
+          name: Restore cached Samples gradle dependencies
+          keys:
+            - deps-samples-{{ checksum "build.gradle" }}
+            - deps-samples
+
+      - restore_cache:
+          name: Restore gradle build cache
+          keys: # by decreasing rate of change...
+            - build-cache-{{ checksum "../sidechains-besu/headcommit" }}-{{ checksum "../sidechains-web3j/headcommit" }}-{{ .Revision }}
+            - build-cache-{{ checksum "../sidechains-besu/headcommit" }}-{{ checksum "../sidechains-web3j/headcommit" }}
+            - build-cache-{{ checksum "../sidechains-besu/headcommit" }}
+            - build-cache
+
+  capture_test_results:
+    description: "Capture test results"
+    steps:
+      - run:
+          name: Gather test results
+          when: always
+          command: |
+            FILES=`find . -name test-results`
+            for FILE in $FILES
+            do
+              MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-results@\1@'`
+              TARGET="build/test-results/$MODULE"
+              mkdir -p "$TARGET"
+              cp -rf ${FILE}/*/* "$TARGET"
+            done
+            # show what is being gathered
+            ls -R build/test-results
+      - store_test_results:
+          path: build/test-results
+
+  capture_nodes_outputs:
+    description: "Capture nodes' outputs"
+    steps:
+      - run:
+          name: Gather nodes' outputs
+          when: always
+          command: |
+            mkdir -p nodes_output
+            cp node_*.* nodes_output/
+            # show what is being gathered
+            ls -R nodes_output
+      - store_artifacts:
+          path: nodes_output/
+
+jobs:
+  assemble:
+    executor: executor_xl
+    steps:
+      - prepare
+      - run:
+          name: Assemble
+          command: |
+            pushd .
+            # Build our Web3j
+            cd ../sidechains-web3j
+            ./gradlew --parallel --stacktrace --info --build-cache installDist
+            # Build our Besu
+            cd ../sidechains-besu
+            ./gradlew --parallel --stacktrace --info --build-cache installDist
+            popd
+            # Build the samples
+            ./gradlew --parallel --stacktrace --info --build-cache clean compileJava compileTestJava assemble
+
+      - save_cache:
+          name: Caching Besu gradle dependencies
+          key: deps-besu-{{ checksum "../sidechains-besu/gradle/versions.gradle" }}
+          paths:
+            - ../sidechains-besu/.gradle
+      - save_cache:
+          name: Caching Web3j gradle dependencies
+          key: deps-web3j-{{ checksum "../sidechains-web3j/build.gradle" }}
+          paths:
+            - ../sidechains-web3j/.gradle
+      - save_cache:
+          name: Caching Samples gradle dependencies
+          key: deps-samples-{{ checksum "build.gradle" }}
+          paths:
+            - .gradle
+      - save_cache:
+          name: Caching Besu build products
+          key: products-besu-{{ checksum "../sidechains-besu/headcommit" }}
+          paths:
+            - ../sidechains-besu/build/
+      - save_cache:
+          name: Caching gradle build cache
+          key: build-cache-{{ checksum "../sidechains-besu/headcommit" }}-{{ checksum "../sidechains-web3j/headcommit" }}-{{ .Revision }}
+          paths:
+            - ~/.gradle
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - ./project
+            - ./sidechains-web3j
+            - ./sidechains-besu/build/install
+      - store_artifacts:
+          name: Distribution artifacts
+          path:  build/distributions
+          destination: distributions
+          when: always
+
+  unitTests:
+    executor: executor_xl
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Build
+          no_output_timeout: 20m
+          command: |
+            ./gradlew --parallel build
+      - capture_test_results
+
+  integrationTests:
+    executor: executor_xl
+    steps:
+#      - prepare
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install Node v10
+          # following the official installation instructions
+          command: |
+            curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            npm install scripts
+      - run:
+          name: Create sidechains
+          no_output_timeout: 1m
+          command: |
+            scripts/create_chain.js 11 1
+            scripts/create_chain.js 22 1
+            scripts/create_chain.js 33 1
+      - restore_cache:
+          name: Restore cached Samples gradle dependencies
+          keys:
+            - deps-samples-{{ checksum "build.gradle" }}
+            - deps-samples
+      - run:
+          name: IntegrationTests
+          no_output_timeout: 1m
+          command: |
+            # Run the sidechains
+            nohup scripts/run_node.js 11 0 > node_11_0.out 2> node_11_0.err &
+            nohup scripts/run_node.js 22 0 > node_22_0.out 2> node_22_0.err &
+            nohup scripts/run_node.js 33 0 > node_33_0.out 2> node_33_0.err &
+            # Run the tests proper
+            ./gradlew --parallel --stacktrace --info --build-cache integrationTest
+      - capture_test_results
+      - capture_nodes_outputs
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - assemble
+      - integrationTests:
+          requires:
+            - assemble
+
+
