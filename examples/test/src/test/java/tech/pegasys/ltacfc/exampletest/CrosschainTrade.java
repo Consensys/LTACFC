@@ -5,7 +5,6 @@ import org.junit.Test;
 
 public class CrosschainTrade extends AbstractExampleTest {
 
-  @Ignore
   @Test
   public void directSignSerialSingleBlockchain() throws Exception {
     String tempPropsFile = createPropertiesFile(true, true, true);
@@ -19,7 +18,6 @@ public class CrosschainTrade extends AbstractExampleTest {
     tech.pegasys.ltacfc.examples.trade.Main.main(new String[]{tempPropsFile});
   }
 
-  @Ignore
   @Test
   public void transferSerialSingleBlockchain() throws Exception {
     String tempPropsFile = createPropertiesFile(false, true, true);
@@ -45,7 +43,6 @@ public class CrosschainTrade extends AbstractExampleTest {
     tech.pegasys.ltacfc.examples.trade.Main.main(new String[]{tempPropsFile});
   }
 
-  @Ignore
   @Test
   public void transferSerialMultiBlockchain() throws Exception {
     String tempPropsFile = createPropertiesFile(false, true, false);

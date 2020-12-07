@@ -61,6 +61,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
 
   public byte[] start(BigInteger transactionId, BigInteger timeout, byte[] callGraph) throws Exception {
+    LOG.info("Start Transaction on blockchain 0x{}", this.blockchainId.toString(16));
     StatsHolder.log("Start call now");
     TransactionReceipt txR = this.crossBlockchainControlContract.start(transactionId, timeout, callGraph).send();
     StatsHolder.logGas("Start Transaction", txR.getGasUsed());
@@ -84,9 +85,16 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
       encodedSignatures.add(segEvent.getEncodedSignatures());
     }
 
+    LOG.info("Call Path Len: {}", callPath.size());
+    for (int i = 0; i < callPath.size(); i++) {
+      LOG.info("Call Path[{}]: {}", i, callPath.get(i));
+    }
+
+
     //RlpDumper.dump(RLP.input(Bytes.wrap(encodedSignatures.get(0))));
     TransactionReceipt txR;
     try {
+      LOG.info("Segment Transaction on blockchain 0x{}", this.blockchainId.toString(16));
       txR = this.crossBlockchainControlContract.segment(encodedEvents, encodedSignatures, callPath).send();
       StatsHolder.logGas("Segment Transaction", txR.getGasUsed());
     } catch (TransactionException ex) {
@@ -135,6 +143,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
 
     TransactionReceipt txR;
     try {
+      LOG.info("Root Transaction on blockchain 0x{}", this.blockchainId.toString(16));
       txR = this.crossBlockchainControlContract.root(encodedEvents, encodedSignatures).send();
       StatsHolder.logGas("Root Transaction", txR.getGasUsed());
       if (!txR.isStatusOK()) {
@@ -173,6 +182,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
     }
 
 
+    LOG.info("Signalling Transaction on blockchain 0x{}", this.blockchainId.toString(16));
     TransactionReceipt txR = this.crossBlockchainControlContract.signalling(encodedEvents, encodedSignatures).send();
     StatsHolder.logGas("Signalling Transaction", txR.getGasUsed());
     if (!txR.isStatusOK()) {
@@ -198,6 +208,7 @@ public class CrossBlockchainControlSignedEvents extends AbstractCbc {
       encodedSignatures.add(segEvent.getEncodedSignatures());
     }
 
+    LOG.info("Signalling Transaction on blockchain 0x{}", this.blockchainId.toString(16));
     return this.crossBlockchainControlContract.signalling(encodedEvents, encodedSignatures).sendAsync();
   }
 

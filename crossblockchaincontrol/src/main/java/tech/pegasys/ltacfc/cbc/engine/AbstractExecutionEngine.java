@@ -65,38 +65,7 @@ public abstract class AbstractExecutionEngine implements ExecutionEngine {
       RlpString blockchainIdRlp = (RlpString) callerCall.getValues().get(0);
       BigInteger theCallerBlockchainId = blockchainIdRlp.asPositiveBigInteger();
 
-      int numCalls = calls.size();
-      Executor executor = Executors.newFixedThreadPool(numCalls);
-      CompletionService<String> completionService =
-          new ExecutorCompletionService<String>(executor);
-      BigInteger callOffset = BigInteger.ONE;
-      for (int i = 1; i < numCalls; i++) {
-        RlpList segCall = (RlpList) calls.get(i);
-        List<BigInteger> nextCallPath = new ArrayList<>(callPath);
-        nextCallPath.add(callOffset);
-        completionService.submit(new Callable<String>() {
-          public String call() throws Exception {
-            callSegments(segCall, nextCallPath, theCallerBlockchainId);
-            return "Not used";
-          }
-        });
-        callOffset = callOffset.add(BigInteger.ONE);
-      }
-      int received = 0;
-      while(received < numCalls - 1) {
-        Future<String> resultFuture = completionService.take(); //blocks if none available
-        try {
-          String result = resultFuture.get();
-          LOG.info("Finished {} of {} parallel calls", received + 1, numCalls - 1);
-          received++;
-        }
-        catch(Exception e) {
-          LOG.error("Error for call: {}: {}", received, e.getMessage());
-          throw e;
-        }
-      }
-      LOG.info("Done");
-
+      executeCalls(calls, callPath, theCallerBlockchainId);
 
       // Now call the segment call that called all of the other segments.
       RlpList segCall = (RlpList) calls.get(0);

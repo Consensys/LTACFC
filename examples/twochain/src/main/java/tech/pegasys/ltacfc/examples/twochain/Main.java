@@ -61,6 +61,9 @@ public class Main {
     StatsHolder.log(consensusMethodology.name());
     ExecutionEngineType engineType = propsLoader.getExecutionEnngine();
     StatsHolder.log(engineType.name());
+    if (engineType == ExecutionEngineType.PARALLEL) {
+      throw new Exception("This example will not work with a paralell execution engine as it has two segments that interact with the same contract on the same blockchain");
+    }
 
 
     RootBc rootBlockchain = new RootBc(creds, root.bcId, root.uri, root.gasPriceStrategy, root.period);
